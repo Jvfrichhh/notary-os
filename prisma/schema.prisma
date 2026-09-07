@@ -1,0 +1,662 @@
+// ============================================================================
+// PRISMA SCHEMA — Sistem Manajemen Kantor Notaris
+// Sesuai Blueprint §6 (Database Design)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Shared enums
+// ----------------------------------------------------------------------------
+
+enum RecordStatus {
+  ACTIVE
+  ARCHIVED
+  TRASHED
+}
+
+enum JobStatus {
+  INBOX
+  IN_PROGRESS
+  WAITING_FOR_CLIENT
+  WAITING_FOR_DOCUMENT
+  REVIEW
+  READY_FOR_SIGNING
+  COMPLETED
+  CANCELLED
+}
+
+enum JobPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum ChecklistItemStatus {
+  MISSING
+  COMPLETE
+}
+
+enum DocumentCategory {
+  CLIENT_DOCUMENT
+  WORKING_DOCUMENT
+  FINAL_DOCUMENT
+  SUPPORTING_DOCUMENT
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+enum WasiatStatus {
+  DIBUAT
+  DICATAT
+  DILAPORKAN
+  BUKTI_TERSEDIA
+}
+
+enum ServiceRecordStatus {
+  DRAFT
+  PROCESS
+  DONE
+}
+
+// ----------------------------------------------------------------------------
+// RBAC
+// ----------------------------------------------------------------------------
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique // NOTARY, ADMIN, STAFF, VIEWER, or custom
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique // e.g. view_clients, edit_finance
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  phone        String?
+  roleId       String
+  role         Role      @relation(fields: [roleId], references: [id])
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Reverse relations (assignments)
+  jobsAsPic         Job[]          @relation("JobPic")
+  jobsAsAssistant   Job[]          @relation("JobAssistant")
+  jobsAsReviewer    Job[]          @relation("JobReviewer")
+  jobsAsNotary      Job[]          @relation("JobNotary")
+  legalisasiAsPic   Legalisasi[]   @relation("LegalisasiPic")
+  waarmerkingAsPic  Waarmerking[]  @relation("WaarmerkingPic")
+  visitsReceived    Visit[]
+  tasksAssigned     JobTask[]
+  documentsUploaded Document[]
+  deedsAsNotary     Deed[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+// ----------------------------------------------------------------------------
+// CRM
+// ----------------------------------------------------------------------------
+
+model Client {
+  id           String       @id @default(cuid())
+  clientNumber String       @unique
+  fullName     String
+  clientType   String? // individu / perusahaan
+  nik          String?
+  phone        String?
+  email        String?
+  address      String?
+  city         String?
+  companyName  String?
+  npwp         String?
+  notes        String?
+  status       RecordStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  createdBy    String?
+
+  visits       Visit[]
+  jobs         Job[]
+  documents    Document[]
+  deeds        Deed[]
+  repertoriums Repertorium[]
+  legalisasi   Legalisasi[]
+  waarmerking  Waarmerking[]
+  wasiat       Wasiat[]
+  payments     Payment[]
+  appointments Appointment[]
+
+  @@index([fullName])
+  @@map("clients")
+}
+
+model Visit {
+  id              String       @id @default(cuid())
+  clientId        String?
+  client          Client?      @relation(fields: [clientId], references: [id])
+  visitorName     String // dipakai jika client baru / belum terdaftar
+  phone           String?
+  origin          String?
+  purpose         String?
+  serviceCategory String?
+  notes           String?
+  staffId         String?
+  staff           User?        @relation(fields: [staffId], references: [id])
+  visitDate       DateTime     @default(now())
+  status          RecordStatus @default(ACTIVE)
+  createdAt       DateTime     @default(now())
+
+  jobs Job[]
+
+  @@index([visitDate])
+  @@map("visits")
+}
+
+// ----------------------------------------------------------------------------
+// Service Template
+// ----------------------------------------------------------------------------
+
+model ServiceType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  templates ServiceTemplate[]
+  jobs      Job[]
+
+  @@map("service_types")
+}
+
+model ServiceTemplate {
+  id                      String      @id @default(cuid())
+  serviceTypeId           String
+  serviceType             ServiceType @relation(fields: [serviceTypeId], references: [id])
+  name                    String
+  defaultChecklist        Json? // [{ label, isRequired }]
+  defaultTasks            Json? // [{ title, description }]
+  defaultDocumentCategory Json?
+  requiredFields          Json?
+  createdAt               DateTime    @default(now())
+
+  @@map("service_templates")
+}
+
+// ----------------------------------------------------------------------------
+// Job / Work Management
+// ----------------------------------------------------------------------------
+
+model Job {
+  id             String      @id @default(cuid())
+  jobNumber      String      @unique
+  clientId       String
+  client         Client      @relation(fields: [clientId], references: [id])
+  visitId        String?
+  visit          Visit?      @relation(fields: [visitId], references: [id])
+  serviceTypeId  String?
+  serviceType    ServiceType? @relation(fields: [serviceTypeId], references: [id])
+  description    String?
+  priority       JobPriority @default(NORMAL)
+  status         JobStatus   @default(INBOX)
+  deadline       DateTime?
+  picId          String?
+  pic            User?       @relation("JobPic", fields: [picId], references: [id])
+  assistantId    String?
+  assistant      User?       @relation("JobAssistant", fields: [assistantId], references: [id])
+  reviewerId     String?
+  reviewer       User?       @relation("JobReviewer", fields: [reviewerId], references: [id])
+  notaryId       String?
+  notary         User?       @relation("JobNotary", fields: [notaryId], references: [id])
+  startDate      DateTime?
+  completionDate DateTime?
+  notes          String?
+  recordStatus   RecordStatus @default(ACTIVE)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  tasks        JobTask[]
+  checklists   JobChecklist[]
+  documents    Document[]
+  deeds        Deed[]
+  minuta       Minuta[]
+  salinan      Salinan[]
+  grosse       Grosse[]
+  kutipan      Kutipan[]
+  repertoriums Repertorium[]
+  wasiat       Wasiat[]
+  payments     Payment[]
+  appointments Appointment[]
+
+  @@index([status])
+  @@index([deadline])
+  @@map("jobs")
+}
+
+model JobTask {
+  id          String     @id @default(cuid())
+  jobId       String
+  job         Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  assignedTo  String?
+  assignee    User?      @relation(fields: [assignedTo], references: [id])
+  status      TaskStatus @default(TODO)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@map("job_tasks")
+}
+
+model JobChecklist {
+  id         String           @id @default(cuid())
+  jobId      String
+  job        Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  templateId String?
+  items      ChecklistItem[]
+  createdAt  DateTime         @default(now())
+
+  @@map("job_checklists")
+}
+
+model ChecklistItem {
+  id                 String              @id @default(cuid())
+  checklistId        String
+  checklist          JobChecklist        @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  label              String
+  isRequired         Boolean             @default(true)
+  status             ChecklistItemStatus @default(MISSING)
+  attachedDocumentId String?
+  attachedDocument   Document?           @relation(fields: [attachedDocumentId], references: [id])
+  note               String?
+
+  @@map("checklist_items")
+}
+
+// ----------------------------------------------------------------------------
+// Document Vault
+// ----------------------------------------------------------------------------
+
+model Document {
+  id          String            @id @default(cuid())
+  jobId       String?
+  job         Job?              @relation(fields: [jobId], references: [id])
+  clientId    String?
+  client      Client?           @relation(fields: [clientId], references: [id])
+  fileName    String
+  fileType    String
+  fileSize    Int
+  category    DocumentCategory
+  uploadedBy  String?
+  uploader    User?             @relation(fields: [uploadedBy], references: [id])
+  uploadedAt  DateTime          @default(now())
+  description String?
+  storageKey  String // path/key di storage provider -- selalu mengikuti versi CURRENT
+  status      RecordStatus      @default(ACTIVE)
+
+  versions       DocumentVersion[]
+  checklistItems ChecklistItem[]
+  minuta         Minuta[]
+  salinan        Salinan[]
+  grosse         Grosse[]
+  kutipan        Kutipan[]
+  legalisasi     Legalisasi[]
+  waarmerking    Waarmerking[]
+  wasiatEvidence Wasiat[]
+
+  @@index([jobId])
+  @@index([clientId])
+  @@index([category])
+  @@index([status])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id             String   @id @default(cuid())
+  documentId     String
+  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  versionNumber  Int
+  uploadedBy     String?
+  uploadedAt     DateTime @default(now())
+  notes          String?
+  isCurrent      Boolean  @default(true)
+  storageKey     String
+  // Metadata per-versi -- supaya versi lama tetap punya nama/tipe/ukuran file
+  // sendiri, tidak ikut berubah kalau versi baru diupload dengan tipe berbeda.
+  fileName       String?
+  fileType       String?
+  fileSize       Int?
+
+  @@unique([documentId, versionNumber])
+  @@map("document_versions")
+}
+
+// ----------------------------------------------------------------------------
+// Notary Record — Akta & turunannya
+// ----------------------------------------------------------------------------
+
+model Deed {
+  id          String   @id @default(cuid())
+  deedNumber  String   @unique
+  deedDate    DateTime
+  deedType    String
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
+  notaryId    String?
+  notary      User?    @relation(fields: [notaryId], references: [id])
+  status       ServiceRecordStatus @default(PROCESS)
+  recordStatus RecordStatus        @default(ACTIVE)
+  createdAt    DateTime @default(now())
+
+  minuta       Minuta[]
+  salinan      Salinan[]
+  grosse       Grosse[]
+  kutipan      Kutipan[]
+  repertorium  Repertorium?
+
+  @@map("deeds")
+}
+
+model Minuta {
+  id             String       @id @default(cuid())
+  deedId         String
+  deed           Deed         @relation(fields: [deedId], references: [id])
+  jobId          String?
+  job            Job?         @relation(fields: [jobId], references: [id])
+  repertoriumId  String?
+  repertorium    Repertorium? @relation(fields: [repertoriumId], references: [id])
+  documentId     String?
+  document       Document?    @relation(fields: [documentId], references: [id])
+  notes          String?
+  recordStatus   RecordStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+
+  @@map("minuta")
+}
+
+model Salinan {
+  id         String    @id @default(cuid())
+  deedId     String
+  deed       Deed      @relation(fields: [deedId], references: [id])
+  jobId      String?
+  job        Job?      @relation(fields: [jobId], references: [id])
+  documentId   String?
+  document     Document?    @relation(fields: [documentId], references: [id])
+  createdBy    String?
+  recordStatus RecordStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+
+  @@map("salinan")
+}
+
+model Grosse {
+  id         String              @id @default(cuid())
+  deedId     String
+  deed       Deed                @relation(fields: [deedId], references: [id])
+  jobId      String?
+  job        Job?                @relation(fields: [jobId], references: [id])
+  documentId String?
+  document   Document?           @relation(fields: [documentId], references: [id])
+  status       ServiceRecordStatus @default(PROCESS)
+  recordStatus RecordStatus        @default(ACTIVE)
+  createdAt    DateTime            @default(now())
+
+  @@map("grosse")
+}
+
+model Kutipan {
+  id         String              @id @default(cuid())
+  deedId     String
+  deed       Deed                @relation(fields: [deedId], references: [id])
+  jobId      String?
+  job        Job?                @relation(fields: [jobId], references: [id])
+  documentId String?
+  document   Document?           @relation(fields: [documentId], references: [id])
+  status       ServiceRecordStatus @default(PROCESS)
+  recordStatus RecordStatus        @default(ACTIVE)
+  createdAt    DateTime            @default(now())
+
+  @@map("kutipan")
+}
+
+model Repertorium {
+  id             String   @id @default(cuid())
+  sequenceNumber Int
+  year           Int
+  deedId         String   @unique
+  deed           Deed     @relation(fields: [deedId], references: [id])
+  deedDate       DateTime
+  appearerName   String
+  deedType       String
+  description    String?
+  clientId       String?
+  client         Client?  @relation(fields: [clientId], references: [id])
+  jobId          String?
+  job            Job?     @relation(fields: [jobId], references: [id])
+  createdBy      String?
+  recordStatus   RecordStatus @default(ACTIVE)
+  createdAt      DateTime @default(now())
+
+  minuta Minuta[]
+
+  @@unique([year, sequenceNumber])
+  @@index([appearerName])
+  @@index([deedType])
+  @@map("repertorium")
+}
+
+// NOTE Phase 4: Klapper TIDAK dibuat sebagai tabel.
+// Klapper = query GROUP BY appearerName/clientId dari tabel `repertorium`,
+// diurutkan alfabetis. Lihat blueprint §6.1.
+
+model Legalisasi {
+  id          String              @id @default(cuid())
+  number      String              @unique
+  date        DateTime
+  clientId    String
+  client      Client              @relation(fields: [clientId], references: [id])
+  documentId  String?
+  document    Document?           @relation(fields: [documentId], references: [id])
+  serviceType String?
+  status      ServiceRecordStatus @default(PROCESS)
+  recordStatus RecordStatus       @default(ACTIVE)
+  picId       String?
+  pic         User?               @relation("LegalisasiPic", fields: [picId], references: [id])
+  notes       String?
+  createdAt   DateTime            @default(now())
+
+  @@map("legalisasi")
+}
+
+model Waarmerking {
+  id          String              @id @default(cuid())
+  number      String              @unique
+  date        DateTime
+  clientId    String
+  client      Client              @relation(fields: [clientId], references: [id])
+  documentId  String?
+  document    Document?           @relation(fields: [documentId], references: [id])
+  serviceType String?
+  status      ServiceRecordStatus @default(PROCESS)
+  recordStatus RecordStatus       @default(ACTIVE)
+  picId       String?
+  pic         User?               @relation("WaarmerkingPic", fields: [picId], references: [id])
+  notes       String?
+  createdAt   DateTime            @default(now())
+
+  @@map("waarmerking")
+}
+
+model Wasiat {
+  id                String       @id @default(cuid())
+  clientId          String
+  client            Client       @relation(fields: [clientId], references: [id])
+  deedNumber        String?
+  date              DateTime?
+  wasiatType        String?
+  repertoriumId     String?
+  status            WasiatStatus @default(DIBUAT)
+  recordStatus      RecordStatus @default(ACTIVE)
+  notes             String?
+  evidenceDocumentId String?
+  evidenceDocument  Document?    @relation(fields: [evidenceDocumentId], references: [id])
+  jobId             String?
+  job               Job?         @relation(fields: [jobId], references: [id])
+  createdAt         DateTime     @default(now())
+
+  @@map("wasiat")
+}
+
+// ----------------------------------------------------------------------------
+// Finance
+// ----------------------------------------------------------------------------
+
+model Payment {
+  id              String        @id @default(cuid())
+  jobId           String?
+  job             Job?          @relation(fields: [jobId], references: [id])
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id])
+  totalAmount     Decimal       @default(0) @db.Decimal(14, 2)
+  downPayment     Decimal       @default(0) @db.Decimal(14, 2)
+  paidAmount      Decimal       @default(0) @db.Decimal(14, 2)
+  remainingAmount Decimal       @default(0) @db.Decimal(14, 2)
+  status          PaymentStatus @default(UNPAID)
+  recordStatus    RecordStatus  @default(ACTIVE)
+  paymentDate     DateTime?
+  paymentMethod   String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+
+  @@map("payments")
+}
+
+// ----------------------------------------------------------------------------
+// Calendar
+// ----------------------------------------------------------------------------
+
+model Appointment {
+  id       String   @id @default(cuid())
+  jobId    String?
+  job      Job?     @relation(fields: [jobId], references: [id])
+  clientId String?
+  client   Client?  @relation(fields: [clientId], references: [id])
+  title    String
+  date     DateTime
+  time     String?
+  type     String? // signing / follow-up / meeting
+  notes    String?
+  createdAt DateTime @default(now())
+
+  @@map("appointments")
+}
+
+// ----------------------------------------------------------------------------
+// System
+// ----------------------------------------------------------------------------
+
+model Notification {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  type             String
+  message          String
+  relatedEntityType String?
+  relatedEntityId  String?
+  isRead           Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// Append-only. Aplikasi tidak boleh expose update/delete untuk model ini.
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  action        String // e.g. "status_changed", "document_uploaded"
+  entityType    String // e.g. "Job", "Document"
+  entityId      String
+  previousValue Json?
+  newValue      Json?
+  timestamp     DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// Counter untuk generate jobNumber (JOB-YYYY-0001) secara concurrency-safe.
+// Increment dilakukan lewat satu statement atomik (INSERT ... ON CONFLICT
+// DO UPDATE ... RETURNING) di src/lib/idGenerators.ts, bukan count()+1
+// yang rawan race condition kalau dua job dibuat bersamaan.
+model JobNumberCounter {
+  year  Int @id
+  value Int @default(0)
+
+  @@map("job_number_counters")
+}
+
+// Sama seperti JobNumberCounter, tapi untuk nomor urut Repertorium per tahun.
+// Increment atomik lewat INSERT ... ON CONFLICT ... RETURNING di
+// src/lib/idGenerators.ts, bukan count()+1.
+model RepertoriumCounter {
+  year  Int @id
+  value Int @default(0)
+
+  @@map("repertorium_counters")
+}

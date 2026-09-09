@@ -35,7 +35,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
       <div className="w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
-        <h1 className="text-lg font-semibold text-foreground">Notary OS</h1>
+        <h1 className="text-lg font-semibold text-foreground">Notary Operating System</h1>
         <p className="mt-1 text-sm text-muted-foreground">Masuk ke sistem manajemen kantor notaris</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -47,7 +47,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="nama@kantor.local"
+              placeholder="Masukkan Email Anda"
             />
           </div>
 
@@ -59,7 +59,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
+              placeholder="Masukkan Password"
             />
           </div>
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-6 text-xs text-muted-foreground">
-          Demo: notary@demo.local / admin@demo.local / staff@demo.local / viewer@demo.local — password: password123
+          © 2026 Java Fauzan. All rights reserved.
         </p>
       </div>
     </div>

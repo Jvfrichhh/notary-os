@@ -27,6 +27,7 @@ npx prisma generate
 npx tsx scripts/db-target.ts --expect-ref <project-ref>   # read-only; exit 0 = target terverifikasi
 npx prisma db push             # database baru/kosong: bentuk seluruh skema
 npx prisma migrate resolve --applied 20261018020000_client_portal_accounts
+npx prisma migrate resolve --applied 20261018040000_client_portal_documents
 npm run prisma:seed            # data demo; berhenti sendiri jika database sudah berisi data
 ```
 
@@ -125,11 +126,22 @@ Aturan akses (ditegakkan di `src/middleware.ts` **dan** di tiap halaman/action):
   pada tiap request (akun nonaktif / klien diarsipkan langsung kehilangan akses).
 - Job milik klien lain → 404, sama seperti job yang tidak ada.
 
-Yang sudah ada di tahap 1: login, dashboard (ringkasan + daftar pekerjaan), detail pekerjaan
-(status versi klien, target, riwayat perubahan status, daftar dokumen yang diperlukan). Belum ada:
-permintaan dokumen, unggah dokumen, notifikasi klien, pembuatan akun dari UI internal.
+Yang sudah ada:
+- Tahap 1: login, dashboard (ringkasan + daftar pekerjaan), detail pekerjaan (status versi klien, target,
+  riwayat perubahan status).
+- Tahap 2: **unggah dokumen per item checklist** (`/portal/jobs/[id]`, server action
+  `uploadChecklistDocument`), status pemeriksaan (Menunggu pemeriksaan / Diterima / Perlu diperbaiki +
+  catatan kantor), unduh dokumen miliknya (`/api/portal/documents/[id]/download`), **notifikasi klien**
+  (`/portal/notifications`). Di sisi internal: halaman job menampilkan unggahan klien dengan tombol
+  **Terima / Perlu Perbaikan** (`reviewChecklistDocument`, butuh `edit_jobs`); perubahan status job
+  otomatis membuat notifikasi klien.
+Belum ada: pembuatan/penonaktifan akun klien dari UI internal, reset password mandiri.
 
-**Perubahan skema**: tabel baru `client_accounts` — `prisma/migrations/20261018020000_client_portal_accounts/`.
+**Perubahan skema** (aditif):
+- `prisma/migrations/20261018020000_client_portal_accounts/` — tabel `client_accounts`.
+- `prisma/migrations/20261018040000_client_portal_documents/` — enum `ChecklistReviewStatus`; kolom
+  `reviewStatus/reviewNote/reviewedAt/reviewedById` di `checklist_items`; kolom
+  `uploadedByClientAccountId` di `documents`; tabel `client_notifications`.
 
 > Repo ini tidak punya migrasi *baseline* (skema lama dibuat tanpa `prisma migrate`), jadi migrasi di atas
 > **tidak bisa** membentuk database kosong sendirian (ia hanya membuat 1 tabel yang ber-FK ke `clients`).
@@ -151,7 +163,7 @@ Lalu untuk **database kosong** (pakai db-target sebagai gerbang di tiap langkah 
 
 ```bash
 npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma db push
-npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma migrate resolve --applied 20261018020000_client_portal_accounts
+npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma migrate resolve --applied 20261018020000_client_portal_accounts && npx prisma migrate resolve --applied 20261018040000_client_portal_documents
 npx tsx scripts/db-target.ts --expect-ref <ref> && npm run prisma:seed
 npx tsx scripts/db-target.ts --expect-ref <ref>     # cek akhir: client_accounts ada, migrasi tercatat applied
 ```

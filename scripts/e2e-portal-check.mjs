@@ -158,6 +158,57 @@ let actionId = null;
   await ctx.close();
 }
 
+// ---------------------------------------------------------------- 10
+console.log("\n[10] Unggah dokumen oleh klien & isolasi unduhan");
+// Klien A mengunggah file kecil ke item checklist job miliknya lewat UI
+// (server action + storage lokal), lalu: A bisa mengunduh, B mendapat 404,
+// tanpa login 401. Menulis Document/DocumentVersion/ChecklistItem di DB
+// pengujian lewat APLIKASI (bukan langsung) -- itu memang perilaku yang diuji.
+{
+  const ctxA = await browser.newContext();
+  const pageA = await ctxA.newPage();
+  await portalLogin(pageA, CLIENT_A);
+  if (jobIdA) {
+    await pageA.goto(`${BASE}/portal/jobs/${jobIdA}`);
+    const inputs = await pageA.$$('input[type="file"][name="file"]');
+    check(inputs.length > 0, `halaman job A menampilkan ${inputs.length} form unggah (item belum diterima)`);
+    if (inputs.length > 0) {
+      await inputs[0].setInputFiles({ name: "e2e-ktp.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%e2e dummy\n") });
+      const form = await inputs[0].evaluateHandle((el) => el.closest("form"));
+      await Promise.all([pageA.waitForLoadState("networkidle"), form.asElement().evaluate((f) => f.requestSubmit())]);
+      await pageA.waitForTimeout(1500);
+      const body = await pageA.textContent("body");
+      check(/berhasil dikirim|Menunggu pemeriksaan/.test(body), "unggahan A diterima server -> status 'Menunggu pemeriksaan'");
+      const dl = await pageA.$eval('a[href^="/api/portal/documents/"]', (a) => a.getAttribute("href")).catch(() => null);
+      check(!!dl, `tautan unduh dokumen A tersedia (${dl ?? "-"})`);
+      if (dl) {
+        const rA = await ctxA.request.get(`${BASE}${dl}`, { maxRedirects: 0 });
+        check([302, 307, 200].includes(rA.status()), `A mengunduh dokumennya sendiri -> ${rA.status()} (redirect ke signed URL)`);
+        const ctxB = await browser.newContext();
+        const pageB = await ctxB.newPage();
+        await portalLogin(pageB, CLIENT_B);
+        const rB = await ctxB.request.get(`${BASE}${dl}`, { maxRedirects: 0 });
+        check(rB.status() === 404, `B mengunduh dokumen A -> 404 (dapat ${rB.status()})`);
+        await ctxB.close();
+        const anon = await browser.newContext();
+        const rN = await anon.request.get(`${BASE}${dl}`, { maxRedirects: 0 });
+        check(rN.status() === 401, `tanpa login mengunduh -> 401 (dapat ${rN.status()})`);
+        await anon.close();
+        // Staff (NOTARY) ke endpoint portal -> 403 (khusus klien)
+        const sctx = await browser.newContext();
+        const sp = await sctx.newPage();
+        await staffLogin(sp, STAFF);
+        const rS = await sctx.request.get(`${BASE}${dl}`, { maxRedirects: 0 });
+        check(rS.status() === 403, `staff ke /api/portal/... -> 403 (dapat ${rS.status()})`);
+        await sctx.close();
+      }
+    }
+  } else {
+    check(false, "jobIdA tidak diketahui -- skenario unggah dilewati");
+  }
+  await ctxA.close();
+}
+
 // ---------------------------------------------------------------- 7
 console.log("\n[7] Kredensial staff di portal");
 {

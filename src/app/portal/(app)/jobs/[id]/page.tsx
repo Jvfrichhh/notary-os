@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock3, AlertTriangle, Download } from "lucide-react";
+import { ChecklistUploadForm } from "@/components/portal/ChecklistUploadForm";
+import { ACCEPT_ATTRIBUTE, ALLOWED_EXTENSIONS_LABEL } from "@/lib/uploadValidation";
 import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
 import { Card } from "@/components/ui/Card";
@@ -34,7 +36,16 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
       checklists: {
         select: {
           items: {
-            select: { id: true, label: true, isRequired: true, status: true },
+            select: {
+              id: true,
+              label: true,
+              isRequired: true,
+              status: true,
+              reviewStatus: true,
+              reviewNote: true,
+              reviewedAt: true,
+              attachedDocument: { select: { id: true, fileName: true, uploadedAt: true, uploadedByClientAccountId: true } }
+            },
             orderBy: { label: "asc" }
           }
         }
@@ -67,6 +78,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
   }
 
   const checklistItems = job.checklists.flatMap((c) => c.items);
+  const jobClosed = job.status === "COMPLETED" || job.status === "CANCELLED";
   const missingRequired = checklistItems.filter((i) => i.isRequired && i.status !== "COMPLETE");
   const statusInfo = PORTAL_JOB_STATUS[job.status];
 
@@ -134,29 +146,64 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
         ) : (
           <ul className="divide-y divide-border">
             {checklistItems.map((item) => {
-              const done = item.status === "COMPLETE";
+              const accepted = item.status === "COMPLETE";
+              const review = accepted ? "ACCEPTED" : item.reviewStatus; // COMPLETE oleh kantor = diterima
+              const canUpload = !accepted && !jobClosed;
+              const doc = item.attachedDocument;
               return (
-                <li key={item.id} className="flex items-center gap-3 py-2 text-sm">
-                  {done ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-status-on-track" />
-                  ) : (
-                    <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                  <span className={done ? "text-muted-foreground line-through" : "text-foreground"}>{item.label}</span>
-                  {!item.isRequired && <span className="text-xs text-muted-foreground">(opsional)</span>}
-                  {!done && item.isRequired && (
-                    <span className="ml-auto text-xs font-medium text-status-due-today">Belum diterima</span>
-                  )}
+                <li key={item.id} className="py-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <ReviewIcon review={review} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className={accepted ? "text-muted-foreground line-through" : "font-medium text-foreground"}>
+                          {item.label}
+                        </span>
+                        {!item.isRequired && <span className="text-xs text-muted-foreground">(opsional)</span>}
+                        <ReviewBadge review={review} />
+                      </div>
+
+                      {review === "NEEDS_REVISION" && item.reviewNote && (
+                        <p className="mt-1 rounded-md border border-status-overdue/30 bg-status-overdue/5 px-2 py-1 text-xs text-foreground">
+                          Catatan kantor: {item.reviewNote}
+                        </p>
+                      )}
+
+                      {doc && (doc.uploadedByClientAccountId || accepted) && (
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            File: <span className="text-foreground">{doc.fileName}</span> · {formatDateTime(doc.uploadedAt)}
+                          </span>
+                          {doc.uploadedByClientAccountId && (
+                            <a
+                              href={`/api/portal/documents/${doc.id}/download`}
+                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <Download className="h-3 w-3" /> Lihat
+                            </a>
+                          )}
+                        </p>
+                      )}
+
+                      {canUpload && (
+                        <ChecklistUploadForm
+                          checklistItemId={item.id}
+                          accept={ACCEPT_ATTRIBUTE}
+                          allowedLabel={ALLOWED_EXTENSIONS_LABEL}
+                          replace={review === "PENDING_REVIEW" || review === "NEEDS_REVISION"}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
-        {missingRequired.length > 0 && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Unggah dokumen melalui portal akan tersedia pada tahap berikutnya. Untuk saat ini, serahkan dokumen
-            langsung ke kantor notaris.
-          </p>
+        {jobClosed && (
+          <p className="mt-3 text-xs text-muted-foreground">Pekerjaan sudah ditutup; unggah dokumen tidak tersedia.</p>
         )}
       </Card>
     </div>
@@ -170,4 +217,23 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="text-right font-medium text-foreground">{value}</dd>
     </div>
   );
+}
+
+type ReviewView = "PENDING_REVIEW" | "ACCEPTED" | "NEEDS_REVISION" | null | undefined;
+
+function ReviewIcon({ review }: { review: ReviewView }) {
+  if (review === "ACCEPTED") return <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-status-on-track" />;
+  if (review === "PENDING_REVIEW") return <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-status-due-soon" />;
+  if (review === "NEEDS_REVISION") return <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-status-overdue" />;
+  return <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />;
+}
+
+function ReviewBadge({ review }: { review: ReviewView }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    ACCEPTED: { label: "Diterima", cls: "bg-status-on-track/10 text-status-on-track" },
+    PENDING_REVIEW: { label: "Menunggu pemeriksaan", cls: "bg-status-due-soon/10 text-status-due-soon" },
+    NEEDS_REVISION: { label: "Perlu diperbaiki", cls: "bg-status-overdue/10 text-status-overdue" }
+  };
+  const v = review ? map[review] : { label: "Belum diunggah", cls: "bg-muted text-muted-foreground" };
+  return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${v.cls}`}>{v.label}</span>;
 }

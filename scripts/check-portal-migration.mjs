@@ -9,7 +9,7 @@
  *  2. `prisma migrate diff --from-schema-datamodel <main> --to-schema-datamodel <sekarang> --script`
  *     -> SQL delta yang akan dibuat Prisma untuk perubahan model ini.
  *  3. Normalisasi (buang komentar, spasi) dan bandingkan statement-per-statement
- *     dengan prisma/migrations/20261018020000_client_portal_accounts/migration.sql.
+ *     dengan GABUNGAN file migrasi portal (lihat MIGRATIONS).
  *
  * Exit 0 = identik secara statement; exit 1 = ada perbedaan (dicetak).
  * Butuh Prisma CLI (devDependency) -> jalankan setelah `npm install`.
@@ -19,7 +19,11 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const MIGRATION = "prisma/migrations/20261018020000_client_portal_accounts/migration.sql";
+// Semua migrasi portal (delta main -> sekarang = gabungan file-file ini).
+const MIGRATIONS = [
+  "prisma/migrations/20261018020000_client_portal_accounts/migration.sql",
+  "prisma/migrations/20261018040000_client_portal_documents/migration.sql"
+];
 const BASE_REF = process.env.BASE_REF ?? "main";
 
 function normalize(sql) {
@@ -47,12 +51,12 @@ try {
     ["prisma", "migrate", "diff", "--from-schema-datamodel", basePath, "--to-schema-datamodel", "prisma/schema.prisma", "--script"],
     { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] }
   );
-  const actual = readFileSync(MIGRATION, "utf8");
+  const actual = MIGRATIONS.map((f) => readFileSync(f, "utf8")).join("\n");
 
   const exp = normalize(expected);
   const act = normalize(actual);
 
-  console.log(`Prisma menghasilkan ${exp.length} statement; file migrasi berisi ${act.length} statement.\n`);
+  console.log(`Prisma menghasilkan ${exp.length} statement; ${MIGRATIONS.length} file migrasi berisi ${act.length} statement.\n`);
 
   const missing = exp.filter((s) => !act.includes(s)); // ada di hasil Prisma, tidak ada di file
   const extra = act.filter((s) => !exp.includes(s)); // ada di file, tidak dihasilkan Prisma

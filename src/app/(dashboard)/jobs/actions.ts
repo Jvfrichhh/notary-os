@@ -10,6 +10,8 @@ import { requireUser } from "@/lib/session";
 import { VALID_TRANSITIONS } from "@/lib/jobStatus";
 import { generateJobNumber } from "@/lib/idGenerators";
 import { createNotification } from "@/lib/notifications";
+import { createClientNotification } from "@/lib/clientNotifications";
+import { portalStatusLabel } from "@/lib/portalLabels";
 import type { JobStatus } from "@prisma/client";
 
 const jobSchema = z.object({
@@ -172,6 +174,17 @@ export async function updateJobStatus(jobId: string, newStatus: JobStatus) {
     newValue: { status: updated.status }
   });
 
+  // Portal klien: beri tahu klien dengan label versi klien (bukan istilah internal).
+  await createClientNotification({
+    clientId: job.clientId,
+    type: "status_changed",
+    message: `Status pekerjaan ${job.jobNumber} kini: ${portalStatusLabel(updated.status)}.`,
+    relatedEntityType: "Job",
+    relatedEntityId: job.id
+  });
+  revalidatePath(`/portal/jobs/${job.id}`);
+  revalidatePath("/portal");
+
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/dashboard");
@@ -263,4 +276,71 @@ export async function toggleTaskStatus(taskId: string, jobId: string) {
   });
 
   revalidatePath(`/jobs/${jobId}`);
+}
+
+/**
+ * Staff memeriksa dokumen yang diunggah KLIEN lewat portal untuk satu item
+ * checklist. decision:
+ *  - "ACCEPTED"       -> item COMPLETE, reviewStatus ACCEPTED
+ *  - "NEEDS_REVISION" -> item tetap MISSING, reviewStatus NEEDS_REVISION +
+ *                        catatan (wajib) yang ditampilkan ke klien
+ * Butuh EDIT_JOBS. Klien diberi notifikasi.
+ */
+export async function reviewChecklistDocument(itemId: string, jobId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+
+  const decision = formData.get("decision");
+  const note = String(formData.get("note") ?? "").trim();
+  if (decision !== "ACCEPTED" && decision !== "NEEDS_REVISION") return;
+  if (decision === "NEEDS_REVISION" && note.length < 3) return; // catatan wajib agar klien tahu apa yang harus diperbaiki
+
+  const item = await prisma.checklistItem.findFirst({
+    where: { id: itemId, checklist: { jobId } },
+    select: {
+      id: true,
+      label: true,
+      status: true,
+      reviewStatus: true,
+      attachedDocumentId: true,
+      checklist: { select: { job: { select: { id: true, jobNumber: true, clientId: true } } } }
+    }
+  });
+  if (!item || !item.attachedDocumentId) return; // tidak ada unggahan untuk diperiksa
+
+  const accepted = decision === "ACCEPTED";
+  await prisma.checklistItem.update({
+    where: { id: item.id },
+    data: {
+      status: accepted ? "COMPLETE" : "MISSING",
+      reviewStatus: decision,
+      reviewNote: accepted ? null : note,
+      reviewedAt: new Date(),
+      reviewedById: user.id
+    }
+  });
+
+  await writeAuditLog({
+    userId: user.id,
+    action: accepted ? "client_document_accepted" : "client_document_revision_requested",
+    entityType: "ChecklistItem",
+    entityId: item.id,
+    previousValue: { status: item.status, reviewStatus: item.reviewStatus },
+    newValue: { status: accepted ? "COMPLETE" : "MISSING", reviewStatus: decision, note: accepted ? undefined : note }
+  });
+
+  const job = item.checklist.job;
+  await createClientNotification({
+    clientId: job.clientId,
+    type: "document_reviewed",
+    message: accepted
+      ? `Dokumen "${item.label}" untuk ${job.jobNumber} telah DITERIMA.`
+      : `Dokumen "${item.label}" untuk ${job.jobNumber} perlu diperbaiki: ${note}`,
+    relatedEntityType: "Job",
+    relatedEntityId: job.id
+  });
+
+  revalidatePath(`/jobs/${job.id}`);
+  revalidatePath(`/portal/jobs/${job.id}`);
+  revalidatePath("/portal");
 }

@@ -29,6 +29,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
       client: true,
       job: true,
       uploader: true,
+      uploadedByClientAccount: { select: { email: true, name: true } },
       versions: { orderBy: { versionNumber: "desc" } }
     }
   });
@@ -107,7 +108,15 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <InfoRow label="Tipe File" value={document.fileType} />
           <InfoRow label="Ukuran" value={formatFileSize(document.fileSize)} />
-          <InfoRow label="Diunggah Oleh" value={document.uploader?.name} />
+          <InfoRow
+            label="Diunggah Oleh"
+            value={
+              document.uploader?.name ??
+              (document.uploadedByClientAccount
+                ? `Klien via portal (${document.uploadedByClientAccount.name ?? document.uploadedByClientAccount.email})`
+                : undefined)
+            }
+          />
           <InfoRow label="Tanggal Unggah" value={formatDateTime(document.uploadedAt)} />
           <div>
             <p className="text-xs text-muted-foreground">Client</p>

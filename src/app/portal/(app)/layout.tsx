@@ -1,5 +1,6 @@
 import { PortalHeader } from "@/components/portal/PortalHeader";
 import { requireClientAccount } from "@/lib/portalSession";
+import { prisma } from "@/lib/prisma";
 
 // Layout membaca session + database -> selalu dinamis, tidak di-cache lintas klien.
 export const dynamic = "force-dynamic";
@@ -10,10 +11,17 @@ export default async function PortalLayout({ children }: { children: React.React
   // requireClientAccount() lagi untuk mendapatkan clientId -- murah, dan
   // menjamin tidak ada halaman yang lupa dibatasi.
   const principal = await requireClientAccount();
+  const unreadCount = await prisma.clientNotification.count({
+    where: { clientId: principal.clientId, isRead: false }
+  });
 
   return (
     <div className="min-h-screen bg-muted">
-      <PortalHeader displayName={principal.displayName} clientNumber={principal.client.clientNumber} />
+      <PortalHeader
+        displayName={principal.displayName}
+        clientNumber={principal.client.clientNumber}
+        unreadCount={unreadCount}
+      />
       <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6">{children}</main>
     </div>
   );

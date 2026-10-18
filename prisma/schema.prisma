@@ -52,6 +52,14 @@ enum ChecklistItemStatus {
   COMPLETE
 }
 
+// Status pemeriksaan dokumen yang diunggah KLIEN lewat portal untuk satu
+// item checklist. null = belum ada unggahan dari klien.
+enum ChecklistReviewStatus {
+  PENDING_REVIEW
+  ACCEPTED
+  NEEDS_REVISION
+}
+
 enum DocumentCategory {
   CLIENT_DOCUMENT
   WORKING_DOCUMENT
@@ -175,7 +183,8 @@ model Client {
   wasiat       Wasiat[]
   payments     Payment[]
   appointments Appointment[]
-  accounts     ClientAccount[]
+  accounts      ClientAccount[]
+  notifications ClientNotification[]
 
   @@index([fullName])
   @@map("clients")
@@ -199,8 +208,27 @@ model ClientAccount {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  documentsUploaded Document[]
+
   @@index([clientId])
   @@map("client_accounts")
+}
+
+// Notifikasi untuk KLIEN (semua akun portal milik satu Client melihatnya).
+// Dipisah dari `Notification` (yang terikat ke users.id internal).
+model ClientNotification {
+  id                String   @id @default(cuid())
+  clientId          String
+  client            Client   @relation(fields: [clientId], references: [id])
+  type              String // "document_reviewed" | "status_changed" | "info"
+  message           String
+  relatedEntityType String?
+  relatedEntityId   String?
+  isRead            Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([clientId, isRead])
+  @@map("client_notifications")
 }
 
 model Visit {
@@ -345,6 +373,12 @@ model ChecklistItem {
   attachedDocument   Document?           @relation(fields: [attachedDocumentId], references: [id])
   note               String?
 
+  // Portal klien: hasil pemeriksaan staff atas unggahan klien.
+  reviewStatus ChecklistReviewStatus?
+  reviewNote   String? // alasan "perlu diperbaiki", ditampilkan ke klien
+  reviewedAt   DateTime?
+  reviewedById String? // users.id staff yang memeriksa (tanpa relasi agar aditif minimal)
+
   @@map("checklist_items")
 }
 
@@ -364,6 +398,9 @@ model Document {
   category    DocumentCategory
   uploadedBy  String?
   uploader    User?             @relation(fields: [uploadedBy], references: [id])
+  // Terisi jika dokumen diunggah KLIEN lewat portal (uploadedBy null).
+  uploadedByClientAccountId String?
+  uploadedByClientAccount   ClientAccount? @relation(fields: [uploadedByClientAccountId], references: [id])
   uploadedAt  DateTime          @default(now())
   description String?
   storageKey  String // path/key di storage provider -- selalu mengikuti versi CURRENT

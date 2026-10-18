@@ -3,8 +3,8 @@ import { getToken } from "next-auth/jwt";
 
 /**
  * Pemisah dua area aplikasi:
- *   - /portal/**  : hanya akun PORTAL KLIEN  (token.kind === "client")
- *   - selain itu  : hanya akun INTERNAL      (token.kind === "staff")
+ *   - /portal/** dan /api/portal/** : hanya akun PORTAL KLIEN (token.kind === "client")
+ *   - selain itu                    : hanya akun INTERNAL     (token.kind === "staff")
  *
  * Token dibaca dari cookie JWT yang ditandatangani server (NEXTAUTH_SECRET);
  * browser tidak bisa memalsukan `kind`. Middleware hanya lapis pertama --
@@ -18,8 +18,9 @@ export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const token = await getToken({ req });
 
-  const isPortal = pathname === "/portal" || pathname.startsWith("/portal/");
   const isApi = pathname.startsWith("/api/");
+  // Area portal = halaman /portal/** DAN endpoint /api/portal/** (unduh dokumen klien).
+  const isPortal = pathname === "/portal" || pathname.startsWith("/portal/") || pathname.startsWith("/api/portal/");
 
   // 1) Belum login
   if (!token) {
@@ -36,8 +37,12 @@ export async function middleware(req: NextRequest) {
   // Token lama (sebelum portal ada) tidak punya `kind` -> pasti internal.
   const isClient = token.kind === "client";
 
-  // 2) Akun internal mencoba membuka portal klien -> kembalikan ke dashboard.
+  // 2) Akun internal mencoba membuka portal klien -> kembalikan ke dashboard
+  //    (atau 403 untuk endpoint API portal).
   if (isPortal && !isClient) {
+    if (isApi) {
+      return NextResponse.json({ error: "Endpoint ini khusus akun portal klien." }, { status: 403 });
+    }
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 

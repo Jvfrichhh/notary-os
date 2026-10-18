@@ -27,32 +27,11 @@
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const PASSWORD = "password123";
 
-// ---------------------------------------------------------------------------
-// PENGAMAN TARGET. Script ini melakukan login, menavigasi, dan (sengaja)
-// mencoba aksi yang seharusnya DITOLAK server. Kalau proteksi ternyata bocor,
-// aksi itu akan benar-benar menulis data -- jadi script hanya boleh diarahkan
-// ke server pengujian lokal, kecuali diizinkan eksplisit.
-// ---------------------------------------------------------------------------
-const PRODUCTION_HOSTS = ["notary-os-three.vercel.app"];
-{
-  const host = new URL(BASE).hostname;
-  if (PRODUCTION_HOSTS.includes(host)) {
-    console.error(`DIHENTIKAN: ${host} adalah domain PRODUKSI. Script ini tidak boleh dijalankan ke produksi.`);
-    process.exit(2);
-  }
-  const isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1";
-  if (!isLocal && process.env.E2E_ALLOW_REMOTE !== "1") {
-    console.error(
-      `DIHENTIKAN: BASE_URL menunjuk ke host non-lokal (${host}).` +
-        "\nJalankan ke server lokal, atau set E2E_ALLOW_REMOTE=1 HANYA untuk preview yang terhubung ke database pengujian."
-    );
-    process.exit(2);
-  }
-  console.log(`Target: ${BASE}${isLocal ? "" : "  (remote, diizinkan lewat E2E_ALLOW_REMOTE=1)"}`);
-}
-const CLIENT_A = "client@demo.local"; // CLI-0001, JOB-YYYY-0001
-const CLIENT_B = "client2@demo.local"; // CLI-0002, JOB-YYYY-0002
-const STAFF = "notary@demo.local";
+import { assertSafeTarget, bindTestDatabase, portalLogin as portalLoginShared, describeDbUrl } from "./lib/e2e-guard.mjs";
+
+// Lapis 1: pemeriksaan ENV (produksi ditolak mutlak; remote butuh izin +
+// E2E_EXPECTED_DB_REF; E2E_TEST_DATABASE_URL harus cocok dengan ref itu).
+const { testDbUrl } = assertSafeTarget(BASE);
 
 let failures = 0;
 function check(cond, msg) {
@@ -60,16 +39,7 @@ function check(cond, msg) {
   if (!cond) failures++;
 }
 
-async function portalLogin(page, email, password = PASSWORD) {
-  await page.goto(`${BASE}/portal/login`);
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', password);
-  await page.click('button[type="submit"]');
-  await page.waitForTimeout(1500);
-  if (page.url().includes("/portal/login")) return false;
-  await page.waitForURL(/\/portal(\?|$)/, { timeout: 15000 });
-  return true;
-}
+const portalLogin = (page, email, password = PASSWORD) => portalLoginShared(page, BASE, email, password);
 
 async function staffLogin(page, email) {
   await page.goto(`${BASE}/login`);
@@ -81,6 +51,10 @@ async function staffLogin(page, email) {
 // Import playwright SETELAH pengaman target di atas lolos.
 const { chromium } = await import("playwright");
 const browser = await chromium.launch();
+
+// Lapis 2: pre-flight RUNTIME. Berhenti jika akun demo tidak bisa login di
+// target, atau jika aplikasi ternyata memakai DB lain dari E2E_TEST_DATABASE_URL.
+const testDb = await bindTestDatabase({ browser, baseUrl: BASE, testDbUrl });
 
 // ---------------------------------------------------------------- 1
 console.log("\n[1] Tanpa login");
@@ -196,37 +170,37 @@ console.log("\n[7] Kredensial staff di portal");
 
 // ---------------------------------------------------------------- 8
 console.log("\n[8] Akun nonaktif / klien diarsipkan");
-// Skenario ini MENULIS ke database (toggle isActive / status klien, lalu
-// dikembalikan). Sengaja memakai variabel E2E_TEST_DATABASE_URL -- bukan
-// DATABASE_URL -- supaya .env aplikasi yang kebetulan terbawa tidak pernah
-// memicu tulisan. Isi variabel ini hanya dengan URL database PENGUJIAN.
-if (!process.env.E2E_TEST_DATABASE_URL) {
+// Satu-satunya skenario yang MENULIS ke database (toggle isActive / status
+// klien). Hanya berjalan jika E2E_TEST_DATABASE_URL lolos lapis 1 dan 2.
+// Nilai SELALU dipulihkan di `finally`, apa pun yang terjadi di tengah.
+if (!testDb) {
   console.log("  - dilewati (E2E_TEST_DATABASE_URL tidak diset)");
 } else {
-  const { PrismaClient } = await import("@prisma/client");
-  const prisma = new PrismaClient({ datasources: { db: { url: process.env.E2E_TEST_DATABASE_URL } } });
-  console.log(`  - menulis ke: ${new URL(process.env.E2E_TEST_DATABASE_URL).hostname}`);
+  console.log(`  - menulis ke: ${describeDbUrl(testDbUrl)}`);
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
   try {
     // 8a: sesi aktif lalu akun dinonaktifkan -> ditendang
-    const ctx = await browser.newContext();
-    const page = await ctx.newPage();
     await portalLogin(page, CLIENT_B);
-    await prisma.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: false } });
+    await testDb.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: false } });
     await page.goto(`${BASE}/portal`);
     check(page.url().includes("/portal/login?error=account_inactive"), "akun dinonaktifkan saat sesi aktif -> /portal/login?error=account_inactive");
     const ok = await portalLogin(page, CLIENT_B);
     check(!ok, "akun nonaktif tidak bisa login lagi");
-    await prisma.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: true } });
+    await testDb.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: true } });
 
     // 8b: klien diarsipkan
     await portalLogin(page, CLIENT_B);
-    await prisma.client.update({ where: { clientNumber: "CLI-0002" }, data: { status: "ARCHIVED" } });
+    await testDb.client.update({ where: { clientNumber: "CLI-0002" }, data: { status: "ARCHIVED" } });
     await page.goto(`${BASE}/portal`);
     check(page.url().includes("/portal/login?error=client_inactive"), "klien diarsipkan saat sesi aktif -> /portal/login?error=client_inactive");
-    await prisma.client.update({ where: { clientNumber: "CLI-0002" }, data: { status: "ACTIVE" } });
-    await ctx.close();
   } finally {
-    await prisma.$disconnect();
+    // Pemulihan tanpa syarat -- berjalan juga saat assertion/navigasi gagal.
+    const r1 = await testDb.clientAccount.updateMany({ where: { email: CLIENT_B }, data: { isActive: true } });
+    const r2 = await testDb.client.updateMany({ where: { clientNumber: "CLI-0002" }, data: { status: "ACTIVE" } });
+    console.log(`  - dipulihkan: akun ${CLIENT_B} aktif (${r1.count}), CLI-0002 ACTIVE (${r2.count})`);
+    await ctx.close();
+    await testDb.$disconnect();
   }
 }
 

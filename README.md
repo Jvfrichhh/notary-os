@@ -24,9 +24,15 @@ Isi `.env`:
 
 ```bash
 npx prisma generate
-npx prisma migrate dev --name init
-npm run prisma:seed
+npx tsx scripts/db-target.ts   # pastikan DATABASE_URL menunjuk ke database yang Anda maksud (read-only)
+npx prisma db push             # database baru/kosong: bentuk seluruh skema
+npx prisma migrate resolve --applied 20261018020000_client_portal_accounts
+npm run prisma:seed            # data demo; berhenti sendiri jika database sudah berisi data
 ```
+
+> Jangan memakai `prisma migrate dev` di repo ini untuk saat ini: folder `prisma/migrations` belum punya
+> migrasi *baseline*, sehingga `migrate dev` di database kosong akan gagal (FK ke `clients`) dan di
+> database berisi data bisa **menawarkan reset**. Lihat bagian "Portal Klien" untuk penjelasan lengkap.
 
 Ini akan membuat seluruh tabel dan mengisi demo data:
 

@@ -1,7 +1,14 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { userHasPermission } from "@/lib/permissions";
+import { userHasAnyPermission, userHasPermission } from "@/lib/permissions";
+
+/**
+ * Tujuan redirect saat user login tapi TIDAK punya izin membuka halaman.
+ * Dashboard membaca query `denied=1` dan menampilkan pemberitahuan singkat,
+ * supaya user tahu kenapa ia "terlempar" -- bukan sekadar pindah halaman diam-diam.
+ */
+export const ACCESS_DENIED_REDIRECT = "/dashboard?denied=1";
 
 /**
  * Dipakai di server components / server actions untuk ambil user yang login.
@@ -27,7 +34,21 @@ export async function requirePermission(permissionKey: string) {
   const user = await requireUser();
   const allowed = await userHasPermission(user.id, permissionKey);
   if (!allowed) {
-    redirect("/dashboard");
+    redirect(ACCESS_DENIED_REDIRECT);
+  }
+  return user;
+}
+
+/**
+ * Versi "salah satu dari": lolos kalau user punya MINIMAL SATU permission
+ * dari daftar. Dipakai halaman gabungan seperti /admin yang relevan untuk
+ * manage_users, manage_roles, maupun view_audit_log.
+ */
+export async function requireAnyPermission(permissionKeys: readonly string[]) {
+  const user = await requireUser();
+  const allowed = await userHasAnyPermission(user.id, permissionKeys);
+  if (!allowed) {
+    redirect(ACCESS_DENIED_REDIRECT);
   }
   return user;
 }

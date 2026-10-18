@@ -19,6 +19,34 @@ export async function userHasPermission(userId: string, permissionKey: string): 
 }
 
 /**
+ * Ambil SEMUA permission key milik user dalam satu query. Dipakai di layout
+ * (untuk memfilter menu sidebar) dan di tempat lain yang butuh banyak
+ * pengecekan sekaligus -- lebih hemat daripada memanggil userHasPermission()
+ * berulang kali. User nonaktif / tidak ditemukan -> set kosong.
+ */
+export async function getUserPermissions(userId: string): Promise<Set<string>> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: { include: { permissions: { include: { permission: true } } } } }
+  });
+
+  if (!user || !user.isActive) return new Set();
+
+  return new Set(user.role.permissions.map((rp) => rp.permission.key));
+}
+
+/**
+ * True kalau user punya MINIMAL SATU dari permission yang diminta.
+ * Dipakai untuk halaman gabungan seperti /admin (Users, Roles & Audit Log)
+ * yang boleh dibuka oleh siapa pun yang punya salah satu izin terkait.
+ */
+export async function userHasAnyPermission(userId: string, permissionKeys: readonly string[]): Promise<boolean> {
+  if (permissionKeys.length === 0) return true;
+  const owned = await getUserPermissions(userId);
+  return permissionKeys.some((key) => owned.has(key));
+}
+
+/**
  * Dipakai di API routes / server actions. Melempar error 403-style
  * kalau user tidak punya permission — jangan tangkap diam-diam.
  */
@@ -36,34 +64,8 @@ export class PermissionError extends Error {
   }
 }
 
-// Daftar permission — dijaga sinkron dengan prisma/seed.ts
-export const PERMISSIONS = {
-  VIEW_CLIENTS: "view_clients",
-  CREATE_CLIENTS: "create_clients",
-  EDIT_CLIENTS: "edit_clients",
-  DELETE_CLIENTS: "delete_clients",
-  VIEW_VISITS: "view_visits",
-  CREATE_VISITS: "create_visits",
-  VIEW_JOBS: "view_jobs",
-  CREATE_JOBS: "create_jobs",
-  EDIT_JOBS: "edit_jobs",
-  DELETE_JOBS: "delete_jobs",
-  VIEW_DOCUMENTS: "view_documents",
-  UPLOAD_DOCUMENTS: "upload_documents",
-  DELETE_DOCUMENTS: "delete_documents",
-  VIEW_FINANCE: "view_finance",
-  EDIT_FINANCE: "edit_finance",
-  VIEW_MINUTA: "view_minuta",
-  EDIT_MINUTA: "edit_minuta",
-  VIEW_REPERTORIUM: "view_repertorium",
-  EDIT_REPERTORIUM: "edit_repertorium",
-  VIEW_LEGALISASI: "view_legalisasi",
-  EDIT_LEGALISASI: "edit_legalisasi",
-  VIEW_WAARMERKING: "view_waarmerking",
-  EDIT_WAARMERKING: "edit_waarmerking",
-  VIEW_WASIAT: "view_wasiat",
-  EDIT_WASIAT: "edit_wasiat",
-  VIEW_AUDIT_LOG: "view_audit_log",
-  MANAGE_USERS: "manage_users",
-  MANAGE_ROLES: "manage_roles"
-} as const;
+// Daftar permission key tinggal di permissionKeys.ts (tanpa dependensi Prisma)
+// supaya bisa di-import dari client component / konfigurasi navigasi / script
+// pengujian. Di-re-export di sini agar semua import lama tetap berfungsi.
+export { PERMISSIONS } from "@/lib/permissionKeys";
+export type { PermissionKey } from "@/lib/permissionKeys";

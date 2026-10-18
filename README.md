@@ -119,6 +119,11 @@ Portal klien hidup di `/portal` dan memakai **akun terpisah** dari akun internal
 | Isi session | `kind: "staff"`, `role` | `kind: "client"`, `clientId` |
 | Guard server | `requireUser()` / `requirePermission()` | `requireClientAccount()` (`src/lib/portalSession.ts`) |
 
+**Domain terpisah (opsional)** — set env `PORTAL_HOST` (mis. `portal.kantor.id` atau `notary-os-portal.vercel.app`)
+dan `STAFF_HOST`. Satu deployment melayani keduanya: di host portal, `/` → `/portal` dan `/login` → `/portal/login`
+(rewrite), path internal dialihkan ke `/`; di host kantor, `/portal/**` dialihkan ke host portal. Sesi login
+terpisah per host. Tanpa env ini aplikasi berjalan satu domain (portal di `/portal`). Lihat `src/lib/hosts.ts`.
+
 Aturan akses (ditegakkan di `src/middleware.ts` **dan** di tiap halaman/action):
 - Akun klien hanya bisa membuka `/portal/**`; ke halaman/API internal → dialihkan/403.
 - Akun internal tidak memakai portal; ke `/portal` → dialihkan ke `/dashboard`.

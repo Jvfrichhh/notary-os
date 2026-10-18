@@ -38,7 +38,7 @@ export function PortalHeader({
             <p className="mt-0.5 text-xs text-muted-foreground">{clientNumber}</p>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/portal/login" })}
+            onClick={() => signOut({ callbackUrl: `${window.location.origin}/portal/login` })}
             className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
             title="Keluar"
             aria-label="Keluar"

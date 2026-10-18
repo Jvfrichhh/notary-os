@@ -58,7 +58,7 @@ function PortalLoginForm() {
           <p>{deniedMessage}</p>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/portal/login" })}
+            onClick={() => signOut({ callbackUrl: `${window.location.origin}/portal/login` })}
             className="mt-2 text-xs font-medium text-primary hover:underline"
           >
             Keluar dari sesi ini

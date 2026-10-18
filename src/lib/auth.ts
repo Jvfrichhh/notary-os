@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { isAllowedRedirectHost } from "@/lib/hosts";
 
 /** Nilai `role` yang ditulis ke session untuk akun portal klien (bukan Role RBAC). */
 export const CLIENT_PORTAL_ROLE = "CLIENT";
@@ -94,6 +95,22 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
+    /**
+     * Tujuan redirect setelah signIn/signOut. Default NextAuth hanya
+     * mengizinkan origin NEXTAUTH_URL; dengan domain portal terpisah,
+     * host portal/kantor yang terdaftar (lib/hosts.ts) juga diizinkan.
+     * Host lain -> kembali ke baseUrl (anti open-redirect).
+     */
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      try {
+        const u = new URL(url);
+        if (u.origin === baseUrl || isAllowedRedirectHost(u.host)) return url;
+      } catch {
+        /* url tidak valid -> fallback */
+      }
+      return baseUrl;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

@@ -168,6 +168,13 @@ npx tsx scripts/db-target.ts --expect-ref <ref> && npm run prisma:seed
 npx tsx scripts/db-target.ts --expect-ref <ref>     # cek akhir: client_accounts ada, migrasi tercatat applied
 ```
 
+**Tanpa Prisma CLI** (mis. lewat SQL editor / MCP Supabase): `python3 scripts/prisma-to-ddl.py prisma/schema.prisma`
+menghasilkan DDL seluruh skema mengikuti konvensi Prisma (diverifikasi identik dengan kedua file migrasi portal
+dan dieksekusi bersih di PostgreSQL 16); lalu `scripts/seed-demo.sql` mengisi data demo yang sama dengan
+`prisma/seed.ts` (berhenti sendiri jika DB berisi data; password via pgcrypto bcrypt). Setelah itu catat kedua
+migrasi di `_prisma_migrations` (atau `prisma migrate resolve --applied ...`). Verifikasi akhir tetap dengan
+`prisma migrate diff --from-url <DB> --to-schema-datamodel prisma/schema.prisma --exit-code` saat CLI tersedia.
+
 Untuk database **yang sudah punya skema lama** (mis. salinan/clone data): `npx prisma migrate deploy`
 hanya akan menambahkan `client_accounts`. Jangan pakai `prisma migrate dev` pada database berisi data —
 ia bisa menawarkan *reset* saat mendeteksi drift; **tolak**.

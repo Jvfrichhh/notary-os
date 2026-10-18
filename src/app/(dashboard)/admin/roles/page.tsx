@@ -21,7 +21,9 @@ export default async function AdminRolesPage() {
     prisma.permission.findMany({ orderBy: { key: "asc" }, select: { id: true, key: true } })
   ]);
 
-  const has = new Map(roles.map((r) => [r.id, new Set(r.permissions.map((p) => p.permissionId))]));
+  const has = new Map<string, Set<string>>(
+    roles.map((r) => [r.id, new Set<string>(r.permissions.map((p) => p.permissionId))] as [string, Set<string>])
+  );
 
   return (
     <div className="space-y-6">

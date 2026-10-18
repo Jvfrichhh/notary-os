@@ -201,6 +201,21 @@ jalan). Pengaman (`scripts/lib/e2e-guard.mjs`): domain produksi ditolak mutlak; 
 berjalan jika `E2E_TEST_DATABASE_URL` cocok dengan ref itu **dan** pre-flight membuktikan aplikasi memakai DB
 yang sama (login akun demo mengubah `lastLoginAt` di DB tersebut). Data yang diubah skenario selalu dipulihkan.
 
+## Penyimpanan dokumen di Vercel
+
+`STORAGE_PROVIDER=local` hanya untuk development — di Vercel disk bersifat read-only sehingga upload gagal
+(aplikasi kini menolak dengan pesan jelas). Untuk deployment, gunakan **Supabase Storage** (satu akun dengan
+database, kompatibel S3):
+
+1. Buat bucket privat `notary-documents` (Supabase → Storage, atau SQL `insert into storage.buckets ...`).
+2. Project Settings → Storage → **S3 Access Keys** → *New access key*.
+3. Env: `STORAGE_PROVIDER=supabase`, `SUPABASE_PROJECT_REF=<ref>`, `SUPABASE_S3_REGION=<region project>`,
+   `SUPABASE_STORAGE_BUCKET=notary-documents`, `SUPABASE_S3_ACCESS_KEY_ID`, `SUPABASE_S3_SECRET_ACCESS_KEY`.
+
+File tidak pernah publik: aplikasi hanya memberi signed URL berumur 5 menit setelah izin dicek. Cloudflare R2
+(`STORAGE_PROVIDER=r2`, env `R2_*`) dan S3 generik (`STORAGE_PROVIDER=s3`, env `S3_*`) tetap didukung lewat
+provider yang sama (`src/lib/storage/S3StorageProvider.ts`).
+
 ## Catatan penting
 
 - Semua authorization dicek **server-side** lewat `assertPermission()` — jangan hanya mengandalkan sembunyi tombol di UI saat menambah fitur baru.

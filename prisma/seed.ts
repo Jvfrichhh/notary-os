@@ -45,7 +45,37 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ]
 };
 
+/** Host & nama database dari DATABASE_URL, tanpa password (untuk ditampilkan). */
+function describeDatabaseTarget(): string {
+  try {
+    const u = new URL(process.env.DATABASE_URL ?? "");
+    return `${u.hostname}:${u.port || "5432"}${u.pathname}`;
+  } catch {
+    return "(DATABASE_URL tidak valid / tidak diset)";
+  }
+}
+
 async function main() {
+  console.log(`Target database: ${describeDatabaseTarget()}`);
+
+  // PENGAMAN: seed ini berisi DATA DEMO dan tidak idempoten (beberapa create
+  // tanpa upsert). Ia hanya dimaksudkan untuk database pengujian yang masih
+  // kosong. Kalau database sudah berisi data, hentikan -- kecuali operator
+  // secara eksplisit menyatakan paham dengan SEED_ALLOW_EXISTING_DATA=1.
+  const [userCount, clientCount, jobCount] = await Promise.all([
+    prisma.user.count(),
+    prisma.client.count(),
+    prisma.job.count()
+  ]);
+  if ((userCount > 0 || clientCount > 0 || jobCount > 0) && process.env.SEED_ALLOW_EXISTING_DATA !== "1") {
+    console.error(
+      `\nDIHENTIKAN: database sudah berisi data (users=${userCount}, clients=${clientCount}, jobs=${jobCount}).` +
+        "\nSeed hanya untuk database pengujian yang kosong. Jika Anda yakin ini BUKAN database produksi," +
+        "\njalankan ulang dengan SEED_ALLOW_EXISTING_DATA=1."
+    );
+    process.exit(2);
+  }
+
   console.log("Seeding database...");
 
   // 1. Permissions
@@ -182,11 +212,7 @@ async function main() {
   // Selaraskan job_number_counters supaya job berikutnya yang dibuat lewat
   // UI (generateJobNumber di src/lib/idGenerators.ts) tidak bentrok dengan
   // nomor yang sudah dipakai job seed ini.
-  await prisma.jobNumberCounter.upsert({
-    where: { year: seedJobYear },
-    update: { value: 1 },
-    create: { year: seedJobYear, value: 1 }
-  });
+  await bumpJobNumberCounter(seedJobYear, 1);
 
   // 8. Checklist for the job
   const checklist = await prisma.jobChecklist.create({
@@ -317,11 +343,7 @@ async function main() {
     }
   });
   // Counter nomor job ikut dinaikkan supaya job berikutnya dari UI = 0003.
-  await prisma.jobNumberCounter.upsert({
-    where: { year: seedJobYear },
-    update: { value: 2 },
-    create: { year: seedJobYear, value: 2 }
-  });
+  await bumpJobNumberCounter(seedJobYear, 2);
 
   console.log("Seed selesai.");
   console.log("Demo login (password sama untuk semua: password123):");
@@ -329,6 +351,19 @@ async function main() {
   console.log("Portal klien (/portal/login), password sama:");
   console.log("  CLI-0001 -> client@demo.local");
   console.log("  CLI-0002 -> client2@demo.local");
+}
+
+/**
+ * Naikkan counter nomor job ke MINIMAL `atLeast`, tanpa pernah menurunkan
+ * nilai yang sudah ada (menurunkan counter = nomor job berikutnya bentrok).
+ */
+async function bumpJobNumberCounter(year: number, atLeast: number) {
+  const current = await prisma.jobNumberCounter.findUnique({ where: { year } });
+  if (!current) {
+    await prisma.jobNumberCounter.create({ data: { year, value: atLeast } });
+  } else if (current.value < atLeast) {
+    await prisma.jobNumberCounter.update({ where: { year }, data: { value: atLeast } });
+  }
 }
 
 main()

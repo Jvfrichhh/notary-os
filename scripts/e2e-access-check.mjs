@@ -14,10 +14,33 @@
  *
  * Butuh: playwright (dipakai dari instalasi global/lokal).
  */
-import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const PASSWORD = "password123";
+
+// ---------------------------------------------------------------------------
+// PENGAMAN TARGET. Script ini melakukan login, menavigasi, dan (sengaja)
+// mencoba aksi yang seharusnya DITOLAK server. Kalau proteksi ternyata bocor,
+// aksi itu akan benar-benar menulis data -- jadi script hanya boleh diarahkan
+// ke server pengujian lokal, kecuali diizinkan eksplisit.
+// ---------------------------------------------------------------------------
+const PRODUCTION_HOSTS = ["notary-os-three.vercel.app"];
+{
+  const host = new URL(BASE).hostname;
+  if (PRODUCTION_HOSTS.includes(host)) {
+    console.error(`DIHENTIKAN: ${host} adalah domain PRODUKSI. Script ini tidak boleh dijalankan ke produksi.`);
+    process.exit(2);
+  }
+  const isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  if (!isLocal && process.env.E2E_ALLOW_REMOTE !== "1") {
+    console.error(
+      `DIHENTIKAN: BASE_URL menunjuk ke host non-lokal (${host}).` +
+        "\nJalankan ke server lokal, atau set E2E_ALLOW_REMOTE=1 HANYA untuk preview yang terhubung ke database pengujian."
+    );
+    process.exit(2);
+  }
+  console.log(`Target: ${BASE}${isLocal ? "" : "  (remote, diizinkan lewat E2E_ALLOW_REMOTE=1)"}`);
+}
 
 const ROLES = {
   NOTARY: { email: "notary@demo.local", forbidden: [] },
@@ -56,6 +79,8 @@ async function sidebarLinks(page) {
   return page.$$eval("aside nav a", (as) => as.map((a) => new URL(a.href).pathname));
 }
 
+// Import playwright SETELAH pengaman target di atas lolos.
+const { chromium } = await import("playwright");
 const browser = await chromium.launch();
 
 // --- API tanpa login ---

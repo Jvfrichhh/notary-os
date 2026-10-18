@@ -124,12 +124,37 @@ Yang sudah ada di tahap 1: login, dashboard (ringkasan + daftar pekerjaan), deta
 permintaan dokumen, unggah dokumen, notifikasi klien, pembuatan akun dari UI internal.
 
 **Perubahan skema**: tabel baru `client_accounts` — `prisma/migrations/20261018020000_client_portal_accounts/`.
-Terapkan ke database **pengujian** dengan `npx prisma migrate deploy` (atau `npx prisma db push`).
-Jangan ke produksi tanpa review. Akun demo (setelah `npm run prisma:seed`): `client@demo.local`
-(CLI-0001) dan `client2@demo.local` (CLI-0002), password `password123`.
 
-Uji otomatis: `node scripts/e2e-portal-check.mjs` (server & seed harus jalan; set `DATABASE_URL`
-untuk skenario akun nonaktif).
+> Repo ini tidak punya migrasi *baseline* (skema lama dibuat tanpa `prisma migrate`), jadi migrasi di atas
+> **tidak bisa** membentuk database kosong sendirian (ia hanya membuat 1 tabel yang ber-FK ke `clients`).
+
+### Menyiapkan database PENGUJIAN (jangan produksi)
+
+Semua perintah dijalankan dengan `DATABASE_URL`/`DIRECT_URL` yang menunjuk ke database pengujian.
+Verifikasi target dulu — script ini hanya membaca:
+
+```bash
+npx tsx scripts/db-target.ts     # harus menampilkan host DB pengujian & "database KOSONG"
+```
+
+Lalu untuk **database kosong**:
+
+```bash
+npx prisma db push               # bentuk seluruh skema (semua tabel, termasuk client_accounts)
+npx prisma migrate resolve --applied 20261018020000_client_portal_accounts   # catat migrasi sbg sudah terpasang
+npm run prisma:seed              # data demo; otomatis BERHENTI jika DB sudah berisi data
+npx tsx scripts/db-target.ts     # cek ulang: client_accounts ada, migrasi tercatat
+```
+
+Untuk database **yang sudah punya skema lama** (mis. salinan/clone data): `npx prisma migrate deploy`
+hanya akan menambahkan `client_accounts`. Jangan pakai `prisma migrate dev` pada database berisi data —
+ia bisa menawarkan *reset* saat mendeteksi drift; **tolak**.
+
+Akun demo setelah seed: `client@demo.local` (CLI-0001) dan `client2@demo.local` (CLI-0002), password `password123`.
+
+Uji otomatis: `node scripts/e2e-portal-check.mjs` (server & seed harus jalan). Script menolak domain
+produksi dan host non-lokal (kecuali `E2E_ALLOW_REMOTE=1` untuk preview ber-DB pengujian). Skenario akun
+nonaktif hanya berjalan jika `E2E_TEST_DATABASE_URL` (URL DB pengujian) diset.
 
 ## Catatan penting
 

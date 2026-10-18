@@ -17,16 +17,39 @@
  *  7. Login portal dengan kredensial staff -> gagal (provider terpisah).
  *  8. Akun portal nonaktif / klien diarsipkan -> login ditolak, dan sesi yang
  *     sudah ada langsung ditendang ke /portal/login?error=...
- *     (butuh akses DB lewat DATABASE_URL untuk toggle flag -- dilewati jika
- *     tidak diset).
+ *     (butuh E2E_TEST_DATABASE_URL -- URL database PENGUJIAN -- untuk toggle
+ *     flag; dilewati jika tidak diset).
  *  9. Logout -> /portal/login.
  *
- * Butuh: playwright. Opsional: @prisma/client + DATABASE_URL untuk skenario 8.
+ * Butuh: playwright. Opsional: @prisma/client + E2E_TEST_DATABASE_URL untuk skenario 8.
  */
-import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const PASSWORD = "password123";
+
+// ---------------------------------------------------------------------------
+// PENGAMAN TARGET. Script ini melakukan login, menavigasi, dan (sengaja)
+// mencoba aksi yang seharusnya DITOLAK server. Kalau proteksi ternyata bocor,
+// aksi itu akan benar-benar menulis data -- jadi script hanya boleh diarahkan
+// ke server pengujian lokal, kecuali diizinkan eksplisit.
+// ---------------------------------------------------------------------------
+const PRODUCTION_HOSTS = ["notary-os-three.vercel.app"];
+{
+  const host = new URL(BASE).hostname;
+  if (PRODUCTION_HOSTS.includes(host)) {
+    console.error(`DIHENTIKAN: ${host} adalah domain PRODUKSI. Script ini tidak boleh dijalankan ke produksi.`);
+    process.exit(2);
+  }
+  const isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  if (!isLocal && process.env.E2E_ALLOW_REMOTE !== "1") {
+    console.error(
+      `DIHENTIKAN: BASE_URL menunjuk ke host non-lokal (${host}).` +
+        "\nJalankan ke server lokal, atau set E2E_ALLOW_REMOTE=1 HANYA untuk preview yang terhubung ke database pengujian."
+    );
+    process.exit(2);
+  }
+  console.log(`Target: ${BASE}${isLocal ? "" : "  (remote, diizinkan lewat E2E_ALLOW_REMOTE=1)"}`);
+}
 const CLIENT_A = "client@demo.local"; // CLI-0001, JOB-YYYY-0001
 const CLIENT_B = "client2@demo.local"; // CLI-0002, JOB-YYYY-0002
 const STAFF = "notary@demo.local";
@@ -55,6 +78,8 @@ async function staffLogin(page, email) {
   await Promise.all([page.waitForURL(/\/dashboard/, { timeout: 30000 }), page.click('button[type="submit"]')]);
 }
 
+// Import playwright SETELAH pengaman target di atas lolos.
+const { chromium } = await import("playwright");
 const browser = await chromium.launch();
 
 // ---------------------------------------------------------------- 1
@@ -171,11 +196,16 @@ console.log("\n[7] Kredensial staff di portal");
 
 // ---------------------------------------------------------------- 8
 console.log("\n[8] Akun nonaktif / klien diarsipkan");
-if (!process.env.DATABASE_URL) {
-  console.log("  - dilewati (DATABASE_URL tidak diset)");
+// Skenario ini MENULIS ke database (toggle isActive / status klien, lalu
+// dikembalikan). Sengaja memakai variabel E2E_TEST_DATABASE_URL -- bukan
+// DATABASE_URL -- supaya .env aplikasi yang kebetulan terbawa tidak pernah
+// memicu tulisan. Isi variabel ini hanya dengan URL database PENGUJIAN.
+if (!process.env.E2E_TEST_DATABASE_URL) {
+  console.log("  - dilewati (E2E_TEST_DATABASE_URL tidak diset)");
 } else {
   const { PrismaClient } = await import("@prisma/client");
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({ datasources: { db: { url: process.env.E2E_TEST_DATABASE_URL } } });
+  console.log(`  - menulis ke: ${new URL(process.env.E2E_TEST_DATABASE_URL).hostname}`);
   try {
     // 8a: sesi aktif lalu akun dinonaktifkan -> ditendang
     const ctx = await browser.newContext();

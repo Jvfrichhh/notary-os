@@ -14,6 +14,8 @@ export interface PortalPrincipal {
   clientId: string;
   email: string;
   displayName: string;
+  /** true = wajib ganti password sebelum memakai portal (akun baru / di-reset kantor). */
+  mustChangePassword: boolean;
   client: { id: string; clientNumber: string; fullName: string; companyName: string | null };
 }
 
@@ -52,6 +54,7 @@ export async function getPortalPrincipal(): Promise<
       clientId: account.client.id,
       email: account.email,
       displayName: account.name ?? account.client.fullName,
+      mustChangePassword: account.mustChangePassword,
       client: {
         id: account.client.id,
         clientNumber: account.client.clientNumber,
@@ -69,9 +72,18 @@ export async function getPortalPrincipal(): Promise<
  * - Akun/klien nonaktif    -> /portal/login?error=<alasan> (halaman login
  *                             menampilkan pesan dan tombol keluar)
  */
-export async function requireClientAccount(): Promise<PortalPrincipal> {
+export const PORTAL_CHANGE_PASSWORD_PATH = "/portal/account/password";
+
+export async function requireClientAccount(opts: { allowPendingPasswordChange?: boolean } = {}): Promise<PortalPrincipal> {
   const result = await getPortalPrincipal();
-  if (result.ok) return result.principal;
+  if (result.ok) {
+    // Gerbang ganti password: akun baru / di-reset kantor hanya boleh membuka
+    // halaman ganti password (dan layout). Berlaku juga untuk server action.
+    if (result.principal.mustChangePassword && !opts.allowPendingPasswordChange) {
+      redirect(PORTAL_CHANGE_PASSWORD_PATH);
+    }
+    return result.principal;
+  }
 
   if (result.reason === "not_client") redirect("/dashboard");
   if (result.reason === "unauthenticated") redirect("/portal/login");

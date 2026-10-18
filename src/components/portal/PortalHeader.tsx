@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { Bell, LogOut } from "lucide-react";
+import { Bell, KeyRound, LogOut } from "lucide-react";
 
 export function PortalHeader({
   displayName,
@@ -32,6 +32,14 @@ export function PortalHeader({
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
+          </Link>
+          <Link
+            href="/portal/account/password"
+            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Ganti password"
+            title="Ganti password"
+          >
+            <KeyRound className="h-4 w-4" />
           </Link>
           <div className="text-right">
             <p className="text-sm font-medium leading-none text-foreground">{displayName}</p>

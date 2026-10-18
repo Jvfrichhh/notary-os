@@ -28,6 +28,7 @@ npx tsx scripts/db-target.ts --expect-ref <project-ref>   # read-only; exit 0 = 
 npx prisma db push             # database baru/kosong: bentuk seluruh skema
 npx prisma migrate resolve --applied 20261018020000_client_portal_accounts
 npx prisma migrate resolve --applied 20261018040000_client_portal_documents
+npx prisma migrate resolve --applied 20261018060000_client_portal_password
 npm run prisma:seed            # data demo; berhenti sendiri jika database sudah berisi data
 ```
 
@@ -140,13 +141,17 @@ Yang sudah ada:
   (`/portal/notifications`). Di sisi internal: halaman job menampilkan unggahan klien dengan tombol
   **Terima / Perlu Perbaikan** (`reviewChecklistDocument`, butuh `edit_jobs`); perubahan status job
   otomatis membuat notifikasi klien.
-Belum ada: pembuatan/penonaktifan akun klien dari UI internal, reset password mandiri.
+- Tahap 3: **Akses Portal** di halaman detail klien internal (butuh `edit_clients`): buat akun (password
+  sementara ditampilkan sekali), reset password, nonaktifkan/aktifkan. Klien **wajib ganti password** saat
+  login pertama (`/portal/account/password`), dan bisa menggantinya kapan saja dari header.
+Belum ada: reset password mandiri lewat email (butuh layanan email).
 
 **Perubahan skema** (aditif):
 - `prisma/migrations/20261018020000_client_portal_accounts/` — tabel `client_accounts`.
 - `prisma/migrations/20261018040000_client_portal_documents/` — enum `ChecklistReviewStatus`; kolom
   `reviewStatus/reviewNote/reviewedAt/reviewedById` di `checklist_items`; kolom
   `uploadedByClientAccountId` di `documents`; tabel `client_notifications`.
+- `prisma/migrations/20261018060000_client_portal_password/` — kolom `mustChangePassword` di `client_accounts`.
 
 > Repo ini tidak punya migrasi *baseline* (skema lama dibuat tanpa `prisma migrate`), jadi migrasi di atas
 > **tidak bisa** membentuk database kosong sendirian (ia hanya membuat 1 tabel yang ber-FK ke `clients`).
@@ -168,7 +173,7 @@ Lalu untuk **database kosong** (pakai db-target sebagai gerbang di tiap langkah 
 
 ```bash
 npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma db push
-npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma migrate resolve --applied 20261018020000_client_portal_accounts && npx prisma migrate resolve --applied 20261018040000_client_portal_documents
+npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma migrate resolve --applied 20261018020000_client_portal_accounts && npx prisma migrate resolve --applied 20261018040000_client_portal_documents && npx prisma migrate resolve --applied 20261018060000_client_portal_password
 npx tsx scripts/db-target.ts --expect-ref <ref> && npm run prisma:seed
 npx tsx scripts/db-target.ts --expect-ref <ref>     # cek akhir: client_accounts ada, migrasi tercatat applied
 ```

@@ -20,6 +20,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const status = result.reason === "unauthenticated" ? 401 : 403;
     return NextResponse.json({ error: "Akses ditolak." }, { status });
   }
+  if (result.principal.mustChangePassword) {
+    return NextResponse.json({ error: "Ganti password sementara Anda terlebih dahulu." }, { status: 403 });
+  }
   const { clientId } = result.principal;
 
   const document = await prisma.document.findFirst({

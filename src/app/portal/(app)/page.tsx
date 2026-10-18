@@ -9,7 +9,7 @@ import { PORTAL_ACTIVE_STATUSES, PORTAL_NEEDS_CLIENT_STATUSES, portalStatusLabel
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalDashboardPage() {
+export default async function PortalDashboardPage({ searchParams }: { searchParams: { password?: string } }) {
   const { clientId, client } = await requireClientAccount();
 
   // SEMUA query dibatasi where: { clientId } dari principal yang sudah
@@ -52,6 +52,12 @@ export default async function PortalDashboardPage() {
           Ringkasan pekerjaan Anda di kantor notaris{client.companyName ? ` · ${client.companyName}` : ""}
         </p>
       </div>
+
+      {searchParams.password === "changed" && (
+        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
+          Password berhasil diganti.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {cards.map((c) => (

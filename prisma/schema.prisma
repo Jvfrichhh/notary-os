@@ -204,6 +204,9 @@ model ClientAccount {
   passwordHash String
   name         String?
   isActive     Boolean   @default(true)
+  // true saat akun baru dibuat / password di-reset kantor: klien wajib
+  // mengganti password sebelum bisa memakai portal.
+  mustChangePassword Boolean @default(false)
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

@@ -22,7 +22,8 @@ import { join } from "node:path";
 // Semua migrasi portal (delta main -> sekarang = gabungan file-file ini).
 const MIGRATIONS = [
   "prisma/migrations/20261018020000_client_portal_accounts/migration.sql",
-  "prisma/migrations/20261018040000_client_portal_documents/migration.sql"
+  "prisma/migrations/20261018040000_client_portal_documents/migration.sql",
+  "prisma/migrations/20261018060000_client_portal_password/migration.sql"
 ];
 const BASE_REF = process.env.BASE_REF ?? "main";
 

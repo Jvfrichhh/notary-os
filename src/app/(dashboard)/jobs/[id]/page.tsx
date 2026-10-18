@@ -10,9 +10,11 @@ import { getValidNextStatuses } from "@/lib/jobStatus";
 import {
   addJobTask,
   changeJobStatusForm,
+  reviewChecklistDocument,
   toggleChecklistItem,
   toggleTaskStatus
 } from "@/app/(dashboard)/jobs/actions";
+import { ClientUploadReview } from "@/components/jobs/ClientUploadReview";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +38,13 @@ export default async function JobDetailPage({ params }: { params: { id: string }
       notary: true,
       visit: true,
       tasks: { orderBy: { createdAt: "asc" } },
-      checklists: { include: { items: true } },
+      checklists: {
+        include: {
+          items: {
+            include: { attachedDocument: { select: { id: true, fileName: true, uploadedAt: true, uploadedByClientAccountId: true } } }
+          }
+        }
+      },
       payments: true,
       documents: true,
       deeds: { orderBy: { createdAt: "desc" } }
@@ -135,10 +143,40 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                         {item.isRequired && item.status !== "COMPLETE" && (
                           <span className="text-[10px] font-medium text-status-overdue">wajib</span>
                         )}
+                        {item.reviewStatus === "PENDING_REVIEW" && (
+                          <span className="rounded-full bg-status-due-soon/10 px-2 py-0.5 text-[10px] font-medium text-status-due-soon">
+                            unggahan klien · menunggu pemeriksaan
+                          </span>
+                        )}
+                        {item.reviewStatus === "NEEDS_REVISION" && item.status !== "COMPLETE" && (
+                          <span className="rounded-full bg-status-overdue/10 px-2 py-0.5 text-[10px] font-medium text-status-overdue">
+                            diminta perbaikan
+                          </span>
+                        )}
                       </button>
                     </form>
                   ))
                 )}
+                {/* Pemeriksaan unggahan klien (portal) */}
+                {job.checklists
+                  .flatMap((c) => c.items)
+                  .filter((item) => item.attachedDocument?.uploadedByClientAccountId)
+                  .map((item) => (
+                    <ClientUploadReview
+                      key={`review-${item.id}`}
+                      item={{
+                        id: item.id,
+                        label: item.label,
+                        status: item.status,
+                        reviewStatus: item.reviewStatus,
+                        reviewNote: item.reviewNote,
+                        document: item.attachedDocument!
+                      }}
+                      canReview={canEdit}
+                      canViewDocuments={canViewDocuments}
+                      action={reviewChecklistDocument.bind(null, item.id, job.id)}
+                    />
+                  ))}
               </div>
             )}
           </Card>

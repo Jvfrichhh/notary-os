@@ -24,9 +24,17 @@ Isi `.env`:
 
 ```bash
 npx prisma generate
-npx prisma migrate dev --name init
-npm run prisma:seed
+npx tsx scripts/db-target.ts --expect-ref <project-ref>   # read-only; exit 0 = target terverifikasi
+npx prisma db push             # database baru/kosong: bentuk seluruh skema
+npx prisma migrate resolve --applied 20261018020000_client_portal_accounts
+npx prisma migrate resolve --applied 20261018040000_client_portal_documents
+npx prisma migrate resolve --applied 20261018060000_client_portal_password
+npm run prisma:seed            # data demo; berhenti sendiri jika database sudah berisi data
 ```
+
+> Jangan memakai `prisma migrate dev` di repo ini untuk saat ini: folder `prisma/migrations` belum punya
+> migrasi *baseline*, sehingga `migrate dev` di database kosong akan gagal (FK ke `clients`) dan di
+> database berisi data bisa **menawarkan reset**. Lihat bagian "Portal Klien" untuk penjelasan lengkap.
 
 Ini akan membuat seluruh tabel dan mengisi demo data:
 
@@ -100,6 +108,121 @@ dengan yang dipakai `requirePermission()` di halamannya.
 
 Pemeriksaan cepat tanpa database: `npx tsx scripts/check-navigation.ts`.
 Uji end-to-end per role (server & seed harus sudah jalan): `node scripts/e2e-access-check.mjs`.
+
+## Portal Klien (tahap 1 — fondasi)
+
+Portal klien hidup di `/portal` dan memakai **akun terpisah** dari akun internal:
+
+| | Akun internal | Akun portal klien |
+|---|---|---|
+| Tabel | `users` (+ Role/Permission RBAC) | `client_accounts` → FK `clientId` ke `clients` |
+| Login | `/login` (provider `credentials`) | `/portal/login` (provider `client-credentials`) |
+| Isi session | `kind: "staff"`, `role` | `kind: "client"`, `clientId` |
+| Guard server | `requireUser()` / `requirePermission()` | `requireClientAccount()` (`src/lib/portalSession.ts`) |
+
+**Domain terpisah (opsional)** — set env `PORTAL_HOST` (mis. `portal.kantor.id` atau `notary-os-portal.vercel.app`)
+dan `STAFF_HOST`. Satu deployment melayani keduanya: di host portal, `/` → `/portal` dan `/login` → `/portal/login`
+(rewrite), path internal dialihkan ke `/`; di host kantor, `/portal/**` dialihkan ke host portal. Sesi login
+terpisah per host. Tanpa env ini aplikasi berjalan satu domain (portal di `/portal`). Lihat `src/lib/hosts.ts`.
+
+Aturan akses (ditegakkan di `src/middleware.ts` **dan** di tiap halaman/action):
+- Akun klien hanya bisa membuka `/portal/**`; ke halaman/API internal → dialihkan/403.
+- Akun internal tidak memakai portal; ke `/portal` → dialihkan ke `/dashboard`.
+- Setiap query portal dibatasi `where: { clientId }` dari session yang diverifikasi ulang ke DB
+  pada tiap request (akun nonaktif / klien diarsipkan langsung kehilangan akses).
+- Job milik klien lain → 404, sama seperti job yang tidak ada.
+
+Yang sudah ada:
+- Tahap 1: login, dashboard (ringkasan + daftar pekerjaan), detail pekerjaan (status versi klien, target,
+  riwayat perubahan status).
+- Tahap 2: **unggah dokumen per item checklist** (`/portal/jobs/[id]`, server action
+  `uploadChecklistDocument`), status pemeriksaan (Menunggu pemeriksaan / Diterima / Perlu diperbaiki +
+  catatan kantor), unduh dokumen miliknya (`/api/portal/documents/[id]/download`), **notifikasi klien**
+  (`/portal/notifications`). Di sisi internal: halaman job menampilkan unggahan klien dengan tombol
+  **Terima / Perlu Perbaikan** (`reviewChecklistDocument`, butuh `edit_jobs`); perubahan status job
+  otomatis membuat notifikasi klien.
+- Tahap 3: **Akses Portal** di halaman detail klien internal (butuh `edit_clients`): buat akun (password
+  sementara ditampilkan sekali), reset password, nonaktifkan/aktifkan. Klien **wajib ganti password** saat
+  login pertama (`/portal/account/password`), dan bisa menggantinya kapan saja dari header.
+Belum ada: reset password mandiri lewat email (butuh layanan email).
+
+**Perubahan skema** (aditif):
+- `prisma/migrations/20261018020000_client_portal_accounts/` — tabel `client_accounts`.
+- `prisma/migrations/20261018040000_client_portal_documents/` — enum `ChecklistReviewStatus`; kolom
+  `reviewStatus/reviewNote/reviewedAt/reviewedById` di `checklist_items`; kolom
+  `uploadedByClientAccountId` di `documents`; tabel `client_notifications`.
+- `prisma/migrations/20261018060000_client_portal_password/` — kolom `mustChangePassword` di `client_accounts`.
+
+> Repo ini tidak punya migrasi *baseline* (skema lama dibuat tanpa `prisma migrate`), jadi migrasi di atas
+> **tidak bisa** membentuk database kosong sendirian (ia hanya membuat 1 tabel yang ber-FK ke `clients`).
+
+### Menyiapkan database PENGUJIAN (jangan produksi)
+
+Semua perintah dijalankan dengan `DATABASE_URL`/`DIRECT_URL` yang menunjuk ke database pengujian.
+Verifikasi target dulu — script ini hanya membaca:
+
+```bash
+npx tsx scripts/db-target.ts --expect-ref <project-ref DB pengujian>
+# exit 0 hanya jika ref DATABASE_URL = ref DIRECT_URL = --expect-ref dan koneksi berhasil.
+# Tanpa --expect-ref: inspeksi tetap tampil tetapi exit 3 (BELUM terverifikasi).
+# exit 4 URL tidak diset/valid · 5 kedua URL beda project · 6 ref tidak cocok · 7 koneksi gagal.
+# Project-ref Supabase: bagian <ref> pada username "postgres.<ref>" (pooler) / host "db.<ref>.supabase.co" (direct).
+```
+
+Lalu untuk **database kosong** (pakai db-target sebagai gerbang di tiap langkah tulis):
+
+```bash
+npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma db push
+npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma migrate resolve --applied 20261018020000_client_portal_accounts && npx prisma migrate resolve --applied 20261018040000_client_portal_documents && npx prisma migrate resolve --applied 20261018060000_client_portal_password
+npx tsx scripts/db-target.ts --expect-ref <ref> && npm run prisma:seed
+npx tsx scripts/db-target.ts --expect-ref <ref>     # cek akhir: client_accounts ada, migrasi tercatat applied
+```
+
+**Tanpa Prisma CLI** (mis. lewat SQL editor / MCP Supabase): `python3 scripts/prisma-to-ddl.py prisma/schema.prisma`
+menghasilkan DDL seluruh skema mengikuti konvensi Prisma (diverifikasi identik dengan kedua file migrasi portal
+dan dieksekusi bersih di PostgreSQL 16); lalu `scripts/seed-demo.sql` mengisi data demo yang sama dengan
+`prisma/seed.ts` (berhenti sendiri jika DB berisi data; password via pgcrypto bcrypt). Setelah itu catat kedua
+migrasi di `_prisma_migrations` (atau `prisma migrate resolve --applied ...`). Verifikasi akhir tetap dengan
+`prisma migrate diff --from-url <DB> --to-schema-datamodel prisma/schema.prisma --exit-code` saat CLI tersedia.
+
+Untuk database **yang sudah punya skema lama** (mis. salinan/clone data): `npx prisma migrate deploy`
+hanya akan menambahkan `client_accounts`. Jangan pakai `prisma migrate dev` pada database berisi data —
+ia bisa menawarkan *reset* saat mendeteksi drift; **tolak**.
+
+Akun demo setelah seed: `client@demo.local` (CLI-0001) dan `client2@demo.local` (CLI-0002), password `password123`.
+
+Validasi file migrasi vs SQL yang dihasilkan Prisma (tanpa DB): `node scripts/check-portal-migration.mjs`.
+Uji pengaman lapis 1 secara terisolasi (tanpa jaringan/DB/Playwright): `node scripts/test-e2e-guard.mjs`.
+Unit test identitas DB: `node scripts/test-db-identity.mjs`. Uji alur `db-target.ts` dengan stub Prisma (tanpa DB): `node scripts/test-db-target.mjs`.
+
+Uji otomatis: `node scripts/e2e-portal-check.mjs` dan `node scripts/e2e-access-check.mjs` (server & seed harus
+jalan). Pengaman (`scripts/lib/e2e-guard.mjs`): domain produksi ditolak mutlak; target remote butuh
+`E2E_ALLOW_REMOTE=1` **dan** `E2E_EXPECTED_DB_REF=<project-ref DB pengujian>`; skenario yang menulis DB hanya
+berjalan jika `E2E_TEST_DATABASE_URL` cocok dengan ref itu **dan** pre-flight membuktikan aplikasi memakai DB
+yang sama (login akun demo mengubah `lastLoginAt` di DB tersebut). Data yang diubah skenario selalu dipulihkan.
+
+## Modul Admin (`/admin`)
+
+- **Users** (`manage_users`): tambah akun internal (password sementara tampil sekali), ubah role, reset password,
+  nonaktifkan/aktifkan. Pengaman: tidak bisa menonaktifkan diri sendiri maupun NOTARY aktif terakhir.
+- **Roles & Permissions** (`manage_roles` / `manage_users`): matriks izin, baca saja — perubahan izin lewat kode.
+- **Audit Log** (`view_audit_log`): semua catatan `audit_logs` dengan filter entitas/aksi/pelaku dan paginasi.
+- Setiap akun internal bisa mengganti password sendiri lewat ikon kunci di header (`/account/password`).
+
+## Penyimpanan dokumen di Vercel
+
+`STORAGE_PROVIDER=local` hanya untuk development — di Vercel disk bersifat read-only sehingga upload gagal
+(aplikasi kini menolak dengan pesan jelas). Untuk deployment, gunakan **Supabase Storage** (satu akun dengan
+database, kompatibel S3):
+
+1. Buat bucket privat `notary-documents` (Supabase → Storage, atau SQL `insert into storage.buckets ...`).
+2. Project Settings → Storage → **S3 Access Keys** → *New access key*.
+3. Env: `STORAGE_PROVIDER=supabase`, `SUPABASE_PROJECT_REF=<ref>`, `SUPABASE_S3_REGION=<region project>`,
+   `SUPABASE_STORAGE_BUCKET=notary-documents`, `SUPABASE_S3_ACCESS_KEY_ID`, `SUPABASE_S3_SECRET_ACCESS_KEY`.
+
+File tidak pernah publik: aplikasi hanya memberi signed URL berumur 5 menit setelah izin dicek. Cloudflare R2
+(`STORAGE_PROVIDER=r2`, env `R2_*`) dan S3 generik (`STORAGE_PROVIDER=s3`, env `S3_*`) tetap didukung lewat
+provider yang sama (`src/lib/storage/S3StorageProvider.ts`).
 
 ## Catatan penting
 

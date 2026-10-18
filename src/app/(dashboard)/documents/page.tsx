@@ -52,7 +52,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
     prisma.document.findMany({
       where,
       orderBy: { uploadedAt: "desc" },
-      include: { client: true, job: true, uploader: true },
+      include: { client: true, job: true, uploader: true, uploadedByClientAccount: { select: { name: true, email: true } } },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE
     }),
@@ -173,7 +173,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
                       {!doc.client && !doc.job && "-"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{formatFileSize(doc.fileSize)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{doc.uploader?.name ?? "-"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{doc.uploader?.name ?? (doc.uploadedByClientAccount ? "Klien (portal)" : "-")}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</td>
                   </tr>
                 ))}

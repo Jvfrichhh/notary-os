@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatStatusLabel } from "@/lib/format";
 import { archiveClient, restoreClient } from "@/app/(dashboard)/clients/actions";
+import { ClientPortalAccess } from "@/components/clients/ClientPortalAccess";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -31,7 +32,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     include: {
       visits: { orderBy: { visitDate: "desc" }, take: 5 },
       jobs: { orderBy: { createdAt: "desc" }, take: 5, include: { pic: true } },
-      documents: { orderBy: { uploadedAt: "desc" }, take: 5 }
+      documents: { orderBy: { uploadedAt: "desc" }, take: 5 },
+      accounts: { orderBy: { createdAt: "asc" } }
     }
   });
 
@@ -170,6 +172,33 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           )}
         </Card>
       )}
+
+      {/* Akses Portal Klien -- dilihat siapa pun yang boleh melihat klien;
+          tombol buat/reset/nonaktif hanya untuk pemilik edit_clients. */}
+      <Card>
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-foreground">Akses Portal Klien</h2>
+          <p className="text-xs text-muted-foreground">
+            Akun login klien di portal. Kantor membuatkan akun dan menyampaikan password sementara; klien wajib
+            menggantinya saat login pertama.
+          </p>
+        </div>
+        <ClientPortalAccess
+          clientId={client.id}
+          clientEmail={client.email}
+          clientActive={client.status === "ACTIVE"}
+          canManage={canEdit}
+          accounts={client.accounts.map((a) => ({
+            id: a.id,
+            email: a.email,
+            name: a.name,
+            isActive: a.isActive,
+            mustChangePassword: a.mustChangePassword,
+            lastLoginAt: a.lastLoginAt ? a.lastLoginAt.toISOString() : null,
+            createdAt: a.createdAt.toISOString()
+          }))}
+        />
+      </Card>
     </div>
   );
 }

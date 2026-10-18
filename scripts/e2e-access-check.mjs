@@ -14,10 +14,17 @@
  *
  * Butuh: playwright (dipakai dari instalasi global/lokal).
  */
-import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const PASSWORD = "password123";
+
+import { assertSafeTarget, bindTestDatabase } from "./lib/e2e-guard.mjs";
+
+// Lapis 1: pemeriksaan ENV (produksi ditolak mutlak; remote butuh izin +
+// E2E_EXPECTED_DB_REF). Script ini tidak menulis DB sendiri, tetapi percobaan
+// bypass-nya akan menulis jika otorisasi aplikasi bocor -- maka target tetap
+// harus DB pengujian.
+const { testDbUrl } = assertSafeTarget(BASE);
 
 const ROLES = {
   NOTARY: { email: "notary@demo.local", forbidden: [] },
@@ -56,7 +63,16 @@ async function sidebarLinks(page) {
   return page.$$eval("aside nav a", (as) => as.map((a) => new URL(a.href).pathname));
 }
 
+// Import playwright SETELAH pengaman target di atas lolos.
+const { chromium } = await import("playwright");
 const browser = await chromium.launch();
+
+// Lapis 2: pre-flight RUNTIME -- akun demo portal harus bisa login di target
+// (produksi tidak punya tabel/akun ini). Jika E2E_TEST_DATABASE_URL diset,
+// sekaligus dibuktikan aplikasi memakai DB itu. Koneksi ditutup lagi karena
+// script ini tidak menulis DB.
+const boundDb = await bindTestDatabase({ browser, baseUrl: BASE, testDbUrl });
+if (boundDb) await boundDb.$disconnect();
 
 // --- API tanpa login ---
 console.log("\n[Tanpa login]");

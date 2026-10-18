@@ -20,6 +20,13 @@ export async function requireUser() {
   if (!session?.user) {
     redirect("/login");
   }
+  // Akun PORTAL KLIEN bukan user internal: tidak punya Role/Permission dan
+  // tidak boleh menyentuh halaman, server action, maupun API internal.
+  // Middleware sudah memblokir di level route; ini lapis kedua (defense in
+  // depth) untuk server action yang dipanggil langsung.
+  if (session.user.kind === "client") {
+    redirect("/portal");
+  }
   return session.user;
 }
 

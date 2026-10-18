@@ -1,10 +1,24 @@
 import "next-auth";
 
+/**
+ * Dua jenis principal dalam satu NextAuth:
+ *  - "staff"  : akun internal (tabel users, punya Role/Permission RBAC)
+ *  - "client" : akun portal klien (tabel client_accounts, terikat ke satu Client)
+ *
+ * `kind` ditulis ke JWT oleh server saat login dan TIDAK bisa diubah browser
+ * (JWT ditandatangani NEXTAUTH_SECRET). Semua guard server memakai `kind`
+ * ini, lalu memverifikasi ulang ke database.
+ */
+export type SessionKind = "staff" | "client";
+
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
       role: string;
+      kind: SessionKind;
+      /** Hanya terisi untuk kind === "client". */
+      clientId?: string;
       name?: string | null;
       email?: string | null;
     };
@@ -13,6 +27,8 @@ declare module "next-auth" {
   interface User {
     id: string;
     role: string;
+    kind: SessionKind;
+    clientId?: string;
   }
 }
 
@@ -20,5 +36,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: string;
+    kind: SessionKind;
+    clientId?: string;
   }
 }

@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# env — JANGAN pernah commit kredensial
+.env
+.env.*
+!.env.example
+
+# file upload lokal (STORAGE_PROVIDER=local)
+/storage/
+
+# misc
+*.tsbuildinfo
+npm-debug.log*
+.DS_Store

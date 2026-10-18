@@ -4,12 +4,11 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
-import { hashPortalPassword, validateNewPassword } from "@/lib/portalAccounts";
+import { hashPassword, validateNewPassword } from "@/lib/passwords";
 import { writeAuditLog } from "@/lib/audit";
 
-export interface ChangePasswordState {
-  error?: string;
-}
+import type { ChangePasswordState } from "@/components/portal/ChangePasswordForm";
+export type { ChangePasswordState };
 
 /**
  * Klien mengganti password-nya sendiri. Wajib tahu password saat ini
@@ -36,7 +35,7 @@ export async function changePortalPassword(_prev: ChangePasswordState, formData:
 
   await prisma.clientAccount.update({
     where: { id: principal.accountId },
-    data: { passwordHash: await hashPortalPassword(next), mustChangePassword: false }
+    data: { passwordHash: await hashPassword(next), mustChangePassword: false }
   });
   await writeAuditLog({
     userId: null,

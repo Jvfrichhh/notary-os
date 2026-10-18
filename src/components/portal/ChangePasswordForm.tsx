@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { changePortalPassword, type ChangePasswordState } from "@/app/portal/(app)/account/password/actions";
+export interface ChangePasswordState {
+  error?: string;
+}
+type ChangePasswordAction = (prev: ChangePasswordState, formData: FormData) => Promise<ChangePasswordState>;
 
 const initial: ChangePasswordState = {};
 
@@ -47,8 +50,12 @@ function Submit() {
   );
 }
 
-export function ChangePasswordForm({ forced }: { forced: boolean }) {
-  const [state, action] = useFormState(changePortalPassword, initial);
+/**
+ * Form ganti password generik (dipakai portal klien DAN akun internal).
+ * `action` = server action yang memverifikasi password lama & menyimpan yang baru.
+ */
+export function ChangePasswordForm({ forced, action: serverAction }: { forced: boolean; action: ChangePasswordAction }) {
+  const [state, action] = useFormState(serverAction, initial);
   return (
     <form action={action} className="space-y-4">
       <Field name="currentPassword" label={forced ? "Password sementara" : "Password saat ini"} autoComplete="current-password" />

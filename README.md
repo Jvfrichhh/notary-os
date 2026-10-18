@@ -201,6 +201,14 @@ jalan). Pengaman (`scripts/lib/e2e-guard.mjs`): domain produksi ditolak mutlak; 
 berjalan jika `E2E_TEST_DATABASE_URL` cocok dengan ref itu **dan** pre-flight membuktikan aplikasi memakai DB
 yang sama (login akun demo mengubah `lastLoginAt` di DB tersebut). Data yang diubah skenario selalu dipulihkan.
 
+## Modul Admin (`/admin`)
+
+- **Users** (`manage_users`): tambah akun internal (password sementara tampil sekali), ubah role, reset password,
+  nonaktifkan/aktifkan. Pengaman: tidak bisa menonaktifkan diri sendiri maupun NOTARY aktif terakhir.
+- **Roles & Permissions** (`manage_roles` / `manage_users`): matriks izin, baca saja — perubahan izin lewat kode.
+- **Audit Log** (`view_audit_log`): semua catatan `audit_logs` dengan filter entitas/aksi/pelaku dan paginasi.
+- Setiap akun internal bisa mengganti password sendiri lewat ikon kunci di header (`/account/password`).
+
 ## Penyimpanan dokumen di Vercel
 
 `STORAGE_PROVIDER=local` hanya untuk development — di Vercel disk bersifat read-only sehingga upload gagal

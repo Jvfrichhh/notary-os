@@ -57,7 +57,7 @@ async function getRecentJobs() {
 }
 
 interface PageProps {
-  searchParams: { denied?: string };
+  searchParams: { denied?: string; password?: string };
 }
 
 export default async function DashboardPage({ searchParams }: PageProps) {
@@ -99,6 +99,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Ringkasan operasional kantor hari ini</p>
       </div>
+
+      {searchParams.password === "changed" && (
+        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
+          Password berhasil diganti.
+        </div>
+      )}
 
       {accessDenied && (
         <div

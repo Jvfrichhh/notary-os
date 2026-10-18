@@ -11,7 +11,7 @@ out/
 !.env.example
 
 # file upload lokal (STORAGE_PROVIDER=local)
-storage/
+/storage/
 
 # misc
 *.tsbuildinfo

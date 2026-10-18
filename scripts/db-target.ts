@@ -20,9 +20,12 @@
  */
 import { PrismaClient } from "@prisma/client";
 // @ts-ignore -- modul JS tanpa deklarasi tipe; dipakai bersama e2e-guard.
-import { compareIdentities, dbIdentity, describeDbUrl } from "./lib/db-identity.mjs";
+import { compareIdentities, dbIdentity, describeDbUrl, redactSecrets } from "./lib/db-identity.mjs";
 
-type Identity = { ref: string; source: string; host: string; port: string; database: string; isLocal: boolean } | null;
+type Identity = { ref: string | null; source: string; host: string; port: string; database: string; isLocal: boolean } | null;
+
+/** URL yang kita pegang -- hanya untuk meredaksi password dari pesan error. */
+const KNOWN_URLS = [process.env.DATABASE_URL, process.env.DIRECT_URL].filter(Boolean) as string[];
 
 function arg(name: string): string | null {
   const i = process.argv.indexOf(name);
@@ -32,12 +35,16 @@ function arg(name: string): string | null {
 }
 
 function fail(code: number, msg: string): never {
-  console.error(`\nDIHENTIKAN (exit ${code}): ${msg}`);
+  console.error(`\nDIHENTIKAN (exit ${code}): ${redactSecrets(msg, KNOWN_URLS)}`);
   process.exit(code);
 }
 
 async function inspect(expectRef: string | null): Promise<void> {
   const prisma = new PrismaClient();
+  // Error koneksi/query ditampung di sini, BUKAN langsung process.exit di
+  // dalam catch -- process.exit melewati `finally`, sehingga $disconnect()
+  // tidak akan pernah jalan. Exit dilakukan SETELAH finally.
+  let inspectError: unknown = null;
   try {
     async function tableExists(name: string): Promise<boolean> {
       const rows = await prisma.$queryRaw<{ exists: boolean }[]>`
@@ -91,9 +98,12 @@ async function inspect(expectRef: string | null): Promise<void> {
           : "database BERISI DATA."
     );
   } catch (e) {
-    fail(7, `koneksi / query gagal: ${(e as Error)?.message ?? e}`);
+    inspectError = e;
   } finally {
     await prisma.$disconnect().catch(() => {});
+  }
+  if (inspectError) {
+    fail(7, `koneksi / query gagal: ${(inspectError as Error)?.message ?? String(inspectError)}`);
   }
 
   if (!expectRef) {
@@ -122,15 +132,21 @@ async function main() {
   if (!a) fail(4, "DATABASE_URL tidak diset atau bukan connection string PostgreSQL yang valid.");
   if (!b) fail(4, "DIRECT_URL tidak diset atau bukan connection string PostgreSQL yang valid (Prisma CLI memakainya untuk db push/migrate).");
 
-  console.log(`ref DATABASE_URL : ${a!.ref}  (dari ${a!.source})`);
-  console.log(`ref DIRECT_URL   : ${b!.ref}  (dari ${b!.source})`);
+  console.log(`ref DATABASE_URL : ${a!.ref ?? "TIDAK DAPAT DITENTUKAN"}  (${a!.source})`);
+  console.log(`ref DIRECT_URL   : ${b!.ref ?? "TIDAK DAPAT DITENTUKAN"}  (${b!.source})`);
+  if (!a!.ref) fail(4, `project-ref DATABASE_URL tidak dapat ditentukan (${a!.source}). Tidak ada koneksi yang dibuka.`);
+  if (!b!.ref) fail(4, `project-ref DIRECT_URL tidak dapat ditentukan (${b!.source}). Tidak ada koneksi yang dibuka.`);
 
   const cmp = compareIdentities(dbUrl, directUrl);
   if (!cmp.same) fail(5, `DATABASE_URL dan DIRECT_URL TIDAK menunjuk target yang sama: ${cmp.reason}. Tidak ada koneksi yang dibuka.`);
   console.log("kecocokan        : DATABASE_URL = DIRECT_URL ✓");
 
-  if (expectRef && a!.ref !== expectRef) {
-    fail(6, `project-ref target adalah "${a!.ref}", bukan --expect-ref "${expectRef}". Tidak ada koneksi yang dibuka.`);
+  // --expect-ref harus cocok dengan KEDUA URL (eksplisit, bukan hanya salah satu).
+  if (expectRef) {
+    const want = expectRef.toLowerCase();
+    if (a!.ref !== want || b!.ref !== want) {
+      fail(6, `project-ref target adalah "${a!.ref}" / "${b!.ref}", bukan --expect-ref "${expectRef}". Tidak ada koneksi yang dibuka.`);
+    }
   }
   if (expectRef) console.log(`--expect-ref     : "${expectRef}" cocok ✓ (lanjut inspeksi read-only)`);
   else console.log("--expect-ref     : (tidak diberikan) -> inspeksi tetap dijalankan, tetapi hasil akhir = BELUM TERVERIFIKASI");

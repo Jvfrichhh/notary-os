@@ -164,6 +164,7 @@ Akun demo setelah seed: `client@demo.local` (CLI-0001) dan `client2@demo.local` 
 
 Validasi file migrasi vs SQL yang dihasilkan Prisma (tanpa DB): `node scripts/check-portal-migration.mjs`.
 Uji pengaman lapis 1 secara terisolasi (tanpa jaringan/DB/Playwright): `node scripts/test-e2e-guard.mjs`.
+Unit test identitas DB: `node scripts/test-db-identity.mjs`. Uji alur `db-target.ts` dengan stub Prisma (tanpa DB): `node scripts/test-db-target.mjs`.
 
 Uji otomatis: `node scripts/e2e-portal-check.mjs` dan `node scripts/e2e-access-check.mjs` (server & seed harus
 jalan). Pengaman (`scripts/lib/e2e-guard.mjs`): domain produksi ditolak mutlak; target remote butuh

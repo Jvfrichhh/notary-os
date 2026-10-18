@@ -66,9 +66,9 @@ export function assertSafeTarget(baseUrl) {
   if (testDbUrl) {
     let ref;
     try {
-      ref = dbProjectRef(testDbUrl);
-    } catch {
-      stop("E2E_TEST_DATABASE_URL tidak valid.");
+      ref = dbProjectRef(testDbUrl); // melempar jika tidak valid ATAU ref tidak dapat ditentukan (fail-closed)
+    } catch (e) {
+      stop(`E2E_TEST_DATABASE_URL: ${e?.message ?? "tidak valid"} (${describeDbUrl(testDbUrl)}).`);
     }
     if (expectedRef) {
       if (ref !== expectedRef) {

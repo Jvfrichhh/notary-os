@@ -24,7 +24,7 @@ Isi `.env`:
 
 ```bash
 npx prisma generate
-npx tsx scripts/db-target.ts   # pastikan DATABASE_URL menunjuk ke database yang Anda maksud (read-only)
+npx tsx scripts/db-target.ts --expect-ref <project-ref>   # read-only; exit 0 = target terverifikasi
 npx prisma db push             # database baru/kosong: bentuk seluruh skema
 npx prisma migrate resolve --applied 20261018020000_client_portal_accounts
 npm run prisma:seed            # data demo; berhenti sendiri jika database sudah berisi data
@@ -140,16 +140,20 @@ Semua perintah dijalankan dengan `DATABASE_URL`/`DIRECT_URL` yang menunjuk ke da
 Verifikasi target dulu — script ini hanya membaca:
 
 ```bash
-npx tsx scripts/db-target.ts     # harus menampilkan host DB pengujian & "database KOSONG"
+npx tsx scripts/db-target.ts --expect-ref <project-ref DB pengujian>
+# exit 0 hanya jika ref DATABASE_URL = ref DIRECT_URL = --expect-ref dan koneksi berhasil.
+# Tanpa --expect-ref: inspeksi tetap tampil tetapi exit 3 (BELUM terverifikasi).
+# exit 4 URL tidak diset/valid · 5 kedua URL beda project · 6 ref tidak cocok · 7 koneksi gagal.
+# Project-ref Supabase: bagian <ref> pada username "postgres.<ref>" (pooler) / host "db.<ref>.supabase.co" (direct).
 ```
 
-Lalu untuk **database kosong**:
+Lalu untuk **database kosong** (pakai db-target sebagai gerbang di tiap langkah tulis):
 
 ```bash
-npx prisma db push               # bentuk seluruh skema (semua tabel, termasuk client_accounts)
-npx prisma migrate resolve --applied 20261018020000_client_portal_accounts   # catat migrasi sbg sudah terpasang
-npm run prisma:seed              # data demo; otomatis BERHENTI jika DB sudah berisi data
-npx tsx scripts/db-target.ts     # cek ulang: client_accounts ada, migrasi tercatat
+npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma db push
+npx tsx scripts/db-target.ts --expect-ref <ref> && npx prisma migrate resolve --applied 20261018020000_client_portal_accounts
+npx tsx scripts/db-target.ts --expect-ref <ref> && npm run prisma:seed
+npx tsx scripts/db-target.ts --expect-ref <ref>     # cek akhir: client_accounts ada, migrasi tercatat applied
 ```
 
 Untuk database **yang sudah punya skema lama** (mis. salinan/clone data): `npx prisma migrate deploy`

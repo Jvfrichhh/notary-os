@@ -13,36 +13,15 @@
  * Tidak ada fungsi di sini yang mencetak password atau connection string utuh.
  */
 
+import { describeDbUrl, dbProjectRef } from "./db-identity.mjs";
+
 export const PRODUCTION_APP_HOSTS = ["notary-os-three.vercel.app"];
 export const DEMO_PASSWORD = "password123";
 export const DEMO_CLIENT_A = "client@demo.local";
 
-/** host:port/db + user, tanpa password. Aman dicetak. */
-export function describeDbUrl(raw) {
-  try {
-    const u = new URL(raw);
-    return `${u.hostname}:${u.port || "5432"}${u.pathname} (user: ${u.username || "-"})`;
-  } catch {
-    return "(URL tidak valid)";
-  }
-}
-
-/**
- * Identitas project database dari URL, tanpa password:
- *  - Supabase pooler : username "postgres.<ref>"  -> ref
- *  - Supabase direct : host "db.<ref>.supabase.co" -> ref
- *  - lainnya         : hostname (mis. "localhost")
- * Host pooler Supabase DIPAKAI BERSAMA banyak project, jadi host saja tidak
- * cukup -- itulah sebabnya username ikut dibaca.
- */
-export function dbProjectRef(raw) {
-  const u = new URL(raw);
-  const m1 = /^postgres\.([a-z0-9]+)$/i.exec(decodeURIComponent(u.username));
-  if (m1) return m1[1];
-  const m2 = /^db\.([a-z0-9]+)\.supabase\.co$/i.exec(u.hostname);
-  if (m2) return m2[1];
-  return u.hostname;
-}
+// Definisi identitas DB (host/port/db/user tanpa password, project-ref)
+// ada di SATU tempat: lib/db-identity.mjs -- dipakai juga oleh db-target.ts.
+export { describeDbUrl, dbProjectRef };
 
 function stop(msg) {
   console.error(`\nDIHENTIKAN: ${msg}`);

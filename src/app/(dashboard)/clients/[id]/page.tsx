@@ -7,7 +7,7 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatDate, formatStatusLabel } from "@/lib/format";
+import { classifyDeadline, formatStatusLabel } from "@/lib/format";
 import { archiveClient, restoreClient } from "@/app/(dashboard)/clients/actions";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {

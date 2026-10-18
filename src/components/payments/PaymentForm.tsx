@@ -160,7 +160,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
             <option value="REFUNDED">Refund</option>
           </select>
           <p className="mt-1 text-xs text-muted-foreground">
-            Belum Bayar/Bayar Sebagian/Lunas otomatis mengikuti jumlah dibayar vs total. Pilih "Refund" hanya kalau
+            Belum Bayar/Bayar Sebagian/Lunas otomatis mengikuti jumlah dibayar vs total. Pilih &quot;Refund&quot; hanya kalau
             dana memang dikembalikan ke client.
           </p>
         </div>

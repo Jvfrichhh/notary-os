@@ -101,6 +101,36 @@ dengan yang dipakai `requirePermission()` di halamannya.
 Pemeriksaan cepat tanpa database: `npx tsx scripts/check-navigation.ts`.
 Uji end-to-end per role (server & seed harus sudah jalan): `node scripts/e2e-access-check.mjs`.
 
+## Portal Klien (tahap 1 — fondasi)
+
+Portal klien hidup di `/portal` dan memakai **akun terpisah** dari akun internal:
+
+| | Akun internal | Akun portal klien |
+|---|---|---|
+| Tabel | `users` (+ Role/Permission RBAC) | `client_accounts` → FK `clientId` ke `clients` |
+| Login | `/login` (provider `credentials`) | `/portal/login` (provider `client-credentials`) |
+| Isi session | `kind: "staff"`, `role` | `kind: "client"`, `clientId` |
+| Guard server | `requireUser()` / `requirePermission()` | `requireClientAccount()` (`src/lib/portalSession.ts`) |
+
+Aturan akses (ditegakkan di `src/middleware.ts` **dan** di tiap halaman/action):
+- Akun klien hanya bisa membuka `/portal/**`; ke halaman/API internal → dialihkan/403.
+- Akun internal tidak memakai portal; ke `/portal` → dialihkan ke `/dashboard`.
+- Setiap query portal dibatasi `where: { clientId }` dari session yang diverifikasi ulang ke DB
+  pada tiap request (akun nonaktif / klien diarsipkan langsung kehilangan akses).
+- Job milik klien lain → 404, sama seperti job yang tidak ada.
+
+Yang sudah ada di tahap 1: login, dashboard (ringkasan + daftar pekerjaan), detail pekerjaan
+(status versi klien, target, riwayat perubahan status, daftar dokumen yang diperlukan). Belum ada:
+permintaan dokumen, unggah dokumen, notifikasi klien, pembuatan akun dari UI internal.
+
+**Perubahan skema**: tabel baru `client_accounts` — `prisma/migrations/20261018020000_client_portal_accounts/`.
+Terapkan ke database **pengujian** dengan `npx prisma migrate deploy` (atau `npx prisma db push`).
+Jangan ke produksi tanpa review. Akun demo (setelah `npm run prisma:seed`): `client@demo.local`
+(CLI-0001) dan `client2@demo.local` (CLI-0002), password `password123`.
+
+Uji otomatis: `node scripts/e2e-portal-check.mjs` (server & seed harus jalan; set `DATABASE_URL`
+untuk skenario akun nonaktif).
+
 ## Catatan penting
 
 - Semua authorization dicek **server-side** lewat `assertPermission()` — jangan hanya mengandalkan sembunyi tombol di UI saat menambah fitur baru.

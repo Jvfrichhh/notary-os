@@ -175,9 +175,32 @@ model Client {
   wasiat       Wasiat[]
   payments     Payment[]
   appointments Appointment[]
+  accounts     ClientAccount[]
 
   @@index([fullName])
   @@map("clients")
+}
+
+// Akun login untuk PORTAL KLIEN (eksternal). Sengaja dipisah dari `User`
+// (akun internal ber-RBAC) supaya klien tidak pernah tercampur dengan staff,
+// tidak punya Role/Permission internal, dan tidak bisa menjadi PIC/reviewer.
+// Satu Client boleh punya beberapa akun (mis. perusahaan dengan >1 kontak).
+// Otorisasi di portal SELALU diturunkan dari account.clientId di server,
+// tidak pernah dari clientId yang dikirim browser.
+model ClientAccount {
+  id           String    @id @default(cuid())
+  clientId     String
+  client       Client    @relation(fields: [clientId], references: [id])
+  email        String    @unique
+  passwordHash String
+  name         String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([clientId])
+  @@map("client_accounts")
 }
 
 model Visit {

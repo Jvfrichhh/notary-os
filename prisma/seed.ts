@@ -260,9 +260,75 @@ async function main() {
     }
   });
 
+  // 14. Portal Klien — akun login untuk klien demo + klien kedua untuk uji
+  //     isolasi antar-klien (klien A tidak boleh melihat job klien B).
+  //     Semua pakai upsert supaya seed aman diulang.
+  await prisma.clientAccount.upsert({
+    where: { email: "client@demo.local" },
+    update: {},
+    create: {
+      clientId: client.id,
+      email: "client@demo.local",
+      passwordHash,
+      name: client.fullName
+    }
+  });
+
+  const client2 = await prisma.client.upsert({
+    where: { clientNumber: "CLI-0002" },
+    update: {},
+    create: {
+      clientNumber: "CLI-0002",
+      fullName: "Siti Aminah",
+      clientType: "Individu",
+      phone: "081298765432",
+      email: "siti.aminah@example.com",
+      city: "Depok",
+      status: "ACTIVE"
+    }
+  });
+
+  await prisma.clientAccount.upsert({
+    where: { email: "client2@demo.local" },
+    update: {},
+    create: {
+      clientId: client2.id,
+      email: "client2@demo.local",
+      passwordHash,
+      name: client2.fullName
+    }
+  });
+
+  const seedJob2Number = `JOB-${seedJobYear}-0002`;
+  await prisma.job.upsert({
+    where: { jobNumber: seedJob2Number },
+    update: {},
+    create: {
+      jobNumber: seedJob2Number,
+      clientId: client2.id,
+      serviceTypeId: ajb.id,
+      description: "Akta Jual Beli rumah di Depok",
+      priority: JobPriority.NORMAL,
+      status: JobStatus.WAITING_FOR_DOCUMENT,
+      deadline: new Date("2026-11-30"),
+      picId: users.STAFF.id,
+      notaryId: users.NOTARY.id,
+      startDate: new Date()
+    }
+  });
+  // Counter nomor job ikut dinaikkan supaya job berikutnya dari UI = 0003.
+  await prisma.jobNumberCounter.upsert({
+    where: { year: seedJobYear },
+    update: { value: 2 },
+    create: { year: seedJobYear, value: 2 }
+  });
+
   console.log("Seed selesai.");
   console.log("Demo login (password sama untuk semua: password123):");
   demoUsers.forEach((u) => console.log(`  ${u.role.padEnd(7)} -> ${u.email}`));
+  console.log("Portal klien (/portal/login), password sama:");
+  console.log("  CLI-0001 -> client@demo.local");
+  console.log("  CLI-0002 -> client2@demo.local");
 }
 
 main()

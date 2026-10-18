@@ -172,35 +172,72 @@ console.log("\n[7] Kredensial staff di portal");
 console.log("\n[8] Akun nonaktif / klien diarsipkan");
 // Satu-satunya skenario yang MENULIS ke database (toggle isActive / status
 // klien). Hanya berjalan jika E2E_TEST_DATABASE_URL lolos lapis 1 dan 2.
-// Nilai SELALU dipulihkan di `finally`, apa pun yang terjadi di tengah.
+// Nilai AWAL direkam sebelum perubahan apa pun dan dipulihkan apa adanya di
+// `finally` -- bukan diasumsikan "aktif"/"ACTIVE". Kegagalan pemulihan
+// dihitung sebagai kegagalan tes, bukan disamarkan.
 if (!testDb) {
   console.log("  - dilewati (E2E_TEST_DATABASE_URL tidak diset)");
 } else {
   console.log(`  - menulis ke: ${describeDbUrl(testDbUrl)}`);
-  const ctx = await browser.newContext();
-  const page = await ctx.newPage();
-  try {
-    // 8a: sesi aktif lalu akun dinonaktifkan -> ditendang
-    await portalLogin(page, CLIENT_B);
-    await testDb.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: false } });
-    await page.goto(`${BASE}/portal`);
-    check(page.url().includes("/portal/login?error=account_inactive"), "akun dinonaktifkan saat sesi aktif -> /portal/login?error=account_inactive");
-    const ok = await portalLogin(page, CLIENT_B);
-    check(!ok, "akun nonaktif tidak bisa login lagi");
-    await testDb.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: true } });
 
-    // 8b: klien diarsipkan
-    await portalLogin(page, CLIENT_B);
-    await testDb.client.update({ where: { clientNumber: "CLI-0002" }, data: { status: "ARCHIVED" } });
-    await page.goto(`${BASE}/portal`);
-    check(page.url().includes("/portal/login?error=client_inactive"), "klien diarsipkan saat sesi aktif -> /portal/login?error=client_inactive");
-  } finally {
-    // Pemulihan tanpa syarat -- berjalan juga saat assertion/navigasi gagal.
-    const r1 = await testDb.clientAccount.updateMany({ where: { email: CLIENT_B }, data: { isActive: true } });
-    const r2 = await testDb.client.updateMany({ where: { clientNumber: "CLI-0002" }, data: { status: "ACTIVE" } });
-    console.log(`  - dipulihkan: akun ${CLIENT_B} aktif (${r1.count}), CLI-0002 ACTIVE (${r2.count})`);
-    await ctx.close();
+  // Rekam nilai awal PERSIS record yang akan disentuh (hanya dua record ini).
+  let acct0 = null;
+  let client0 = null;
+  try {
+    [acct0, client0] = await Promise.all([
+      testDb.clientAccount.findUnique({ where: { email: CLIENT_B }, select: { isActive: true } }),
+      testDb.client.findUnique({ where: { clientNumber: "CLI-0002" }, select: { status: true } })
+    ]);
+  } catch (e) {
+    await testDb.$disconnect().catch(() => {});
+    throw e; // belum ada yang diubah; biarkan gagal dengan jelas
+  }
+  if (!acct0 || !client0) {
+    check(false, `record uji tidak ditemukan (akun ${CLIENT_B}: ${!!acct0}, CLI-0002: ${!!client0}) -- skenario 8 dilewati`);
     await testDb.$disconnect();
+  } else {
+    console.log(`  - nilai awal: ${CLIENT_B}.isActive=${acct0.isActive}, CLI-0002.status=${client0.status}`);
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    try {
+      // 8a: sesi aktif lalu akun dinonaktifkan -> ditendang
+      await portalLogin(page, CLIENT_B);
+      await testDb.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: false } });
+      await page.goto(`${BASE}/portal`);
+      check(page.url().includes("/portal/login?error=account_inactive"), "akun dinonaktifkan saat sesi aktif -> /portal/login?error=account_inactive");
+      const ok = await portalLogin(page, CLIENT_B);
+      check(!ok, "akun nonaktif tidak bisa login lagi");
+      await testDb.clientAccount.update({ where: { email: CLIENT_B }, data: { isActive: acct0.isActive } });
+
+      // 8b: klien diarsipkan
+      await portalLogin(page, CLIENT_B);
+      await testDb.client.update({ where: { clientNumber: "CLI-0002" }, data: { status: "ARCHIVED" } });
+      await page.goto(`${BASE}/portal`);
+      check(page.url().includes("/portal/login?error=client_inactive"), "klien diarsipkan saat sesi aktif -> /portal/login?error=client_inactive");
+    } finally {
+      // Pemulihan TANPA SYARAT ke nilai awal yang direkam. updateMany: tidak
+      // melempar jika record sudah tidak ada, dan where-nya tetap hanya dua
+      // record ini.
+      try {
+        const r1 = await testDb.clientAccount.updateMany({ where: { email: CLIENT_B }, data: { isActive: acct0.isActive } });
+        const r2 = await testDb.client.updateMany({ where: { clientNumber: "CLI-0002" }, data: { status: client0.status } });
+        const [acct1, client1] = await Promise.all([
+          testDb.clientAccount.findUnique({ where: { email: CLIENT_B }, select: { isActive: true } }),
+          testDb.client.findUnique({ where: { clientNumber: "CLI-0002" }, select: { status: true } })
+        ]);
+        const restored = acct1?.isActive === acct0.isActive && client1?.status === client0.status;
+        check(
+          restored,
+          `pemulihan nilai awal (${r1.count}+${r2.count} record): ${CLIENT_B}.isActive=${acct1?.isActive}, CLI-0002.status=${client1?.status}`
+        );
+      } catch (e) {
+        failures++;
+        console.error(`  ✗ PEMULIHAN GAGAL -- periksa manual: ${CLIENT_B}.isActive harus ${acct0.isActive}, CLI-0002.status harus ${client0.status}. Error: ${e?.message ?? e}`);
+      } finally {
+        await ctx.close().catch(() => {});
+        await testDb.$disconnect().catch(() => {});
+      }
+    }
   }
 }
 

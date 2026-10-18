@@ -163,7 +163,7 @@ export async function bindTestDatabase({ browser, baseUrl, testDbUrl }) {
     if (prisma) await prisma.$disconnect();
     stop(`Pre-flight: login ${DEMO_CLIENT_A} GAGAL di ${baseUrl}. Target ini tidak punya data demo portal (kemungkinan bukan DB pengujian).`);
   }
-  console.log("Pre-flight     : akun demo portal bisa login di target ✓");
+  console.log("Pre-flight     : akun demo portal bisa login di target ✓ (bukti \"bukan produksi saat ini\", BUKAN bukti identitas project)");
 
   if (prisma) {
     const after = await prisma.clientAccount.findUnique({

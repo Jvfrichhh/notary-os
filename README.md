@@ -159,6 +159,7 @@ ia bisa menawarkan *reset* saat mendeteksi drift; **tolak**.
 Akun demo setelah seed: `client@demo.local` (CLI-0001) dan `client2@demo.local` (CLI-0002), password `password123`.
 
 Validasi file migrasi vs SQL yang dihasilkan Prisma (tanpa DB): `node scripts/check-portal-migration.mjs`.
+Uji pengaman lapis 1 secara terisolasi (tanpa jaringan/DB/Playwright): `node scripts/test-e2e-guard.mjs`.
 
 Uji otomatis: `node scripts/e2e-portal-check.mjs` dan `node scripts/e2e-access-check.mjs` (server & seed harus
 jalan). Pengaman (`scripts/lib/e2e-guard.mjs`): domain produksi ditolak mutlak; target remote butuh

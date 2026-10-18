@@ -73,6 +73,34 @@ Buka http://localhost:3000 → otomatis redirect ke `/login`.
 - 🔜 Payment/Finance UI, Reports, Notification Center penuh — Phase 5
 - 🔜 Admin (manajemen user/role), Audit Log viewer — Phase 5-6
 
+## Navigasi & hak akses per role
+
+Daftar menu sidebar ada di **satu tempat**: `src/lib/navigation.ts`. Setiap item
+punya `permissions` (cukup salah satu). Layout `(dashboard)/layout.tsx` mengambil
+permission user sekali lewat `getUserPermissions()`, lalu menyaring menu sebelum
+dikirim ke `Sidebar`. Menu hanyalah kenyamanan UI — keamanan sesungguhnya ada di:
+
+- **Halaman**: `requirePermission()` / `requireAnyPermission()` di awal tiap `page.tsx`.
+  Kalau tidak berhak, user dialihkan ke `/dashboard?denied=1` dan melihat pemberitahuan.
+- **Server Action / API**: `assertPermission()` (lempar `PermissionError`) dan cek session.
+- **Middleware**: hanya memastikan *sudah login* (role tersimpan di DB, jadi cek
+  permission dilakukan di server component/action, bukan di edge middleware).
+
+Menu per role bawaan (dari `prisma/seed.ts`):
+
+| Role | Menu yang tampil |
+|---|---|
+| NOTARY | Semua (16 menu) |
+| ADMIN | Semua kecuali **Admin** |
+| STAFF | Dashboard, Notifikasi, Clients, Visits, Joblist, Calendar, Deadlines, Document Vault, Reports |
+| VIEWER | Semua kecuali **Admin** (semua halaman bersifat baca saja; tombol tambah/ubah/hapus tidak tampil dan action ditolak server) |
+
+Menambah menu baru: tambahkan item di `NAV_SECTIONS` dengan permission yang **sama**
+dengan yang dipakai `requirePermission()` di halamannya.
+
+Pemeriksaan cepat tanpa database: `npx tsx scripts/check-navigation.ts`.
+Uji end-to-end per role (server & seed harus sudah jalan): `node scripts/e2e-access-check.mjs`.
+
 ## Catatan penting
 
 - Semua authorization dicek **server-side** lewat `assertPermission()` — jangan hanya mengandalkan sembunyi tombol di UI saat menambah fitur baru.

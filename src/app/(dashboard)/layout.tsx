@@ -1,10 +1,25 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { requireUser } from "@/lib/session";
+import { getUserPermissions } from "@/lib/permissions";
+import { filterNavSections, NAV_SECTIONS } from "@/lib/navigation";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+// Layout membaca session -> selalu dinamis (tidak boleh di-cache lintas user).
+export const dynamic = "force-dynamic";
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // Middleware sudah menjamin user login; requireUser() hanya fallback aman.
+  const user = await requireUser();
+
+  // Permission diambil SEKALI di sini (satu query) lalu dipakai untuk
+  // menyaring menu. Komponen Sidebar menerima hasil yang sudah bersih,
+  // sehingga daftar menu tidak pernah berbeda-beda antar komponen.
+  const permissions = await getUserPermissions(user.id);
+  const sections = filterNavSections(NAV_SECTIONS, permissions);
+
   return (
     <div className="flex h-screen overflow-hidden bg-muted">
-      <Sidebar />
+      <Sidebar sections={sections} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>

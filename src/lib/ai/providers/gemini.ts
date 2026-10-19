@@ -18,11 +18,17 @@ import {
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-type GeminiPart =
+type GeminiPart = (
   | { text: string }
   | { inlineData: { mimeType: string; data: string } }
   | { functionCall: { name: string; args: unknown } }
-  | { functionResponse: { name: string; response: unknown } };
+  | { functionResponse: { name: string; response: unknown } }
+) & {
+  /** Model "berpikir" (Gemini 3.x) menyertakan ini pada functionCall; WAJIB dikirim balik apa adanya. */
+  thoughtSignature?: string;
+  /** true = bagian pemikiran internal model; tidak ditampilkan dan tidak dikirim balik. */
+  thought?: boolean;
+};
 
 interface GeminiContent {
   role: "user" | "model";
@@ -92,7 +98,10 @@ function toGeminiContents(messages: MessageParam[]): GeminiContent[] {
           break;
         case "tool_use":
           idToName.set(b.id, b.name);
-          parts.push({ functionCall: { name: b.name, args: b.input ?? {} } });
+          parts.push({
+            functionCall: { name: b.name, args: b.input ?? {} },
+            ...(b.signature ? { thoughtSignature: b.signature } : {})
+          });
           break;
         case "tool_result": {
           const name = idToName.get(b.tool_use_id) ?? "tool";
@@ -182,6 +191,7 @@ export async function geminiCreateMessage(input: CreateMessageInput, model: stri
   const content: ResponseBlock[] = [];
   let calls = 0;
   for (const p of cand.content.parts) {
+    if (p.thought) continue; // ringkasan pemikiran model: bukan jawaban
     if ("text" in p && p.text) content.push({ type: "text", text: p.text });
     else if ("functionCall" in p) {
       calls += 1;
@@ -189,7 +199,8 @@ export async function geminiCreateMessage(input: CreateMessageInput, model: stri
         type: "tool_use",
         id: `gcall_${Date.now().toString(36)}_${calls}`,
         name: p.functionCall.name,
-        input: (p.functionCall.args && typeof p.functionCall.args === "object" ? p.functionCall.args : {}) as Record<string, unknown>
+        input: (p.functionCall.args && typeof p.functionCall.args === "object" ? p.functionCall.args : {}) as Record<string, unknown>,
+        ...(p.thoughtSignature ? { signature: p.thoughtSignature } : {})
       });
     }
   }

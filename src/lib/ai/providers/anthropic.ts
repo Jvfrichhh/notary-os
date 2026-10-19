@@ -12,10 +12,22 @@ export async function anthropicCreateMessage(input: CreateMessageInput, model: s
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new AiError("Fitur AI belum diaktifkan: ANTHROPIC_API_KEY belum diset.");
 
+  // Buang field `signature` (khusus Gemini) supaya API Anthropic tidak menolak field asing.
+  const messages = input.messages.map((m) =>
+    typeof m.content === "string"
+      ? m
+      : {
+          role: m.role,
+          content: m.content.map((b) => {
+            if (b.type !== "tool_use") return b;
+            return { type: b.type, id: b.id, name: b.name, input: b.input };
+          })
+        }
+  );
   const body: Record<string, unknown> = {
     model,
     max_tokens: input.maxTokens ?? 1024,
-    messages: input.messages
+    messages
   };
   if (input.system) body.system = input.system;
   if (input.tools && input.tools.length > 0) body.tools = input.tools;

@@ -54,7 +54,9 @@ export type ContentBlockParam =
   | { type: "text"; text: string }
   | { type: "image"; source: { type: "base64"; media_type: ImageMediaType; data: string } }
   | { type: "document"; source: { type: "base64"; media_type: "application/pdf"; data: string } }
-  | { type: "tool_use"; id: string; name: string; input: unknown }
+  // `signature`: hanya dipakai adaptor Gemini (thoughtSignature yang wajib
+  // dikirim balik bersama functionCall); diabaikan oleh Anthropic.
+  | { type: "tool_use"; id: string; name: string; input: unknown; signature?: string }
   | { type: "tool_result"; tool_use_id: string; content: string; is_error?: boolean };
 
 export interface MessageParam {
@@ -72,7 +74,7 @@ export interface ToolDefinition {
 
 export type ResponseBlock =
   | { type: "text"; text: string }
-  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> };
+  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown>; signature?: string };
 
 export interface MessageResponse {
   id: string;

@@ -127,7 +127,29 @@ interface GeminiResponse {
   candidates?: { content?: { parts?: GeminiPart[] }; finishReason?: string }[];
   usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
   promptFeedback?: { blockReason?: string };
-  error?: { message?: string };
+  error?: {
+    message?: string;
+    details?: {
+      "@type"?: string;
+      retryDelay?: string; // mis. "37s"
+      violations?: { quotaMetric?: string; quotaId?: string; quotaValue?: string }[];
+    }[];
+  };
+}
+
+/** Susun pesan yang menyebut jenis batas (per menit / per hari) dan lama tunggu, dari detail error Google. */
+function quotaMessage(err: GeminiResponse["error"]): string {
+  const details = err?.details ?? [];
+  const violation = details.flatMap((d) => d.violations ?? [])[0];
+  const retry = details.find((d) => d.retryDelay)?.retryDelay;
+  const id = `${violation?.quotaId ?? ""} ${violation?.quotaMetric ?? ""}`.toLowerCase();
+  const perDay = /perday|per_day|daily/.test(id);
+  const perMinute = /perminute|per_minute/.test(id);
+  const limit = violation?.quotaValue ? ` (batas ${violation.quotaValue})` : "";
+  if (perDay) return `Kuota HARIAN paket gratis Gemini habis${limit}. Pulih besok sekitar pukul 14.00–15.00 WIB.`;
+  const wait = retry ? ` Coba lagi dalam ${retry.replace(/s$/, " detik")}.` : " Tunggu sekitar satu menit lalu coba lagi.";
+  if (perMinute) return `Batas PER MENIT paket gratis Gemini tercapai${limit}.${wait}`;
+  return `Batas pemakaian gratis Gemini tercapai${limit}.${wait}`;
 }
 
 export async function geminiCreateMessage(input: CreateMessageInput, model: string): Promise<MessageResponse> {
@@ -177,7 +199,7 @@ export async function geminiCreateMessage(input: CreateMessageInput, model: stri
     const detail = json.error?.message ?? "";
     if (res.status === 400 && /API key/i.test(detail)) throw new AiError("Kunci API Gemini ditolak. Periksa GEMINI_API_KEY.", 400);
     if (res.status === 403) throw new AiError("Kunci API Gemini tidak berwenang. Periksa GEMINI_API_KEY.", 403);
-    if (res.status === 429) throw new AiError("Batas pemakaian gratis Gemini tercapai. Tunggu sebentar lalu coba lagi.", 429);
+    if (res.status === 429) throw new AiError(quotaMessage(json.error), 429);
     if (res.status >= 500) throw new AiError("Layanan AI sedang sibuk. Coba lagi.", res.status);
     throw new AiError(`Permintaan AI ditolak (${res.status})${detail ? `: ${detail.slice(0, 200)}` : ""}.`, res.status);
   }

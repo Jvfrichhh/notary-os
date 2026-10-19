@@ -57,6 +57,13 @@ export class S3StorageProvider implements FileStorageService {
   async delete(storageKey: string): Promise<void> {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: storageKey }));
   }
+
+  async getObjectBuffer(storageKey: string): Promise<Buffer> {
+    const res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: storageKey }));
+    if (!res.Body) throw new Error("File kosong atau tidak ditemukan di storage.");
+    const bytes = await res.Body.transformToByteArray();
+    return Buffer.from(bytes);
+  }
 }
 
 function required(name: string): string {

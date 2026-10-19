@@ -19,12 +19,15 @@ export function ClientUploadReview({
   item,
   canReview,
   canViewDocuments,
-  action
+  action,
+  aiPanel
 }: {
   item: Item;
   canReview: boolean;
   canViewDocuments: boolean;
   action: (formData: FormData) => Promise<void>;
+  /** Panel Analisis AI (opsional; null bila fitur AI mati atau user tak berhak). */
+  aiPanel?: React.ReactNode;
 }) {
   const pending = item.reviewStatus === "PENDING_REVIEW";
   return (
@@ -52,6 +55,8 @@ export function ClientUploadReview({
               : "Menunggu pemeriksaan"}
         </span>
       </div>
+
+      {aiPanel}
 
       {canReview && pending && (
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">

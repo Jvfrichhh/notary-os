@@ -33,7 +33,8 @@ export type NavIconKey =
   | "scroll"
   | "wallet"
   | "bar-chart"
-  | "shield";
+  | "shield"
+  | "sparkles";
 
 export interface NavItemConfig {
   label: string;
@@ -41,6 +42,8 @@ export interface NavItemConfig {
   icon: NavIconKey;
   /** Salah satu permission ini cukup. Kosongkan (undefined) = semua user login. */
   permissions?: readonly string[];
+  /** Hanya tampil bila fitur AI aktif di server (ANTHROPIC_API_KEY diset). */
+  requiresAi?: boolean;
 }
 
 export interface NavSectionConfig {
@@ -75,7 +78,10 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
       { label: "Joblist", href: "/jobs", icon: "list-checks", permissions: [PERMISSIONS.VIEW_JOBS] },
       // Calendar & Deadlines menampilkan data job -> page-nya memakai VIEW_JOBS.
       { label: "Calendar", href: "/calendar", icon: "calendar", permissions: [PERMISSIONS.VIEW_JOBS] },
-      { label: "Deadlines", href: "/deadlines", icon: "clock", permissions: [PERMISSIONS.VIEW_JOBS] }
+      { label: "Deadlines", href: "/deadlines", icon: "clock", permissions: [PERMISSIONS.VIEW_JOBS] },
+      // Asisten AI membaca data lewat tool yang masing-masing dibatasi permission;
+      // minimal VIEW_JOBS supaya ada yang bisa ditanyakan.
+      { label: "Asisten AI", href: "/assistant", icon: "sparkles", permissions: [PERMISSIONS.VIEW_JOBS], requiresAi: true }
     ]
   },
   {
@@ -148,12 +154,14 @@ export function canAccessNavItem(item: NavItemConfig, userPermissions: ReadonlyS
  */
 export function filterNavSections(
   sections: NavSectionConfig[],
-  userPermissions: ReadonlySet<string>
+  userPermissions: ReadonlySet<string>,
+  opts: { aiEnabled?: boolean } = {}
 ): NavSectionConfig[] {
+  const aiEnabled = opts.aiEnabled ?? true;
   return sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => canAccessNavItem(item, userPermissions))
+      items: section.items.filter((item) => canAccessNavItem(item, userPermissions) && (aiEnabled || !item.requiresAi))
     }))
     .filter((section) => section.items.length > 0);
 }

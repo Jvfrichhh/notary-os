@@ -418,12 +418,39 @@ model Document {
   legalisasi     Legalisasi[]
   waarmerking    Waarmerking[]
   wasiatEvidence Wasiat[]
+  aiAnalyses     DocumentAiAnalysis[]
 
   @@index([jobId])
   @@index([clientId])
   @@index([category])
   @@index([status])
   @@map("documents")
+}
+
+/// Hasil analisis AI atas satu dokumen (ekstraksi data + pra-pemeriksaan).
+/// Selalu berupa USULAN: tidak pernah mengubah data lain secara otomatis.
+/// Satu dokumen bisa dianalisis berulang; yang terbaru yang ditampilkan.
+model DocumentAiAnalysis {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  model           String
+  documentType    String? // mis. KTP, KK, NPWP, SERTIFIKAT, AKTA, LAINNYA
+  legible         Boolean  @default(true)
+  qualityScore    Int? // 0-100 perkiraan keterbacaan/kelengkapan
+  issues          Json? // string[] masalah yang ditemukan (buram, terpotong, dst)
+  extractedFields Json? // { nik, fullName, address, ... } nilai yang terbaca
+  clientMatch     Json? // perbandingan dengan data klien: { field: {client, document, match} }
+  summary         String? // satu-dua kalimat untuk staff
+  inputTokens     Int?
+  outputTokens    Int?
+
+  createdById String? // users.id staff yang menjalankan analisis
+  createdAt   DateTime @default(now())
+
+  @@index([documentId, createdAt])
+  @@map("document_ai_analyses")
 }
 
 model DocumentVersion {

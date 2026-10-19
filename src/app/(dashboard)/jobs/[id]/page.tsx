@@ -15,6 +15,10 @@ import {
   toggleTaskStatus
 } from "@/app/(dashboard)/jobs/actions";
 import { ClientUploadReview } from "@/components/jobs/ClientUploadReview";
+import { DocumentAiPanel } from "@/components/documents/DocumentAiPanel";
+import { toAnalysisView } from "@/lib/ai/analysisView";
+import { latestAnalysisFor } from "@/lib/ai/documentAnalysis";
+import { isAiEnabled } from "@/lib/ai/client";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +30,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const canUploadDocuments = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
   const canViewArchive = await userHasPermission(user.id, PERMISSIONS.VIEW_MINUTA);
   const canEditArchive = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
+  const canEditClients = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
+  const aiEnabled = isAiEnabled();
 
   const job = await prisma.job.findUnique({
     where: { id: params.id },
@@ -54,6 +60,13 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   if (!job) notFound();
 
   const nextStatuses = getValidNextStatuses(job.status);
+
+  // Unggahan klien yang bisa dianalisis AI: analisis terbaru per dokumen.
+  const clientUploadIds = job.checklists
+    .flatMap((c) => c.items)
+    .filter((i) => i.attachedDocument?.uploadedByClientAccountId)
+    .map((i) => i.attachedDocument!.id);
+  const aiAnalyses = aiEnabled && canViewDocuments ? await latestAnalysisFor(clientUploadIds) : new Map();
   const totalChecklistItems = job.checklists.flatMap((c) => c.items).length;
   const completedChecklistItems = job.checklists.flatMap((c) => c.items).filter((i) => i.status === "COMPLETE").length;
 
@@ -175,6 +188,26 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                       canReview={canEdit}
                       canViewDocuments={canViewDocuments}
                       action={reviewChecklistDocument.bind(null, item.id, job.id)}
+                      aiPanel={
+                        aiEnabled && canViewDocuments ? (
+                          <DocumentAiPanel
+                            compact
+                            documentId={item.attachedDocument!.id}
+                            expectedLabel={item.label}
+                            returnPath={`/jobs/${job.id}`}
+                            analysis={aiAnalyses.has(item.attachedDocument!.id) ? toAnalysisView(aiAnalyses.get(item.attachedDocument!.id)!) : null}
+                            canAnalyze={canUploadDocuments}
+                            canApply={canEditClients}
+                            clientValues={{
+                              nik: job.client.nik,
+                              npwp: job.client.npwp,
+                              address: job.client.address,
+                              city: job.client.city,
+                              companyName: job.client.companyName
+                            }}
+                          />
+                        ) : null
+                      }
                     />
                   ))}
               </div>

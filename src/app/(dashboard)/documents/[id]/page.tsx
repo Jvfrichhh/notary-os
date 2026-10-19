@@ -8,6 +8,10 @@ import { Card } from "@/components/ui/Card";
 import { formatDateTime, formatFileSize, formatStatusLabel } from "@/lib/format";
 import { archiveDocument, restoreDocument, uploadNewVersion } from "@/app/(dashboard)/documents/actions";
 import { ACCEPT_ATTRIBUTE } from "@/lib/uploadValidation";
+import { DocumentAiPanel } from "@/components/documents/DocumentAiPanel";
+import { toAnalysisView } from "@/lib/ai/analysisView";
+import { canAnalyzeFileType, latestAnalysisFor } from "@/lib/ai/documentAnalysis";
+import { isAiEnabled } from "@/lib/ai/client";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -22,6 +26,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
   const user = await requirePermission(PERMISSIONS.VIEW_DOCUMENTS);
   const canUpload = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
   const canDelete = await userHasPermission(user.id, PERMISSIONS.DELETE_DOCUMENTS);
+  const canEditClients = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
 
   const document = await prisma.document.findUnique({
     where: { id: params.id },
@@ -35,6 +40,9 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
   });
 
   if (!document) notFound();
+
+  const showAi = isAiEnabled() && document.status === "ACTIVE" && canAnalyzeFileType(document.fileType);
+  const latestAi = showAi ? (await latestAnalysisFor([document.id])).get(document.id) ?? null : null;
 
   // Dokumen lama (seed) mungkin belum punya baris versi -- tampilkan
   // Document itu sendiri sebagai v1 kalau begitu.
@@ -102,6 +110,27 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
           )}
         </div>
       </div>
+
+      {showAi && (
+        <DocumentAiPanel
+          documentId={document.id}
+          returnPath={`/documents/${document.id}`}
+          analysis={latestAi ? toAnalysisView(latestAi) : null}
+          canAnalyze={canUpload}
+          canApply={canEditClients && Boolean(document.client)}
+          clientValues={
+            document.client
+              ? {
+                  nik: document.client.nik,
+                  npwp: document.client.npwp,
+                  address: document.client.address,
+                  city: document.client.city,
+                  companyName: document.client.companyName
+                }
+              : null
+          }
+        />
+      )}
 
       <Card>
         <h2 className="mb-4 text-sm font-semibold text-foreground">Metadata</h2>

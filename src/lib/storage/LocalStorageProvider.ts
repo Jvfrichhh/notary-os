@@ -50,4 +50,13 @@ export class LocalStorageProvider implements FileStorageService {
     const fullPath = path.join(this.basePath, storageKey);
     await fs.unlink(fullPath).catch(() => undefined);
   }
+
+  async getObjectBuffer(storageKey: string): Promise<Buffer> {
+    // Tolak path traversal (storageKey selalu "folder/uuid-nama").
+    const fullPath = path.resolve(this.basePath, storageKey);
+    if (!fullPath.startsWith(path.resolve(this.basePath) + path.sep)) {
+      throw new Error("storageKey tidak valid.");
+    }
+    return fs.readFile(fullPath);
+  }
 }

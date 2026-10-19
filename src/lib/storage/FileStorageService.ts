@@ -19,4 +19,10 @@ export interface FileStorageService {
 
   /** Hapus file fisik. Dipanggil hanya dari alur hard-delete admin, bukan soft delete biasa. */
   delete(storageKey: string): Promise<void>;
+
+  /**
+   * Baca isi file ke memori (dipakai analisis dokumen AI di server).
+   * Pemanggil wajib sudah memeriksa izin; fungsi ini tidak tahu konteks user.
+   */
+  getObjectBuffer(storageKey: string): Promise<Buffer>;
 }

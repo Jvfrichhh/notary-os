@@ -1,8 +1,11 @@
 /**
- * Klien tipis untuk Anthropic Messages API, memakai `fetch` bawaan Node 18+.
+ * Fasad klien model AI. Bentuk permintaan/respons mengikuti gaya Anthropic
+ * Messages API (blok konten + tool use); penyedia lain (Gemini) diadaptasi ke
+ * bentuk yang sama di `providers/`, sehingga fitur di atasnya tidak peduli
+ * penyedia mana yang aktif.
  *
- * Sengaja TANPA SDK supaya tidak menambah dependensi: permukaan API yang
- * dipakai aplikasi ini kecil (teks, gambar/PDF sebagai input, dan tool use).
+ * Memakai `fetch` bawaan Node 18+, sengaja TANPA SDK supaya tidak menambah
+ * dependensi.
  *
  * Aturan pakai:
  *  - Hanya dipanggil dari server (server action / route handler). Kunci API
@@ -13,17 +16,34 @@
  *    manusia; tidak ada tulisan ke database yang dipicu langsung oleh model.
  */
 
-const API_URL = "https://api.anthropic.com/v1/messages";
-const API_VERSION = "2023-06-01";
-// Bisa diganti lewat env AI_MODEL tanpa deploy ulang (mis. claude-haiku-5-5 untuk hemat biaya).
-export const DEFAULT_MODEL = "claude-sonnet-5-5";
+export type AiProvider = "anthropic" | "gemini";
 
-export function isAiEnabled(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+/**
+ * Penyedia dipilih lewat env AI_PROVIDER; bila kosong, otomatis: Anthropic
+ * jika ANTHROPIC_API_KEY ada, selain itu Gemini jika GEMINI_API_KEY ada.
+ * Gemini punya tingkat gratis (data boleh dipakai Google -> cocok untuk
+ * pengembangan/demo dengan dokumen contoh); Anthropic berbayar dan tidak
+ * memakai data API untuk pelatihan -> untuk dokumen klien sungguhan.
+ */
+export function aiProvider(): AiProvider | null {
+  const forced = (process.env.AI_PROVIDER || "").toLowerCase();
+  if (forced === "anthropic" || forced === "gemini") {
+    const key = forced === "anthropic" ? process.env.ANTHROPIC_API_KEY : process.env.GEMINI_API_KEY;
+    return key ? forced : null;
+  }
+  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  if (process.env.GEMINI_API_KEY) return "gemini";
+  return null;
 }
 
+export function isAiEnabled(): boolean {
+  return aiProvider() !== null;
+}
+
+/** Model aktif; AI_MODEL mengganti default penyedia tanpa deploy ulang. */
 export function aiModel(): string {
-  return process.env.AI_MODEL || DEFAULT_MODEL;
+  if (process.env.AI_MODEL) return process.env.AI_MODEL;
+  return aiProvider() === "gemini" ? "gemini-3.8-flash" : "claude-sonnet-5-5";
 }
 
 // ---- Tipe permintaan ------------------------------------------------------
@@ -83,59 +103,19 @@ export interface CreateMessageInput {
 }
 
 /**
- * Satu panggilan ke model. Melempar AiError dengan pesan yang aman untuk
- * ditampilkan ke staff (tidak memuat kunci atau payload).
+ * Satu panggilan ke model lewat penyedia aktif. Melempar AiError dengan pesan
+ * yang aman untuk ditampilkan ke staff (tidak memuat kunci atau payload).
  */
 export async function createMessage(input: CreateMessageInput): Promise<MessageResponse> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new AiError("Fitur AI belum diaktifkan: ANTHROPIC_API_KEY belum diset.");
-
-  const body: Record<string, unknown> = {
-    model: aiModel(),
-    max_tokens: input.maxTokens ?? 1024,
-    messages: input.messages
-  };
-  if (input.system) body.system = input.system;
-  if (input.tools && input.tools.length > 0) body.tools = input.tools;
-  if (input.toolChoice) body.tool_choice = input.toolChoice;
-  if (input.temperature !== undefined) body.temperature = input.temperature;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), input.timeoutMs ?? 60_000);
-  let res: Response;
-  try {
-    res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": API_VERSION
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal
-    });
-  } catch (err) {
-    const aborted = err instanceof Error && err.name === "AbortError";
-    throw new AiError(aborted ? "Layanan AI tidak merespons tepat waktu. Coba lagi." : "Tidak dapat menghubungi layanan AI.");
-  } finally {
-    clearTimeout(timer);
+  const provider = aiProvider();
+  if (!provider) throw new AiError("Fitur AI belum diaktifkan: ANTHROPIC_API_KEY atau GEMINI_API_KEY belum diset.");
+  const model = aiModel();
+  if (provider === "gemini") {
+    const { geminiCreateMessage } = await import("@/lib/ai/providers/gemini");
+    return geminiCreateMessage(input, model);
   }
-
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = (await res.json()) as { error?: { message?: string } };
-      detail = j.error?.message ?? "";
-    } catch {
-      /* abaikan */
-    }
-    if (res.status === 401) throw new AiError("Kunci API AI ditolak. Periksa ANTHROPIC_API_KEY.", 401);
-    if (res.status === 429) throw new AiError("Kuota layanan AI sedang penuh. Coba beberapa saat lagi.", 429);
-    if (res.status === 529 || res.status >= 500) throw new AiError("Layanan AI sedang sibuk. Coba lagi.", res.status);
-    throw new AiError(`Permintaan AI ditolak (${res.status})${detail ? `: ${detail.slice(0, 200)}` : ""}.`, res.status);
-  }
-
-  return (await res.json()) as MessageResponse;
+  const { anthropicCreateMessage } = await import("@/lib/ai/providers/anthropic");
+  return anthropicCreateMessage(input, model);
 }
 
 /** Ambil input dari blok tool_use pertama bernama `name` (pola "JSON lewat tool"). */

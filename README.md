@@ -226,9 +226,12 @@ provider yang sama (`src/lib/storage/S3StorageProvider.ts`).
 
 ## Fitur AI (sisi kantor; opsional)
 
-Aktif hanya bila env `ANTHROPIC_API_KEY` diset (model lewat `AI_MODEL`, default
-`claude-sonnet-5-5`). Tanpa kunci, tombol dan menu AI tidak tampil sama sekali.
-Portal klien tidak memakai AI.
+Aktif bila ada kunci salah satu penyedia: `GEMINI_API_KEY` (Google, ada tingkat
+gratis; data boleh dipakai Google, jadi untuk pengembangan/demo dengan dokumen
+contoh) atau `ANTHROPIC_API_KEY` (berbayar; data tidak dipakai pelatihan, untuk
+dokumen klien sungguhan). `AI_PROVIDER` memaksa pilihan, `AI_MODEL` mengganti
+model default (`gemini-3.8-flash` / `claude-sonnet-5-5`). Tanpa kunci, tombol
+dan menu AI tidak tampil sama sekali. Portal klien tidak memakai AI.
 
 Prinsip: **AI mengusulkan, staf memutuskan.** Tidak ada tulisan ke database yang
 dipicu langsung oleh model; setiap penerapan usulan tercatat di audit log.
@@ -250,7 +253,10 @@ dipicu langsung oleh model; setiap penerapan usulan tercatat di audit log.
    ditolak bila dipanggil. Riwayat obrolan hanya di browser (sessionStorage);
    pertanyaan (bukan jawaban) dicatat di audit log.
 
-Klien API ditulis dengan `fetch` bawaan (`src/lib/ai/client.ts`), tanpa SDK.
+Klien API ditulis dengan `fetch` bawaan, tanpa SDK: `src/lib/ai/client.ts`
+adalah fasad (bentuk pesan gaya Anthropic + tool use), `providers/anthropic.ts`
+dan `providers/gemini.ts` adaptor per penyedia. Menambah penyedia lain = satu
+file adaptor baru, fitur di atasnya tidak berubah.
 
 ## Catatan penting
 

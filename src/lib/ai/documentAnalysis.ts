@@ -1,4 +1,4 @@
-import type { DocumentAiAnalysis } from "@prisma/client";
+import type { DocumentAiAnalysis, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getFileStorage } from "@/lib/storage";
 import { aiModel, createMessage, firstToolInput, type ContentBlockParam, type ToolDefinition } from "@/lib/ai/client";
@@ -208,8 +208,8 @@ export async function analyzeDocument(params: { documentId: string; userId: stri
       legible: Boolean(report.legible),
       qualityScore: clampScore(report.quality_score),
       issues: Array.isArray(report.issues) ? report.issues.map(String).slice(0, 10) : [],
-      extractedFields: fields as object,
-      clientMatch: (clientMatch ?? undefined) as object | undefined,
+      extractedFields: fields as Prisma.InputJsonValue,
+      clientMatch: clientMatch ? (clientMatch as Prisma.InputJsonValue) : undefined,
       summary: String(report.summary ?? "").slice(0, 1000),
       inputTokens: res.usage?.input_tokens ?? null,
       outputTokens: res.usage?.output_tokens ?? null,

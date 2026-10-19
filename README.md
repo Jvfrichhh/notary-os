@@ -224,6 +224,34 @@ File tidak pernah publik: aplikasi hanya memberi signed URL berumur 5 menit sete
 (`STORAGE_PROVIDER=r2`, env `R2_*`) dan S3 generik (`STORAGE_PROVIDER=s3`, env `S3_*`) tetap didukung lewat
 provider yang sama (`src/lib/storage/S3StorageProvider.ts`).
 
+## Fitur AI (sisi kantor; opsional)
+
+Aktif hanya bila env `ANTHROPIC_API_KEY` diset (model lewat `AI_MODEL`, default
+`claude-sonnet-5-5`). Tanpa kunci, tombol dan menu AI tidak tampil sama sekali.
+Portal klien tidak memakai AI.
+
+Prinsip: **AI mengusulkan, staf memutuskan.** Tidak ada tulisan ke database yang
+dipicu langsung oleh model; setiap penerapan usulan tercatat di audit log.
+
+1. **Analisis dokumen** (`src/lib/ai/documentAnalysis.ts`) — tombol *Analisis
+   dengan AI* pada unggahan klien di detail job dan di detail dokumen
+   (PDF/JPG/PNG, maks 15 MB). Hasil disimpan di `document_ai_analyses`: jenis
+   dokumen, skor keterbacaan, daftar masalah, data terbaca (NIK, nama, alamat,
+   NPWP, nomor sertifikat, ...), dan kecocokan dengan data klien (dihitung di
+   kode, bukan oleh model). Butuh `upload_documents`.
+2. **Terapkan ke data klien** — staf memilih kolom (NIK, NPWP, alamat, kota,
+   perusahaan) yang disalin ke tabel `clients`; nilai lama tersimpan di audit
+   log. Butuh `edit_clients`.
+3. **Asisten AI** (`/assistant`, `src/lib/ai/assistant.ts`) — tanya-jawab atas
+   data kantor. Model hanya memakai *tools* baca-saja di
+   `src/lib/ai/assistantTools.ts` (ringkasan kantor, daftar job, detail job,
+   tenggat, tugas saya, cari klien, pembayaran, kunjungan). Tiap tool punya
+   permission; tool yang user tidak berhak **tidak dikirim ke model** dan tetap
+   ditolak bila dipanggil. Riwayat obrolan hanya di browser (sessionStorage);
+   pertanyaan (bukan jawaban) dicatat di audit log.
+
+Klien API ditulis dengan `fetch` bawaan (`src/lib/ai/client.ts`), tanpa SDK.
+
 ## Catatan penting
 
 - Semua authorization dicek **server-side** lewat `assertPermission()` — jangan hanya mengandalkan sembunyi tombol di UI saat menambah fitur baru.

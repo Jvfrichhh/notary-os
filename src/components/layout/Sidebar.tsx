@@ -17,6 +17,7 @@ import {
   Wallet,
   BarChart3,
   Shield,
+  Sparkles,
   FileCheck2,
   Stamp,
   ScrollText,
@@ -40,7 +41,8 @@ const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
   scroll: ScrollText,
   wallet: Wallet,
   "bar-chart": BarChart3,
-  shield: Shield
+  shield: Shield,
+  sparkles: Sparkles
 };
 
 interface SidebarProps {

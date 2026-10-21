@@ -1,0 +1,238 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { Download, Plus, Save, Trash2 } from "lucide-react";
+import { saveDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
+import { PERSON_FIELDS, type DeedData, type FieldDef, type Person, type SectionDef } from "@/lib/deeds/schema";
+
+const inputCls =
+  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
+
+type Obj = Record<string, unknown>;
+const asObj = (v: unknown): Obj => (v && typeof v === "object" && !Array.isArray(v) ? (v as Obj) : {});
+const asList = (v: unknown): Obj[] => (Array.isArray(v) ? (v as Obj[]) : []);
+const asStr = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+
+/** Format ribuan saat mengetik nominal uang (disimpan sebagai digit saja). */
+const moneyDisplay = (v: string) => (v ? v.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "");
+
+function PersonFields({ value, onChange }: { value: Person; onChange: (p: Person) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {PERSON_FIELDS.map((f) => {
+        const v = asStr(value[f.key]);
+        const wide = f.key === "nama" || f.key === "alamat";
+        return (
+          <label key={f.key} className={wide ? "col-span-2" : ""}>
+            <span className="mb-0.5 block text-[11px] text-muted-foreground">{f.label}</span>
+            {f.kind === "select" ? (
+              <select value={v} onChange={(e) => onChange({ ...value, [f.key]: e.target.value })} className={inputCls}>
+                <option value="">—</option>
+                {f.options!.map((o) => (
+                  <option key={o}>{o}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={f.kind === "date" ? "date" : "text"}
+                value={v}
+                placeholder={f.placeholder}
+                onChange={(e) => onChange({ ...value, [f.key]: e.target.value })}
+                className={inputCls}
+              />
+            )}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function Field({ def, value, onChange }: { def: FieldDef; value: unknown; onChange: (v: unknown) => void }) {
+  if (def.kind === "person") {
+    return (
+      <div className="sm:col-span-2">
+        <p className="mb-1 text-sm font-medium text-foreground">{def.label}</p>
+        <PersonFields value={asObj(value) as Person} onChange={onChange} />
+      </div>
+    );
+  }
+  if (def.kind === "list") {
+    const items = asList(value);
+    const min = def.min ?? 0;
+    const max = def.max ?? 20;
+    return (
+      <div className="space-y-3 sm:col-span-2">
+        {def.help && <p className="text-xs text-muted-foreground">{def.help}</p>}
+        {items.map((item, i) => (
+          <div key={i} className="rounded-md border border-border p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold text-foreground">
+                {def.itemLabel} {i + 1}
+              </p>
+              {items.length > min && (
+                <button
+                  type="button"
+                  onClick={() => onChange(items.filter((_, j) => j !== i))}
+                  className="inline-flex items-center gap-1 text-xs text-status-overdue hover:underline"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Hapus
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {def.fields.map((f) => (
+                <Field
+                  key={f.key}
+                  def={f}
+                  value={item[f.key]}
+                  onChange={(v) => onChange(items.map((it, j) => (j === i ? { ...it, [f.key]: v } : it)))}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+        {items.length < max && (
+          <button
+            type="button"
+            onClick={() => onChange([...items, {}])}
+            className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+          >
+            <Plus className="h-3.5 w-3.5" /> Tambah {def.itemLabel.toLowerCase()}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const v = asStr(value);
+  const wide = def.kind === "textarea" || ("wide" in def && def.wide);
+  return (
+    <label className={wide ? "sm:col-span-2" : ""}>
+      <span className="mb-1 block text-sm font-medium text-foreground">{def.label}</span>
+      {def.kind === "select" ? (
+        <select value={v || def.default || ""} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+          {def.options.map((o) => (
+            <option key={o}>{o}</option>
+          ))}
+        </select>
+      ) : def.kind === "textarea" ? (
+        <textarea rows={4} value={v} placeholder={def.placeholder} onChange={(e) => onChange(e.target.value)} className={inputCls} />
+      ) : def.kind === "money" ? (
+        <input
+          inputMode="numeric"
+          value={moneyDisplay(v || def.default || "")}
+          placeholder="0"
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+          className={inputCls}
+        />
+      ) : (
+        <input
+          type={def.kind === "date" ? "date" : def.kind === "time" ? "time" : def.kind === "number" ? "number" : "text"}
+          value={v || ("default" in def ? def.default ?? "" : "")}
+          placeholder={"placeholder" in def ? def.placeholder : undefined}
+          onChange={(e) => onChange(e.target.value)}
+          className={inputCls}
+        />
+      )}
+      {"help" in def && def.help && <span className="mt-0.5 block text-xs text-muted-foreground">{def.help}</span>}
+    </label>
+  );
+}
+
+/**
+ * Form isian draft akta. Data disimpan sebagai JSON di deed_drafts; tombol
+ * unduh menyimpan dulu lalu mengunduh .docx minuta/salinan dari server.
+ */
+export function DeedForm({
+  draftId,
+  sections,
+  initialData,
+  canEdit
+}: {
+  draftId: string;
+  sections: SectionDef[];
+  initialData: DeedData;
+  canEdit: boolean;
+}) {
+  const [data, setData] = useState<DeedData>(() => {
+    // Daftar berulang tampil minimal sejumlah `min` item.
+    const d: DeedData = { ...initialData };
+    for (const s of sections)
+      for (const f of s.fields)
+        if (f.kind === "list" && asList(d[f.key]).length < (f.min ?? 0)) {
+          d[f.key] = [...asList(d[f.key]), ...Array.from({ length: (f.min ?? 0) - asList(d[f.key]).length }, () => ({}))];
+        }
+    return d;
+  });
+  const [status, setStatus] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const set = (key: string, v: unknown) => {
+    setData((d) => ({ ...d, [key]: v }));
+    setDirty(true);
+  };
+
+  const save = (then?: () => void) =>
+    startTransition(async () => {
+      const res = await saveDeedDraft(draftId, JSON.stringify(data));
+      if (res.ok) {
+        setDirty(false);
+        setStatus(`Tersimpan ${new Date(res.savedAt!).toLocaleTimeString("id-ID")}`);
+        then?.();
+      } else setStatus(res.error ?? "Gagal menyimpan.");
+    });
+
+  const download = (variant: "minuta" | "salinan") => {
+    const go = () => (window.location.href = `/api/deeds/${draftId}/${variant}`);
+    if (canEdit && dirty) save(go);
+    else go();
+  };
+
+  return (
+    <div className="space-y-6">
+      {sections.map((s) => (
+        <fieldset key={s.title} disabled={!canEdit} className="space-y-3 rounded-lg border border-border bg-background p-5 shadow-sm">
+          <legend className="px-1 text-sm font-semibold text-foreground">{s.title}</legend>
+          {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {s.fields.map((f) => (
+              <Field key={f.key} def={f} value={data[f.key]} onChange={(v) => set(f.key, v)} />
+            ))}
+          </div>
+        </fieldset>
+      ))}
+
+      <div className="sticky bottom-0 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background/95 p-3 shadow-sm backdrop-blur">
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => save()}
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
+            <Save className="h-4 w-4" /> {pending ? "Menyimpan..." : "Simpan"}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => download("minuta")}
+          disabled={pending}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+        >
+          <Download className="h-4 w-4" /> Unduh Minuta (.docx)
+        </button>
+        <button
+          type="button"
+          onClick={() => download("salinan")}
+          disabled={pending}
+          className="inline-flex items-center gap-1.5 rounded-md border border-status-overdue/50 px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10 disabled:opacity-60"
+        >
+          <Download className="h-4 w-4" /> Unduh Salinan (.docx)
+        </button>
+        <span className="text-xs text-muted-foreground">{dirty ? "Ada perubahan belum disimpan" : status}</span>
+      </div>
+    </div>
+  );
+}

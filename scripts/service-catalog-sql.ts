@@ -5,9 +5,9 @@
  *  - service_templates: hanya dibuat bila jenis layanan itu BELUM punya
  *    template (template yang sudah disesuaikan kantor tidak ditimpa).
  *
- * Jalankan:  node --experimental-strip-types scripts/service-catalog-sql.ts > catalog.sql
+ * Jalankan:  npx tsx scripts/service-catalog-sql.ts > catalog.sql
  */
-import { SERVICE_CATALOG } from "../src/lib/serviceCatalog.ts";
+import { SERVICE_CATALOG } from "../src/lib/serviceCatalog";
 
 const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
 const lines: string[] = ["BEGIN;"];

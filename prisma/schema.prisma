@@ -332,6 +332,7 @@ model Job {
   wasiat       Wasiat[]
   payments     Payment[]
   appointments Appointment[]
+  deedDrafts   DeedDraft[]
 
   @@index([status])
   @@index([deadline])
@@ -749,4 +750,22 @@ model RepertoriumCounter {
   value Int @default(0)
 
   @@map("repertorium_counters")
+}
+
+/// Draft akta yang dibuat dari template (lib/deeds). Isian disimpan sebagai
+/// JSON; file .docx minuta/salinan dihasilkan ulang setiap diunduh.
+model DeedDraft {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  templateKey String
+  title       String?
+  data        Json
+  createdById String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([jobId])
+  @@map("deed_drafts")
 }

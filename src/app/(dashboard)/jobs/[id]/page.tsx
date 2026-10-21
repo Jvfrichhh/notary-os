@@ -19,6 +19,10 @@ import { DocumentAiPanel } from "@/components/documents/DocumentAiPanel";
 import { toAnalysisView } from "@/lib/ai/analysisView";
 import { latestAnalysisFor } from "@/lib/ai/documentAnalysis";
 import { isAiEnabled } from "@/lib/ai/client";
+import { deedTemplateOptions } from "@/lib/deeds/registry";
+import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
+import { createDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
+import { formatDateTime as fmtDeedTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +54,7 @@ export default async function JobDetailPage({
       notary: true,
       visit: true,
       tasks: { orderBy: { createdAt: "asc" } },
+      deedDrafts: { orderBy: { updatedAt: "desc" }, select: { id: true, templateKey: true, title: true, updatedAt: true } },
       checklists: {
         include: {
           items: {
@@ -223,6 +228,57 @@ export default async function JobDetailPage({
                   ))}
               </div>
             )}
+          </Card>
+
+          {/* Draft Akta */}
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">Draft Akta ({job.deedDrafts.length})</h2>
+            {job.deedDrafts.length > 0 && (
+              <ul className="mb-3 divide-y divide-border text-sm">
+                {job.deedDrafts.map((d) => (
+                  <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                    <Link href={`/jobs/${job.id}/deeds/${d.id}`} className="font-medium text-primary hover:underline">
+                      {d.title ?? d.templateKey}
+                    </Link>
+                    <span className="flex items-center gap-3 text-xs text-muted-foreground">
+                      diperbarui {fmtDeedTime(d.updatedAt)}
+                      <a href={`/api/deeds/${d.id}/minuta`} className="text-foreground hover:underline">Minuta</a>
+                      <a href={`/api/deeds/${d.id}/salinan`} className="text-status-overdue hover:underline">Salinan</a>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canEdit ? (
+              (() => {
+                const options = deedTemplateOptions();
+                const suggested = SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.deedKey;
+                if (options.length === 0) return null;
+                return (
+                  <form action={createDeedDraft.bind(null, job.id)} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                      name="templateKey"
+                      defaultValue={suggested && options.some((o) => o.key === suggested) ? suggested : options[0].key}
+                      className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    >
+                      {options.map((o) => (
+                        <option key={o.key} value={o.key}>
+                          {o.title}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                      Buat Draft Akta
+                    </button>
+                  </form>
+                );
+              })()
+            ) : (
+              job.deedDrafts.length === 0 && <p className="text-sm text-muted-foreground">Belum ada draft akta.</p>
+            )}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Data klien terisi otomatis; hasil berupa Word format akta kantor (Minuta hitam, Salinan merah).
+            </p>
           </Card>
 
           {/* Tasks */}

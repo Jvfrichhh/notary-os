@@ -265,6 +265,19 @@ export function paginate(
     }
     pushBody(l);
   });
+
+  // Penutup terlalu panjang untuk dipindah utuh, dan blok tanda tangan tidak
+  // muat di sisa halaman: bawa beberapa baris terakhir penutup ke halaman
+  // berikutnya bersama blok (blok tidak boleh tertinggal sendirian/terpotong),
+  // lalu sisa halaman sekarang ditutup garis penuh.
+  const minSig = Math.min(minSigLines, sig.length);
+  const CARRY = 2;
+  if (LINES_PER_PAGE - lineOnPage < minSig && minSig + CARRY <= LINES_PER_PAGE && lineOnPage > CARRY + 1) {
+    const carried = out.splice(out.length - CARRY, CARRY).map((l) => ({ ...l, markTop: false, markBottom: false, pageBreakBefore: false }));
+    lineOnPage -= CARRY;
+    while (lineOnPage < LINES_PER_PAGE) pushBody(fullDashLine());
+    carried.forEach(pushBody);
+  }
   out[out.length - 1].markBottom = true;
 
   // Blok tanda tangan mengalir setelah badan akta.

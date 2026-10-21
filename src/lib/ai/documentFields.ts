@@ -35,6 +35,14 @@ export interface ExtractedFields {
   birthPlace?: string | null;
   birthDate?: string | null; // YYYY-MM-DD jika terbaca
   address?: string | null;
+  /** Rincian alamat KTP (untuk komparisi akta). */
+  rt?: string | null;
+  rw?: string | null;
+  kelurahan?: string | null;
+  kecamatan?: string | null;
+  occupation?: string | null;
+  gender?: string | null;
+  nationality?: string | null;
   city?: string | null;
   npwp?: string | null;
   companyName?: string | null;

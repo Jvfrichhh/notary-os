@@ -59,7 +59,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
   // AuditLog juga menyimpan previousValue/newValue untuk aksi internal lain
   // (penugasan PIC, catatan, dll) -- itu TIDAK ditampilkan ke klien.
   const statusLogs = await prisma.auditLog.findMany({
-    where: { entityType: "Job", entityId: job.id, action: "job_status_changed" },
+    where: { entityType: "Job", entityId: job.id, action: { in: ["job_status_changed", "job_status_auto"] } },
     orderBy: { timestamp: "asc" },
     select: { id: true, timestamp: true, newValue: true }
   });
@@ -137,7 +137,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
           <h2 className="text-sm font-semibold text-foreground">Dokumen yang Diperlukan</h2>
           {checklistItems.length > 0 && (
             <span className="text-xs text-muted-foreground">
-              {checklistItems.length - missingRequired.length}/{checklistItems.length} lengkap
+              {checklistItems.filter((i) => i.status === "COMPLETE").length}/{checklistItems.length} lengkap
             </span>
           )}
         </div>

@@ -85,7 +85,7 @@ export default async function NotaryRecordPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Notary Record</h1>
+          <h1 className="text-xl font-semibold text-foreground">Repertorium & Klapper</h1>
           <p className="text-sm text-muted-foreground">Repertorium dan Klapper — dua tampilan dari data yang sama</p>
         </div>
         {canCreate && (

@@ -5,7 +5,7 @@ import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatCurrency, formatDate, formatStatusLabel } from "@/lib/format";
+import { classifyDeadline, formatCurrency, formatDate, formatDateJakarta, formatStatusLabel, toDateInput } from "@/lib/format";
 import { getValidNextStatuses } from "@/lib/jobStatus";
 import {
   addJobTask,
@@ -27,6 +27,7 @@ import { deedTemplateOptions } from "@/lib/deeds/registry";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { formatDateTime as fmtDeedTime } from "@/lib/format";
+import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function JobDetailPage({
   searchParams
 }: {
   params: { id: string };
-  searchParams?: { created?: string };
+  searchParams?: { created?: string; ok?: string; err?: string; portal?: string };
 }) {
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
@@ -56,8 +57,6 @@ export default async function JobDetailPage({
       client: true,
       serviceType: true,
       pic: true,
-      assistant: true,
-      reviewer: true,
       notary: true,
       tasks: { orderBy: { createdAt: "asc" } },
       deedDrafts: {
@@ -86,10 +85,18 @@ export default async function JobDetailPage({
   });
 
   const NOTARY_ONLY = ["READY_FOR_SIGNING", "COMPLETED", "CANCELLED"];
-  // Pengajuan/persetujuan punya tombol sendiri; dropdown hanya untuk status lain.
-  const nextStatuses = getValidNextStatuses(job.status).filter(
-    (s) => s !== "REVIEW" && (isNotary || !NOTARY_ONLY.includes(s)) && !(job.status === "REVIEW" && s === "IN_PROGRESS")
-  );
+  // Pengajuan/persetujuan/revisi punya tombol sendiri; dropdown hanya untuk status lain.
+  // Staf tidak bisa menarik pekerjaan yang sedang diperiksa / sudah disetujui Notaris.
+  const lockedForStaff = !isNotary && (job.status === "REVIEW" || job.status === "READY_FOR_SIGNING");
+  const nextStatuses = lockedForStaff
+    ? []
+    : getValidNextStatuses(job.status).filter(
+        (s) =>
+          s !== "REVIEW" &&
+          s !== "READY_FOR_SIGNING" &&
+          (isNotary || !NOTARY_ONLY.includes(s)) &&
+          !((job.status === "REVIEW" || job.status === "READY_FOR_SIGNING") && s === "IN_PROGRESS")
+      );
   const isFinal = job.status === "COMPLETED" || job.status === "CANCELLED";
   const staffOptions = isNotary && !isFinal
     ? await prisma.user.findMany({
@@ -98,8 +105,22 @@ export default async function JobDetailPage({
         orderBy: { name: "asc" }
       })
     : [];
-  const dateInput = (d: Date | null) =>
-    d ? new Date(d.getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10) : "";
+  const dateInput = toDateInput;
+  const openDrafts = job.deedDrafts.filter((d) => !d.deed).length;
+
+  // Riwayat pekerjaan dari audit log (status, draft akta, pengesahan).
+  const timeline = await prisma.auditLog.findMany({
+    where: {
+      OR: [
+        { entityType: "Job", entityId: job.id },
+        { entityType: "DeedDraft", entityId: { in: job.deedDrafts.map((d) => d.id) } },
+        { entityType: "Deed", entityId: { in: job.deeds.map((d) => d.id) } }
+      ]
+    },
+    orderBy: { timestamp: "desc" },
+    take: 30,
+    select: { id: true, action: true, timestamp: true, newValue: true, user: { select: { name: true } } }
+  });
 
   // Unggahan klien yang bisa dianalisis AI: analisis terbaru per dokumen.
   const clientUploadIds = job.checklists
@@ -110,8 +131,34 @@ export default async function JobDetailPage({
   const totalChecklistItems = job.checklists.flatMap((c) => c.items).length;
   const completedChecklistItems = job.checklists.flatMap((c) => c.items).filter((i) => i.status === "COMPLETE").length;
 
+  const OK_MSG: Record<string, string> = {
+    submitted: "Pekerjaan diajukan ke Notaris. Notaris sudah diberi tahu.",
+    approved: "Pekerjaan disetujui; PIC diberi tahu untuk menyiapkan penandatanganan.",
+    revision: "Permintaan revisi terkirim ke PIC.",
+    edited: "Perubahan pekerjaan tersimpan."
+  };
+  const ERR_MSG: Record<string, string> = {
+    nodraft: "Buat dan simpan draft akta dulu sebelum mengajukan ke Notaris.",
+    submit: "Pekerjaan tidak bisa diajukan dari status sekarang.",
+    state: "Status pekerjaan sudah berubah; muat ulang halaman.",
+    note: "Tulis catatan revisi minimal 3 huruf.",
+    edit: "Isian tidak valid; periksa kembali.",
+    pic: "Staf yang dipilih tidak aktif."
+  };
+  const flashOk = searchParams?.ok ? OK_MSG[searchParams.ok] : undefined;
+  const flashErr = searchParams?.err ? ERR_MSG[searchParams.err] : undefined;
+
   return (
     <div className="space-y-6">
+      {flashOk && (
+        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">{flashOk}</div>
+      )}
+      {flashErr && (
+        <div role="alert" className="rounded-md border border-status-overdue/40 bg-status-overdue/10 px-3 py-2 text-sm text-foreground">
+          {flashErr}
+        </div>
+      )}
+      {searchParams?.portal && <PortalAccountBanner status={searchParams.portal} />}
       {(searchParams?.created === "client" || searchParams?.created === "job") && (
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
           {searchParams.created === "client" ? `Klien ${job.client.clientNumber} dan pekerjaan` : "Pekerjaan"} {job.jobNumber} berhasil dibuat.
@@ -128,8 +175,12 @@ export default async function JobDetailPage({
             {job.client.fullName} · {job.client.clientNumber}
           </Link>
         </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatDate(job.deadline)} />
+        <div className="flex flex-wrap items-center gap-2">
+          {job.deadline ? (
+            <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={`Target ${formatDate(job.deadline)}`} />
+          ) : (
+            <span className="text-xs text-muted-foreground">Tanpa target</span>
+          )}
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
             {formatStatusLabel(job.status)}
           </span>
@@ -142,14 +193,14 @@ export default async function JobDetailPage({
           {/* Info */}
           <Card>
             <h2 className="mb-3 text-sm font-semibold text-foreground">Informasi Pekerjaan</h2>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
               <Info label="Jenis Layanan" value={job.serviceType?.name} />
+              <Info label="Status" value={formatStatusLabel(job.status)} />
               <Info label="Prioritas" value={formatStatusLabel(job.priority)} />
-              <Info label="Deadline" value={formatDate(job.deadline)} />
-              <Info label="Mulai" value={formatDate(job.startDate)} />
-              <Info label="Selesai" value={formatDate(job.completionDate)} />
-              <Info label="PIC" value={job.pic?.name} />
-              <Info label="Reviewer" value={job.reviewer?.name} />
+              <Info label="Target" value={formatDate(job.deadline)} />
+              <Info label="Mulai" value={formatDateJakarta(job.startDate)} />
+              <Info label="Selesai" value={formatDateJakarta(job.completionDate)} />
+              <Info label="Staf (PIC)" value={job.pic?.name} />
               <Info label="Notaris" value={job.notary?.name} />
             </dl>
             {job.notes && <p className="mt-3 whitespace-pre-line rounded-md bg-muted p-3 text-sm text-muted-foreground">{job.notes}</p>}
@@ -320,7 +371,8 @@ export default async function JobDetailPage({
                 const options = deedTemplateOptions();
                 const suggested = SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.deedKey;
                 if (options.length === 0) return null;
-                return (
+                if (isFinal) return null;
+                const form = (
                   <form action={createDeedDraft.bind(null, job.id)} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <select
                       name="templateKey"
@@ -338,9 +390,23 @@ export default async function JobDetailPage({
                     </button>
                   </form>
                 );
+                // Sudah ada draft: pembuatan draft lain disembunyikan agar tidak terbuat ganda.
+                return job.deedDrafts.length === 0 ? (
+                  form
+                ) : (
+                  <details>
+                    <summary className="cursor-pointer text-xs font-medium text-primary">+ Draft akta lain untuk pekerjaan ini</summary>
+                    <div className="mt-2">{form}</div>
+                  </details>
+                );
               })()
             ) : (
               job.deedDrafts.length === 0 && <p className="text-sm text-muted-foreground">Belum ada draft akta.</p>
+            )}
+            {job.deeds.length > 0 && openDrafts > 0 && !isFinal && (
+              <p className="mt-2 rounded-md bg-status-due-soon/10 px-3 py-2 text-xs text-foreground">
+                Masih ada {openDrafts} draft belum disahkan. Pekerjaan selesai otomatis setelah semua draft disahkan; hapus draft yang tidak dipakai.
+              </p>
             )}
             <p className="mt-2 text-xs text-muted-foreground">
               Data klien terisi otomatis; hasil berupa Word format akta kantor (Minuta hitam, Salinan merah).
@@ -349,7 +415,7 @@ export default async function JobDetailPage({
 
           {/* Tasks */}
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Tasks ({job.tasks.length})</h2>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">Tugas ({job.tasks.length})</h2>
             <div className="space-y-1.5">
               {job.tasks.map((task) => (
                 <form
@@ -373,7 +439,7 @@ export default async function JobDetailPage({
                   </button>
                 </form>
               ))}
-              {job.tasks.length === 0 && <p className="text-sm text-muted-foreground">Belum ada task.</p>}
+              {job.tasks.length === 0 && <p className="text-sm text-muted-foreground">Belum ada tugas.</p>}
             </div>
 
             {canEdit && (
@@ -381,7 +447,7 @@ export default async function JobDetailPage({
                 <input
                   name="title"
                   required
-                  placeholder="Tambah task baru..."
+                  placeholder="Tambah tugas baru..."
                   className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
@@ -424,9 +490,9 @@ export default async function JobDetailPage({
             <Card>
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-foreground">Akta ({job.deeds.length})</h2>
-                {canEditArchive && (
+                {canEditArchive && job.deedDrafts.length === 0 && (
                   <Link href={`/archive/deed/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
-                    + Tambah Akta
+                    + Catat akta manual
                   </Link>
                 )}
               </div>
@@ -487,6 +553,8 @@ export default async function JobDetailPage({
                     </form>
                   )}
                 </div>
+              ) : isNotary ? (
+                <p className="text-sm text-muted-foreground">Menunggu staf mengajukan draft untuk Anda periksa.</p>
               ) : canEdit ? (
                 <form action={submitJobForReview.bind(null, job.id)} className="space-y-2">
                   <p className="text-sm text-muted-foreground">Draft sudah siap? Ajukan ke Notaris untuk diperiksa.</p>
@@ -525,7 +593,7 @@ export default async function JobDetailPage({
                   ))}
                 </select>
                 <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                  Update Status
+                  Simpan Status
                 </button>
               </form>
             ) : canEdit ? (
@@ -569,17 +637,53 @@ export default async function JobDetailPage({
             </Card>
           )}
 
-          {/* Timeline placeholder */}
+          {/* Riwayat */}
           <Card>
-            <h2 className="mb-2 text-sm font-semibold text-foreground">Timeline</h2>
-            <p className="text-sm text-muted-foreground">
-              Activity Timeline otomatis (Blueprint §21) akan tampil di sini setelah Audit Log UI dibangun (Phase 5).
-            </p>
+            <h2 className="mb-2 text-sm font-semibold text-foreground">Riwayat</h2>
+            {timeline.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Belum ada riwayat.</p>
+            ) : (
+              <ol className="space-y-2 text-sm">
+                {timeline.map((t) => (
+                  <li key={t.id} className="border-l-2 border-border pl-3">
+                    <p className="text-foreground">{timelineLabel(t.action, t.newValue)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {fmtDeedTime(t.timestamp)} · {t.user?.name ?? "Sistem"}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
           </Card>
         </div>
       </div>
     </div>
   );
+}
+
+/** Kalimat riwayat yang mudah dibaca dari entri audit log. */
+function timelineLabel(action: string, value: unknown): string {
+  const v = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const status = typeof v.status === "string" ? formatStatusLabel(v.status) : "";
+  const reason = typeof v.reason === "string" ? v.reason : "";
+  switch (action) {
+    case "job_created":
+      return "Pekerjaan dibuat";
+    case "job_status_changed":
+      return `Status diubah menjadi ${status}`;
+    case "job_status_auto":
+      return `Status otomatis: ${status}${reason ? ` (${reason})` : ""}`;
+    case "job_updated":
+      return "Data pekerjaan diubah";
+    case "deed_draft_created":
+      return "Draft akta dibuat";
+    case "deed_draft_deleted":
+      return "Draft akta dihapus";
+    case "deed_draft_finalized":
+      return `Akta disahkan${typeof v.deedNumber === "string" ? ` · No. ${v.deedNumber}` : ""}`;
+    default:
+      return action.replace(/_/g, " ");
+  }
 }
 
 const fieldCls =

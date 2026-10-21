@@ -8,6 +8,8 @@ import { assertPermission, PERMISSIONS, userHasPermission } from "@/lib/permissi
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
 import { createJobWithTemplate } from "@/lib/jobCreation";
+import { fromDateInput } from "@/lib/format";
+import { createPortalAccountForNewClient } from "@/lib/portalAccounts";
 
 const clientSchema = z.object({
   fullName: z.string().min(2, "Nama minimal 2 karakter"),
@@ -57,7 +59,7 @@ async function createJobFromForm(clientId: string, service: { id: string; name: 
       clientId,
       serviceTypeId: service.id,
       description: description.slice(0, 500),
-      deadline: deadlineRaw ? new Date(`${deadlineRaw}T00:00:00+07:00`) : null,
+      deadline: fromDateInput(deadlineRaw),
       picId: picId || null,
       priority: (["LOW", "NORMAL", "HIGH", "URGENT"].includes(priority) ? priority : "NORMAL") as "LOW" | "NORMAL" | "HIGH" | "URGENT",
       notaryId: userId
@@ -207,10 +209,30 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
     revalidatePath("/jobs");
     revalidatePath("/deeds");
     revalidatePath("/dashboard");
-    redirect(`/jobs/${jobId}?created=client`);
+    const portal = await maybeCreatePortal(client, formData, user.id, `/jobs/${jobId}`);
+    redirect(`/jobs/${jobId}?created=client${portal}`);
   }
 
-  redirect(`/clients/${client.id}`);
+  const portal = await maybeCreatePortal(client, formData, user.id, `/clients/${client.id}`);
+  redirect(`/clients/${client.id}${portal ? `?${portal.slice(1)}` : ""}`);
+}
+
+/** Centang "Buatkan akses portal" di Tambah Klien -> akun portal langsung dibuat. */
+async function maybeCreatePortal(
+  client: { id: string; email: string | null; fullName: string },
+  formData: FormData,
+  userId: string,
+  showOnPath: string
+): Promise<string> {
+  if (formData.get("withPortal") !== "on" || !client.email) return "";
+  if (!(await userHasPermission(userId, PERMISSIONS.EDIT_CLIENTS))) return "";
+  try {
+    const res = await createPortalAccountForNewClient({ clientId: client.id, email: client.email, name: client.fullName, userId, showOnPath });
+    return res.ok ? "&portal=created" : "&portal=taken";
+  } catch (err) {
+    console.error("[clients] gagal membuat akses portal", err);
+    return "&portal=failed";
+  }
 }
 
 export async function updateClient(

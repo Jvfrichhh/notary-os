@@ -95,7 +95,7 @@ export function RepertoriumForm({ action, deeds, lockedDeedId, cancelHref }: Rep
             <p className="text-sm text-foreground">{selectedDeed.deedDate}</p>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-xs text-muted-foreground">Client</p>
+            <p className="text-xs text-muted-foreground">Klien</p>
             <p className="text-sm text-foreground">{selectedDeed.clientName}</p>
           </div>
         </div>

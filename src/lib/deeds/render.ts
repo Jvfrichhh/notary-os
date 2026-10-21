@@ -2,13 +2,18 @@ import { blocksToLines, paginate } from "./layout";
 import { buildDocx, type Variant } from "./docx";
 import { tandaTanganMinuta, tandaTanganSalinan } from "./common";
 import type { DeedTemplate } from "./types";
-import type { DeedData, FieldDef } from "./schema";
+import { isFieldVisible, type DeedData, type FieldDef } from "./schema";
 import { sectionsFor } from "./registry";
 
 /** Isi nilai bawaan isian yang masih kosong (termasuk di dalam daftar berulang). */
 export function applyDefaults(fields: FieldDef[], data: DeedData): DeedData {
   const out: DeedData = { ...data };
   for (const f of fields) {
+    // Isian yang disembunyikan (jenis perubahan tidak dicentang) tidak dimuat dalam akta.
+    if (!isFieldVisible(f, data)) {
+      delete out[f.key];
+      continue;
+    }
     if (f.kind === "list") {
       const items = Array.isArray(out[f.key]) ? (out[f.key] as DeedData[]) : [];
       out[f.key] = items.map((it) => applyDefaults(f.fields, it ?? {}));

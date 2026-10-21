@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { deedTemplateOptions } from "@/lib/deeds/registry";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraftFromList } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
@@ -50,7 +50,7 @@ export default async function DeedsPage() {
         templateKey: true,
         updatedAt: true,
         deed: { select: { deedNumber: true } },
-        job: { select: { id: true, jobNumber: true, client: { select: { fullName: true } } } }
+        job: { select: { id: true, jobNumber: true, status: true, picId: true, client: { select: { fullName: true } } } }
       }
     }),
     canEdit
@@ -63,6 +63,24 @@ export default async function DeedsPage() {
       : Promise.resolve([])
   ]);
   const templates = deedTemplateOptions();
+
+  // Job yang terakhir dikembalikan Notaris untuk revisi (dan belum diajukan lagi).
+  const draftJobIds = Array.from(new Set(drafts.filter((d) => d.job.status === "IN_PROGRESS").map((d) => d.job.id)));
+  const lastSubmitOrRevision = draftJobIds.length
+    ? await prisma.auditLog.findMany({
+        where: { entityType: "Job", entityId: { in: draftJobIds }, action: "job_status_auto" },
+        orderBy: { timestamp: "desc" },
+        select: { entityId: true, newValue: true }
+      })
+    : [];
+  const revised = new Set<string>();
+  const seen = new Set<string>();
+  for (const l of lastSubmitOrRevision) {
+    if (seen.has(l.entityId)) continue;
+    const v = (l.newValue ?? {}) as { status?: string; reason?: string };
+    if (v.status === "IN_PROGRESS" && v.reason?.startsWith("revisi:")) revised.add(l.entityId);
+    if (v.status === "IN_PROGRESS" || v.status === "REVIEW") seen.add(l.entityId);
+  }
 
   return (
     <div className="space-y-6">
@@ -98,7 +116,7 @@ export default async function DeedsPage() {
                       {j.serviceType?.name ?? "Layanan belum dipilih"}
                       {j.description ? ` · ${j.description}` : ""} · PIC: {j.pic?.name ?? "belum ditentukan"}
                       {mine ? " (Anda)" : ""} · masuk {formatDateTime(j.createdAt)}
-                      {j.deadline ? ` · target ${formatDateTime(j.deadline)}` : ""}
+                      {j.deadline ? ` · target ${formatDate(j.deadline)}` : ""}
                     </p>
                   </div>
                   {canEdit &&
@@ -178,13 +196,20 @@ export default async function DeedsPage() {
                   <Link href={`/jobs/${d.job.id}/deeds/${d.id}`} className="font-medium text-primary hover:underline">
                     {d.title ?? d.templateKey}
                   </Link>
-                  {d.deed ? (
-                    <span className="ml-2 rounded-full bg-status-on-track/10 px-2 py-0.5 text-[11px] font-medium text-status-on-track">
-                      Disahkan · Akta No. {d.deed.deedNumber}
-                    </span>
-                  ) : (
-                    <span className="ml-2 rounded-full bg-status-due-soon/10 px-2 py-0.5 text-[11px] font-medium text-status-due-soon">Draft</span>
-                  )}
+                  {(() => {
+                    // Posisi draft di alur: disahkan / disetujui / diperiksa / revisi / masih draft.
+                    const [label, cls] = d.deed
+                      ? [`Disahkan · Akta No. ${d.deed.deedNumber}`, "bg-status-on-track/10 text-status-on-track"]
+                      : d.job.status === "READY_FOR_SIGNING"
+                        ? ["Disetujui · siap tanda tangan", "bg-status-on-track/10 text-status-on-track"]
+                        : d.job.status === "REVIEW"
+                          ? ["Diperiksa Notaris", "bg-primary/10 text-primary"]
+                          : revised.has(d.job.id)
+                            ? ["Revisi diminta", "bg-status-overdue/10 text-status-overdue"]
+                            : ["Draft", "bg-status-due-soon/10 text-status-due-soon"];
+                    return <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}>{label}</span>;
+                  })()}
+                  {d.job.picId === user.id && <span className="ml-1 text-[11px] text-muted-foreground">(tugas Anda)</span>}
                   <p className="text-xs text-muted-foreground">
                     {d.job.jobNumber} · {d.job.client.fullName} · diperbarui {formatDateTime(d.updatedAt)}
                   </p>

@@ -125,11 +125,13 @@ const PERUBAHAN_SECTIONS: SectionDef[] = [
   },
   {
     title: "Isi Perubahan (isi yang berlaku saja)",
-    description: `Pilihan: ${PT_CHANGE_OPTIONS.join(", ")}. Bagian yang dikosongkan tidak dimuat dalam akta.`,
+    description: "Centang jenis perubahan; hanya isian yang relevan yang ditampilkan. Bagian yang dikosongkan tidak dimuat dalam akta.",
     fields: [
-      { kind: "text", key: "bidangBaru", label: "Maksud & tujuan baru (bila KBLI berubah)", wide: true },
-      { kind: "list", key: "kbliBaru", label: "KBLI baru", itemLabel: "KBLI", min: 0, max: 20, fields: [{ kind: "text", key: "kode", label: "Kode" }, { kind: "text", key: "judul", label: "Judul KBLI" }] },
+      { kind: "checks", key: "ptChanges", label: "Jenis perubahan", options: [...PT_CHANGE_OPTIONS] },
+      { kind: "text", key: "bidangBaru", label: "Maksud & tujuan baru (bila KBLI berubah)", wide: true, showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[0]] } },
+      { showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[0]] }, kind: "list", key: "kbliBaru", label: "KBLI baru", itemLabel: "KBLI", min: 0, max: 20, fields: [{ kind: "text", key: "kode", label: "Kode" }, { kind: "text", key: "judul", label: "Judul KBLI" }] },
       {
+        showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[1], PT_CHANGE_OPTIONS[2]] },
         kind: "list",
         key: "pengurusBaru",
         label: "Susunan Direksi & Dewan Komisaris baru",
@@ -141,10 +143,10 @@ const PERUBAHAN_SECTIONS: SectionDef[] = [
           { kind: "person", key: "orang", label: "Identitas" }
         ]
       },
-      { kind: "list", key: "peralihan", label: "Peralihan saham yang disetujui", itemLabel: "Peralihan", min: 0, max: 10, fields: [{ kind: "text", key: "dari", label: "Dari" }, { kind: "text", key: "kepada", label: "Kepada" }, { kind: "number", key: "jumlah", label: "Jumlah saham" }] },
-      { kind: "textarea", key: "perubahanModal", label: "Perubahan modal (rumusan Pasal 4 baru)", wide: true },
-      { kind: "text", key: "kedudukanBaru", label: "Tempat kedudukan baru", wide: true },
-      { kind: "text", key: "namaBaru", label: "Nama perseroan baru (tanpa 'PT')", wide: true }
+      { showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[3]] }, kind: "list", key: "peralihan", label: "Peralihan saham yang disetujui", itemLabel: "Peralihan", min: 0, max: 10, fields: [{ kind: "text", key: "dari", label: "Dari" }, { kind: "text", key: "kepada", label: "Kepada" }, { kind: "number", key: "jumlah", label: "Jumlah saham" }] },
+      { kind: "textarea", key: "perubahanModal", label: "Perubahan modal (rumusan Pasal 4 baru)", wide: true, showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[4]] } },
+      { kind: "text", key: "kedudukanBaru", label: "Tempat kedudukan baru", wide: true, showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[5]] } },
+      { kind: "text", key: "namaBaru", label: "Nama perseroan baru (tanpa 'PT')", wide: true, showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[6]] } }
     ]
   }
 ];
@@ -155,7 +157,12 @@ export const perubahanPt: DeedTemplate = {
   description: "Pernyataan keputusan RUPS/sirkuler: KBLI, direksi, komisaris, peralihan saham, modal, alamat, nama.",
   sections: PERUBAHAN_SECTIONS,
   signers: (d) => [person(d.penghadap)],
-  prefill: (ctx) => ({ penghadap: personFromClient(ctx.client), namaPt: ctx.client.companyName ?? "" }),
+  prefill: (ctx) => ({
+    penghadap: personFromClient(ctx.client),
+    namaPt: ctx.client.companyName ?? "",
+    // Jenis perubahan yang dipilih Notaris saat membuat pekerjaan.
+    ptChanges: ctx.job.ptChanges ?? []
+  }),
   notes: (d) => {
     const n = ["Perubahan nama, tempat kedudukan, maksud & tujuan, dan modal dasar memerlukan PERSETUJUAN Menteri; perubahan lain cukup DIBERITAHUKAN (Pasal 21 UUPT)."];
     if (!str(d.tanggalRapat)) n.push("Tanggal rapat/keputusan belum diisi.");

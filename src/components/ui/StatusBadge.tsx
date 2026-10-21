@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 type StatusTone = "overdue" | "due-today" | "due-soon" | "on-track" | "archived";
 
 const TONE_LABEL: Record<StatusTone, string> = {
-  overdue: "🔴 Overdue",
-  "due-today": "🟠 Due Today",
-  "due-soon": "🟡 Due Soon",
-  "on-track": "🟢 On Track",
-  archived: "Archived"
+  overdue: "🔴 Terlambat",
+  "due-today": "🟠 Hari ini",
+  "due-soon": "🟡 Segera",
+  "on-track": "🟢 Sesuai jadwal",
+  archived: "Arsip"
 };
 
 const TONE_CLASS: Record<StatusTone, string> = {

@@ -23,7 +23,7 @@ export default async function EditWasiatPage({ params }: { params: { id: string 
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold text-foreground">Edit Wasiat</h1>
+      <h1 className="text-xl font-semibold text-foreground">Ubah Wasiat</h1>
       <Card>
         <WasiatForm
           action={action}

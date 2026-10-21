@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
 import { issueUploadTicket, resolveUploadFromForm, type TicketResult } from "@/lib/upload/directUpload";
 import { writeAuditLog } from "@/lib/audit";
-import { createNotification } from "@/lib/notifications";
+import { notifyJobPeople } from "@/lib/jobAutomation";
 
 export interface PortalUploadState {
   error?: string;
@@ -141,15 +141,10 @@ export async function uploadChecklistDocument(
     }
   });
 
-  if (job.picId) {
-    await createNotification({
-      userId: job.picId,
-      type: "document",
-      message: `Klien ${principal.client.fullName} mengunggah "${item.label}" untuk ${job.jobNumber} — menunggu pemeriksaan.`,
-      relatedEntityType: "Job",
-      relatedEntityId: job.id
-    });
-  }
+  // PIC diberi tahu; job tanpa PIC -> Notaris yang diberi tahu.
+  await notifyJobPeople(job.id, `Klien ${principal.client.fullName} mengunggah "${item.label}" untuk ${job.jobNumber} — menunggu pemeriksaan.`, {
+    pic: true
+  });
 
   revalidatePath(`/portal/jobs/${job.id}`);
   revalidatePath("/portal");

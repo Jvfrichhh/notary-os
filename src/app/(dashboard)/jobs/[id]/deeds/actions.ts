@@ -11,6 +11,10 @@ import { writeAuditLog } from "@/lib/audit";
 import { getDeedTemplate } from "@/lib/deeds/registry";
 import { syncDraftToVault } from "@/lib/deeds/vault";
 import { autoSetJobStatus, notifyJobPeople } from "@/lib/jobAutomation";
+import { nextDeedNumber } from "@/lib/deeds/numbering";
+import { PT_CHANGE_OPTIONS } from "@/lib/serviceCatalog";
+import type { Person } from "@/lib/deeds/schema";
+import type { ExtractedFields } from "@/lib/ai/documentFields";
 
 /** Perbandingan isi JSON tanpa peduli urutan key (jsonb Postgres mengurutkan ulang key). */
 function sameJson(a: unknown, b: unknown): boolean {
@@ -27,6 +31,54 @@ function sameJson(a: unknown, b: unknown): boolean {
 }
 
 const MAX_DATA_BYTES = 200_000;
+
+/** Jenis perubahan PT yang dipilih saat membuat pekerjaan (tersimpan di keterangan job). */
+function parsePtChanges(description: string | null): string[] {
+  const m = /Perubahan: (.+)$/.exec(description ?? "");
+  if (!m) return [];
+  const opts: readonly string[] = PT_CHANGE_OPTIONS;
+  return m[1].split(", ").filter((o) => opts.includes(o));
+}
+
+/** Identitas dari hasil baca KTP klien oleh AI (analisis terbaru yang NIK-nya cocok). */
+async function ktpOfClient(clientId: string, nik: string | null): Promise<Partial<Person>> {
+  const rows = await prisma.documentAiAnalysis.findMany({
+    where: { documentType: "KTP", document: { clientId, status: "ACTIVE" } },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: { extractedFields: true }
+  });
+  for (const r of rows) {
+    const f = (r.extractedFields ?? {}) as ExtractedFields;
+    if (nik && f.nik && f.nik !== nik.replace(/\D/g, "")) continue; // KTP orang lain
+    const sapaan = f.gender === "LAKI-LAKI" ? "Tuan" : f.gender === "PEREMPUAN" ? "Nyonya" : undefined;
+    const p: Partial<Person> = {
+      sapaan,
+      tempatLahir: f.birthPlace ?? undefined,
+      tanggalLahir: f.birthDate && /^\d{4}-\d{2}-\d{2}$/.test(f.birthDate) ? f.birthDate : undefined,
+      pekerjaan: f.occupation ?? undefined,
+      kewarganegaraan: f.nationality && /wni/i.test(f.nationality) ? "Indonesia" : f.nationality ?? undefined,
+      rt: f.rt ?? undefined,
+      rw: f.rw ?? undefined,
+      kelurahan: f.kelurahan ? `Kelurahan ${f.kelurahan.replace(/^(kel(urahan)?|desa)\.?\s+/i, "")}` : undefined,
+      kecamatan: f.kecamatan ?? undefined,
+      nik: f.nik ?? undefined
+    };
+    return Object.fromEntries(Object.entries(p).filter(([, v]) => v)) as Partial<Person>;
+  }
+  return {};
+}
+
+/** Saksi dari draft terakhir yang sudah mengisinya. */
+async function lastWitnesses(): Promise<Record<string, unknown>> {
+  const recent = await prisma.deedDraft.findMany({ orderBy: { updatedAt: "desc" }, take: 20, select: { data: true } });
+  for (const r of recent) {
+    const d = (r.data ?? {}) as Record<string, unknown>;
+    const s1 = d.saksi1 as Person | undefined;
+    if (s1?.nama) return { saksi1: d.saksi1, saksi2: d.saksi2 };
+  }
+  return {};
+}
 
 /** Buat draft akta baru dari halaman Draft Akta (job dipilih di form). */
 export async function createDeedDraftFromList(formData: FormData) {
@@ -45,12 +97,16 @@ export async function createDeedDraft(jobId: string, formData: FormData) {
 
   const job = await prisma.job.findUnique({
     where: { id: jobId },
-    select: { id: true, description: true, client: { select: { fullName: true, nik: true, address: true, city: true, companyName: true, clientType: true } } }
+    select: { id: true, clientId: true, description: true, client: { select: { fullName: true, nik: true, address: true, city: true, companyName: true, clientType: true } } }
   });
   if (!job) return;
 
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
-  const data = { tanggalAkta: today, ...(template.prefill?.({ client: job.client, job: { description: job.description } }) ?? {}) };
+  const [ktp, saksi] = await Promise.all([ktpOfClient(job.clientId, job.client.nik), lastWitnesses()]);
+  const ptChanges = parsePtChanges(job.description);
+  const prefilled = template.prefill?.({ client: { ...job.client, ktp }, job: { description: job.description, ptChanges } }) ?? {};
+  // Saksi biasanya karyawan kantor yang sama: ambil dari draft terakhir yang mengisinya.
+  const data = { tanggalAkta: today, ...saksi, ...prefilled };
 
   const draft = await prisma.deedDraft.create({
     data: { jobId, templateKey, title: template.title, data: data as Prisma.InputJsonValue, createdById: user.id, updatedById: user.id }
@@ -237,4 +293,12 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
   revalidatePath("/notary-record");
   revalidatePath("/deeds");
   redirect(`/archive/deed/${deedId}`);
+}
+
+/** Usulan nomor akta berikutnya untuk bulan tanggal yang dipilih di form pengesahan. */
+export async function suggestDeedNumber(ymd: string): Promise<string> {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_MINUTA);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
+  return nextDeedNumber(ymd);
 }

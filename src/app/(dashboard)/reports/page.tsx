@@ -128,7 +128,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Reports</h1>
+          <h1 className="text-xl font-semibold text-foreground">Laporan</h1>
           <p className="text-sm text-muted-foreground">Ringkasan operasional kantor.</p>
         </div>
         <div className="flex gap-1 rounded-md bg-muted p-1 text-sm">
@@ -160,14 +160,14 @@ export default async function ReportsPage({ searchParams }: PageProps) {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Completed vs Overdue</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Selesai vs Terlambat</h2>
           <dl className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <dt className="text-xs text-muted-foreground">Completed ({year})</dt>
               <dd className="text-2xl font-semibold text-status-on-track">{completedCount}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Overdue (saat ini)</dt>
+              <dt className="text-xs text-muted-foreground">Terlambat (saat ini)</dt>
               <dd className="text-2xl font-semibold text-status-overdue">{overdueCount}</dd>
             </div>
           </dl>

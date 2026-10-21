@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 const TYPE_LABEL: Record<string, string> = {
   assignment: "Penugasan",
-  deadline: "Deadline",
-  overdue: "Overdue",
+  deadline: "Tenggat",
+  overdue: "Terlambat",
   document: "Dokumen",
   info: "Info"
 };

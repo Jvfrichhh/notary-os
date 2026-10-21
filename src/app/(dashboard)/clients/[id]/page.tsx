@@ -7,9 +7,10 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatStatusLabel } from "@/lib/format";
+import { classifyDeadline, formatDate, formatStatusLabel } from "@/lib/format";
 import { archiveClient, createJobForClient, restoreClient } from "@/app/(dashboard)/clients/actions";
 import { ClientNewJobForm } from "@/components/clients/ClientNewJobForm";
+import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { ClientPortalAccess } from "@/components/clients/ClientPortalAccess";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
@@ -21,7 +22,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default async function ClientDetailPage({ params }: { params: { id: string } }) {
+export default async function ClientDetailPage({ params, searchParams }: { params: { id: string }; searchParams?: { portal?: string } }) {
   const user = await requirePermission(PERMISSIONS.VIEW_CLIENTS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
   const canDelete = await userHasPermission(user.id, PERMISSIONS.DELETE_CLIENTS);
@@ -54,6 +55,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
   return (
     <div className="space-y-6">
+      {searchParams?.portal && <PortalAccountBanner status={searchParams.portal} />}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{client.clientNumber}</p>
@@ -100,21 +102,19 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       </div>
 
       <Card>
-        <h2 className="mb-4 text-sm font-semibold text-foreground">Informasi Client</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <h2 className="mb-4 text-sm font-semibold text-foreground">Informasi Klien</h2>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <InfoRow label="Tipe" value={client.clientType} />
           <InfoRow label="NIK" value={client.nik} />
           <InfoRow label="Telepon" value={client.phone} />
           <InfoRow label="Email" value={client.email} />
-          <InfoRow label="Kota" value={client.city} />
-          <InfoRow label="Perusahaan" value={client.companyName} />
-          <InfoRow label="NPWP" value={client.npwp} />
-        </div>
-        {client.address && (
-          <div className="mt-4">
+          <div className="col-span-2">
             <InfoRow label="Alamat" value={client.address} />
           </div>
-        )}
+          <InfoRow label="Kota" value={client.city} />
+          <InfoRow label="NPWP" value={client.npwp} />
+          {client.companyName && <InfoRow label="Perusahaan" value={client.companyName} />}
+        </div>
         {client.notes && (
           <div className="mt-4">
             <InfoRow label="Catatan" value={client.notes} />
@@ -122,7 +122,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         )}
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className={showNewJob ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "grid grid-cols-1 gap-4"}>
         {showNewJob && (
           <Card>
             <h2 className="mb-1 text-sm font-semibold text-foreground">+ Pekerjaan baru</h2>
@@ -132,18 +132,21 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         )}
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Job Terkait</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Pekerjaan Terkait</h2>
           {client.jobs.length === 0 ? (
-            <EmptyState title="Belum ada job." />
+            <EmptyState title="Belum ada pekerjaan." />
           ) : (
             <div className="divide-y divide-border">
               {client.jobs.map((j) => (
-                <Link key={j.id} href={`/jobs/${j.id}`} className="flex items-center justify-between py-2.5 text-sm hover:bg-muted/50">
-                  <div>
+                <Link key={j.id} href={`/jobs/${j.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:bg-muted/50">
+                  <div className="min-w-0">
                     <p className="font-medium text-foreground">{j.jobNumber}</p>
-                    <p className="text-xs text-muted-foreground">{j.description ?? "-"}</p>
+                    <p className="line-clamp-1 text-xs text-muted-foreground">{j.description ?? "-"}</p>
                   </div>
-                  <StatusBadge tone={classifyDeadline(j.deadline, j.status)} label={formatStatusLabel(j.status)} />
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(j.status)}</span>
+                    {j.deadline && <StatusBadge tone={classifyDeadline(j.deadline, j.status)} label={`Target ${formatDate(j.deadline)}`} />}
+                  </div>
                 </Link>
               ))}
             </div>
@@ -157,7 +160,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             <h2 className="text-sm font-semibold text-foreground">Dokumen Terkait</h2>
             {canUploadDocuments && (
               <Link href={`/documents/new?clientId=${client.id}`} className="text-xs font-medium text-primary hover:underline">
-                + Upload Dokumen
+                + Unggah Dokumen
               </Link>
             )}
           </div>

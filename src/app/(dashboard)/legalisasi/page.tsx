@@ -98,7 +98,7 @@ export default async function LegalisasiPage({ searchParams }: PageProps) {
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Nomor</th>
                   <th className="px-4 py-3 font-medium">Tanggal</th>
-                  <th className="px-4 py-3 font-medium">Client</th>
+                  <th className="px-4 py-3 font-medium">Klien</th>
                   <th className="px-4 py-3 font-medium">Jenis Layanan</th>
                   <th className="px-4 py-3 font-medium">PIC</th>
                   <th className="px-4 py-3 font-medium">Status</th>

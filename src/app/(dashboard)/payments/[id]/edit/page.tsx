@@ -16,7 +16,7 @@ export default async function EditPaymentPage({ params }: { params: { id: string
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold text-foreground">Edit Payment</h1>
+      <h1 className="text-xl font-semibold text-foreground">Ubah Pembayaran</h1>
       <Card>
         <PaymentForm
           action={action}

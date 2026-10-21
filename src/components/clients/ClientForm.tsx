@@ -81,7 +81,7 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
 
         <div>
           <label htmlFor="clientType" className="mb-1 block text-sm font-medium text-foreground">
-            Tipe Client
+            Tipe Klien
           </label>
           <select
             id="clientType"
@@ -104,7 +104,14 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
           )}
         </div>
         <Field label="No. Telepon" name="phone" defaultValue={client?.phone} errors={errors.phone} />
-        <Field label="Email" name="email" type="email" defaultValue={client?.email} errors={errors.email} />
+        <div>
+          <Field label="Email" name="email" type="email" defaultValue={client?.email} errors={errors.email} />
+          {!client && newJob && (
+            <label className="mt-1 flex items-center gap-2 text-xs text-foreground">
+              <input type="checkbox" name="withPortal" defaultChecked /> Buatkan akses portal klien (bila email diisi)
+            </label>
+          )}
+        </div>
         <Field label="Kota" name="city" defaultValue={client?.city} errors={errors.city} />
         <Field label="Nama Perusahaan" name="companyName" defaultValue={client?.companyName} errors={errors.companyName} />
         <Field label="NPWP" name="npwp" defaultValue={client?.npwp} errors={errors.npwp} />
@@ -146,7 +153,7 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
       )}
 
       <div className="flex items-center gap-3">
-        <SubmitButton label={client ? "Simpan Perubahan" : newJob ? "Simpan Client & Job" : "Simpan Client"} />
+        <SubmitButton label={client ? "Simpan Perubahan" : newJob ? "Simpan Klien & Pekerjaan" : "Simpan Klien"} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal
         </Link>

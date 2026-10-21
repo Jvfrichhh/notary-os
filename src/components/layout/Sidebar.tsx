@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { NavIconKey, NavSectionConfig } from "@/lib/navigation";
@@ -22,7 +23,9 @@ import {
   FileCheck2,
   Stamp,
   ScrollText,
-  Bell
+  Bell,
+  Menu,
+  X
 } from "lucide-react";
 
 // Pemetaan key ikon (string, aman dikirim server -> client) ke komponen lucide.
@@ -56,13 +59,50 @@ interface SidebarProps {
   sections: NavSectionConfig[];
 }
 
+/**
+ * Layar lebar: sidebar tetap di kiri. Layar kecil (HP/tablet): tombol menu di
+ * kiri atas membuka laci menu; laci tertutup otomatis saat berpindah halaman.
+ */
 export function Sidebar({ sections }: SidebarProps) {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [pathname]);
 
   return (
+    <>
+      <button
+        type="button"
+        aria-label="Buka menu"
+        onClick={() => setOpen(true)}
+        className="fixed left-3 top-3 z-30 rounded-md p-2 text-foreground hover:bg-muted lg:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+      <div className="hidden h-full lg:flex">
+        <SidebarPanel sections={sections} pathname={pathname} />
+      </div>
+      {open && (
+        <div className="fixed inset-0 z-40 flex lg:hidden">
+          <div className="h-full shadow-xl">
+            <SidebarPanel sections={sections} pathname={pathname} onClose={() => setOpen(false)} />
+          </div>
+          <button type="button" aria-label="Tutup menu" className="flex-1 bg-black/40" onClick={() => setOpen(false)} />
+        </div>
+      )}
+    </>
+  );
+}
+
+function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionConfig[]; pathname: string | null; onClose?: () => void }) {
+  return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-background">
-      <div className="flex h-14 items-center border-b border-border px-4">
+      <div className="flex h-14 items-center justify-between border-b border-border px-4">
         <span className="text-sm font-semibold tracking-tight text-foreground">Notary OS</span>
+        {onClose && (
+          <button type="button" aria-label="Tutup menu" onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">

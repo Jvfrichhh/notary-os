@@ -149,7 +149,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
           />
           <InfoRow label="Tanggal Unggah" value={formatDateTime(document.uploadedAt)} />
           <div>
-            <p className="text-xs text-muted-foreground">Client</p>
+            <p className="text-xs text-muted-foreground">Klien</p>
             {document.client ? (
               <Link href={`/clients/${document.client.id}`} className="text-sm text-primary hover:underline">
                 {document.client.fullName}

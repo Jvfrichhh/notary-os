@@ -106,7 +106,7 @@ export default async function GrosseDetailPage({ params }: { params: { id: strin
                 ))}
               </select>
               <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                Update Status
+                Simpan Status
               </button>
             </form>
           </Card>

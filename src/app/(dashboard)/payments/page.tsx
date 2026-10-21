@@ -43,7 +43,7 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Payments</h1>
+          <h1 className="text-xl font-semibold text-foreground">Pembayaran</h1>
           <p className="text-sm text-muted-foreground">Pencatatan tagihan dan pembayaran klien.</p>
         </div>
         {canEdit && (
@@ -98,7 +98,7 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Client</th>
+                  <th className="px-4 py-3 font-medium">Klien</th>
                   <th className="px-4 py-3 font-medium">Job</th>
                   <th className="px-4 py-3 font-medium">Total</th>
                   <th className="px-4 py-3 font-medium">Dibayar</th>

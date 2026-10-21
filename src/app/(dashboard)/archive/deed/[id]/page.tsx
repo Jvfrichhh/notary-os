@@ -83,7 +83,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
             <h2 className="mb-3 text-sm font-semibold text-foreground">Informasi Akta</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
               <div>
-                <dt className="text-xs text-muted-foreground">Client</dt>
+                <dt className="text-xs text-muted-foreground">Klien</dt>
                 <dd>
                   <Link href={`/clients/${deed.client.id}`} className="text-primary hover:underline">
                     {deed.client.fullName}
@@ -217,7 +217,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
                   ))}
                 </select>
                 <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                  Update Status
+                  Simpan Status
                 </button>
               </form>
             ) : (

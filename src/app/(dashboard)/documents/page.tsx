@@ -151,7 +151,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Nama File</th>
                   <th className="px-4 py-3 font-medium">Kategori</th>
-                  <th className="px-4 py-3 font-medium">Client / Job</th>
+                  <th className="px-4 py-3 font-medium">Klien / Pekerjaan</th>
                   <th className="px-4 py-3 font-medium">Ukuran</th>
                   <th className="px-4 py-3 font-medium">Uploader</th>
                   <th className="px-4 py-3 font-medium">Tanggal</th>

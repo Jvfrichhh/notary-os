@@ -38,7 +38,7 @@ export default async function LegalisasiDetailPage({ params }: { params: { id: s
       <Card>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <div>
-            <dt className="text-xs text-muted-foreground">Client</dt>
+            <dt className="text-xs text-muted-foreground">Klien</dt>
             <dd>
               <Link href={`/clients/${record.client.id}`} className="text-primary hover:underline">
                 {record.client.fullName}

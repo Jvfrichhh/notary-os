@@ -27,20 +27,20 @@ import { assertSafeTarget, bindTestDatabase } from "./lib/e2e-guard.mjs";
 const { testDbUrl } = assertSafeTarget(BASE);
 
 const ROLES = {
-  NOTARY: { email: "notary@demo.local", forbidden: ["/visits"] },
+  NOTARY: { email: "notary@demo.local", forbidden: [] },
   // Peran ADMIN & VIEWER dihapus (Okt 2026). STAFF hanya mengerjakan job dari Notaris.
   STAFF: {
     email: "staff@demo.local",
     forbidden: [
       "/admin", "/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments",
-      "/clients/1/edit", "/clients/new", "/jobs/new", "/visits", "/visits/new"
+      "/clients/1/edit", "/clients/new"
     ]
   }
 };
 
 const EXPECTED_HIDDEN = {
-  NOTARY: ["/visits"],
-  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin", "/visits"]
+  NOTARY: [],
+  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin"]
 };
 
 let failures = 0;

@@ -47,7 +47,54 @@ export function classifyDeadline(deadline: Date | null, status: string): Deadlin
   return "on-track";
 }
 
+/** Label Indonesia untuk nilai enum yang tampil di layar. */
+const ENUM_LABEL: Record<string, string> = {
+  // Status pekerjaan
+  INBOX: "Masuk",
+  IN_PROGRESS: "Sedang Diproses",
+  WAITING_FOR_CLIENT: "Menunggu Klien",
+  WAITING_FOR_DOCUMENT: "Menunggu Dokumen",
+  REVIEW: "Diperiksa Notaris",
+  READY_FOR_SIGNING: "Siap Ditandatangani",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
+  // Prioritas
+  LOW: "Rendah",
+  NORMAL: "Normal",
+  HIGH: "Tinggi",
+  URGENT: "Mendesak",
+  // Tugas / checklist
+  TODO: "Belum",
+  DONE: "Selesai",
+  MISSING: "Belum Ada",
+  COMPLETE: "Lengkap",
+  PENDING_REVIEW: "Menunggu Pemeriksaan",
+  ACCEPTED: "Diterima",
+  NEEDS_REVISION: "Perlu Perbaikan",
+  // Dokumen
+  CLIENT_DOCUMENT: "Dokumen Klien",
+  WORKING_DOCUMENT: "Dokumen Kerja",
+  FINAL_DOCUMENT: "Dokumen Final",
+  SUPPORTING_DOCUMENT: "Dokumen Pendukung",
+  // Pembayaran
+  UNPAID: "Belum Dibayar",
+  PARTIALLY_PAID: "Dibayar Sebagian",
+  PAID: "Lunas",
+  REFUNDED: "Dikembalikan",
+  // Arsip / layanan
+  ACTIVE: "Aktif",
+  ARCHIVED: "Diarsipkan",
+  TRASHED: "Dihapus",
+  DRAFT: "Draft",
+  PROCESS: "Proses",
+  DIBUAT: "Dibuat",
+  DICATAT: "Dicatat",
+  DILAPORKAN: "Dilaporkan",
+  BUKTI_TERSEDIA: "Bukti Tersedia"
+};
+
 export function formatStatusLabel(status: string): string {
+  if (ENUM_LABEL[status]) return ENUM_LABEL[status];
   return status
     .toLowerCase()
     .split("_")
@@ -67,6 +114,26 @@ export function formatDate(date: Date | string | null): string {
 
 // timeZone Asia/Jakarta -- ini timestamp beneran (visit check-in, notifikasi,
 // dll), jadi ditampilkan di waktu kantor, bukan waktu server.
+/** Tanggal dari timestamp sungguhan (mis. startDate, uploadedAt) menurut waktu kantor. */
+export function formatDateJakarta(date: Date | string | null): string {
+  if (!date) return "-";
+  return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: JAKARTA_TZ }).format(
+    new Date(date)
+  );
+}
+
+/** Nilai <input type="date"> dari kolom tanggal-saja (UTC-midnight). */
+export function toDateInput(date: Date | null): string {
+  return date ? date.toISOString().slice(0, 10) : "";
+}
+
+/** Kolom tanggal-saja dari <input type="date"> (disimpan UTC-midnight, sesuai konvensi di atas). */
+export function fromDateInput(value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const d = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export function formatDateTime(date: Date | string | null): string {
   if (!date) return "-";
   return new Intl.DateTimeFormat("id-ID", {

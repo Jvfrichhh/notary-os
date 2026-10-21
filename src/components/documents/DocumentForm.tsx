@@ -8,10 +8,10 @@ import { requestOfficeUploadTicket, type DocumentFormState } from "@/app/(dashbo
 import { useDirectUpload } from "@/components/upload/useDirectUpload";
 
 const CATEGORIES = [
-  { value: "CLIENT_DOCUMENT", label: "Client Document" },
-  { value: "WORKING_DOCUMENT", label: "Working Document" },
-  { value: "FINAL_DOCUMENT", label: "Final Document" },
-  { value: "SUPPORTING_DOCUMENT", label: "Supporting Document" }
+  { value: "CLIENT_DOCUMENT", label: "Dokumen Klien" },
+  { value: "WORKING_DOCUMENT", label: "Dokumen Kerja" },
+  { value: "FINAL_DOCUMENT", label: "Dokumen Final" },
+  { value: "SUPPORTING_DOCUMENT", label: "Dokumen Pendukung" }
 ];
 
 interface ClientOption {
@@ -78,7 +78,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Client</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">Klien</label>
           {lockedClient ? (
             <>
               <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">

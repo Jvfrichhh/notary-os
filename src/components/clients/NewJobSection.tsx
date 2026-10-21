@@ -92,6 +92,7 @@ export function NewJobSection({
             </div>
           )}
 
+          <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
           <div>
             <label htmlFor="jobDeadline" className="mb-1 block text-sm font-medium text-foreground">
               Target selesai
@@ -111,7 +112,7 @@ export function NewJobSection({
           </div>
           <div>
             <label htmlFor="jobPicId" className="mb-1 block text-sm font-medium text-foreground">
-              Staf penanggung jawab (PIC)
+              Staf (PIC)
             </label>
             <select id="jobPicId" name="jobPicId" defaultValue={defaultPicId ?? ""} className={fieldClass}>
               <option value="">— Pilih staf —</option>
@@ -121,8 +122,11 @@ export function NewJobSection({
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-muted-foreground">Staf terpilih langsung mendapat notifikasi dan job langsung berstatus Sedang Diproses.</p>
           </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground sm:col-span-2">
+            Staf (PIC) yang dipilih langsung mendapat notifikasi dan pekerjaan langsung berstatus Sedang Diproses.
+          </p>
           <div className="sm:col-span-2">
             <label htmlFor="jobDescription" className="mb-1 block text-sm font-medium text-foreground">
               Keterangan pekerjaan

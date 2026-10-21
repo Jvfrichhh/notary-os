@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Download, Plus, Save, Trash2 } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { Download, Plus, Save, Send, Trash2 } from "lucide-react";
 import { saveDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
-import { PERSON_FIELDS, type DeedData, type FieldDef, type Person, type SectionDef } from "@/lib/deeds/schema";
+import { submitJobForReview } from "@/app/(dashboard)/jobs/actions";
+import { isFieldVisible, PERSON_FIELDS, type DeedData, type FieldDef, type Person, type SectionDef } from "@/lib/deeds/schema";
 
 const inputCls =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -83,7 +84,58 @@ function PersonFields({ value, onChange }: { value: Person; onChange: (p: Person
   );
 }
 
-function Field({ def, value, onChange }: { def: FieldDef; value: unknown; onChange: (v: unknown) => void }) {
+/** Field yang memenuhi satu baris penuh di grid 2 kolom. */
+const isWide = (f: FieldDef) =>
+  f.kind === "person" || f.kind === "list" || f.kind === "checks" || f.kind === "textarea" || ("wide" in f && !!f.wide);
+
+/**
+ * Grid 2 kolom tanpa sel kosong: bila deretan field sempit berjumlah ganjil,
+ * field terakhirnya dibuat selebar baris.
+ */
+function FieldGrid({ fields, data, onChange }: { fields: FieldDef[]; data: Obj; onChange: (key: string, v: unknown) => void }) {
+  const visible = fields.filter((f) => isFieldVisible(f, data));
+  const stretch = new Set<string>();
+  let run: FieldDef[] = [];
+  const flush = () => {
+    if (run.length % 2 === 1) stretch.add(run[run.length - 1].key);
+    run = [];
+  };
+  for (const f of visible) {
+    if (isWide(f)) flush();
+    else run.push(f);
+  }
+  flush();
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {visible.map((f) => (
+        <Field key={f.key} def={f} value={data[f.key]} stretch={stretch.has(f.key)} onChange={(v) => onChange(f.key, v)} />
+      ))}
+    </div>
+  );
+}
+
+function Field({ def, value, onChange, stretch }: { def: FieldDef; value: unknown; onChange: (v: unknown) => void; stretch?: boolean }) {
+  if (def.kind === "checks") {
+    const chosen = Array.isArray(value) ? (value as string[]) : [];
+    return (
+      <div className="sm:col-span-2">
+        <p className="mb-1 text-sm font-medium text-foreground">{def.label}</p>
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+          {def.options.map((o) => (
+            <label key={o} className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={chosen.includes(o)}
+                onChange={(e) => onChange(e.target.checked ? [...chosen, o] : chosen.filter((c) => c !== o))}
+              />
+              {o}
+            </label>
+          ))}
+        </div>
+        {def.help && <p className="mt-1 text-xs text-muted-foreground">{def.help}</p>}
+      </div>
+    );
+  }
   if (def.kind === "person") {
     return (
       <div className="sm:col-span-2">
@@ -98,7 +150,10 @@ function Field({ def, value, onChange }: { def: FieldDef; value: unknown; onChan
     const max = def.max ?? 20;
     return (
       <div className="space-y-3 sm:col-span-2">
-        {def.help && <p className="text-xs text-muted-foreground">{def.help}</p>}
+        <div>
+          <p className="text-sm font-medium text-foreground">{def.label}</p>
+          {def.help && <p className="text-xs text-muted-foreground">{def.help}</p>}
+        </div>
         {items.map((item, i) => (
           <div key={i} className="rounded-md border border-border p-3">
             <div className="mb-2 flex items-center justify-between">
@@ -115,16 +170,11 @@ function Field({ def, value, onChange }: { def: FieldDef; value: unknown; onChan
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {def.fields.map((f) => (
-                <Field
-                  key={f.key}
-                  def={f}
-                  value={item[f.key]}
-                  onChange={(v) => onChange(items.map((it, j) => (j === i ? { ...it, [f.key]: v } : it)))}
-                />
-              ))}
-            </div>
+            <FieldGrid
+              fields={def.fields}
+              data={item}
+              onChange={(key, v) => onChange(items.map((it, j) => (j === i ? { ...it, [key]: v } : it)))}
+            />
           </div>
         ))}
         {items.length < max && (
@@ -141,7 +191,7 @@ function Field({ def, value, onChange }: { def: FieldDef; value: unknown; onChan
   }
 
   const v = asStr(value);
-  const wide = def.kind === "textarea" || ("wide" in def && def.wide);
+  const wide = def.kind === "textarea" || ("wide" in def && def.wide) || stretch;
   return (
     <label className={wide ? "sm:col-span-2" : ""}>
       <span className="mb-1 block text-sm font-medium text-foreground">{def.label}</span>
@@ -183,12 +233,15 @@ export function DeedForm({
   draftId,
   sections,
   initialData,
-  canEdit
+  canEdit,
+  submitJobId
 }: {
   draftId: string;
   sections: SectionDef[];
   initialData: DeedData;
   canEdit: boolean;
+  /** Diisi bila staf boleh "Simpan & Ajukan ke Notaris" dari halaman ini. */
+  submitJobId?: string;
 }) {
   const [data, setData] = useState<DeedData>(() => {
     // Daftar berulang tampil minimal sejumlah `min` item.
@@ -203,6 +256,17 @@ export function DeedForm({
   const [status, setStatus] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  // Peringatan sebelum meninggalkan halaman bila ada isian belum tersimpan.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const set = (key: string, v: unknown) => {
     setData((d) => ({ ...d, [key]: v }));
@@ -224,6 +288,19 @@ export function DeedForm({
       } else setStatus(res.error ?? "Gagal menyimpan.");
     });
 
+  const saveAndSubmit = () => {
+    if (!submitJobId) return;
+    const note = window.prompt("Catatan untuk Notaris (opsional):", "") ?? null;
+    if (note === null) return; // dibatalkan
+    save(() =>
+      startTransition(async () => {
+        const fd = new FormData();
+        fd.set("note", note);
+        await submitJobForReview(submitJobId, fd);
+      })
+    );
+  };
+
   const download = (variant: "minuta" | "salinan") => {
     const go = () => (window.location.href = `/api/deeds/${draftId}/${variant}`);
     if (canEdit && dirty) save(go);
@@ -236,11 +313,7 @@ export function DeedForm({
         <fieldset key={s.title} disabled={!canEdit} className="space-y-3 rounded-lg border border-border bg-background p-5 shadow-sm">
           <legend className="px-1 text-sm font-semibold text-foreground">{s.title}</legend>
           {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {s.fields.map((f) => (
-              <Field key={f.key} def={f} value={data[f.key]} onChange={(v) => set(f.key, v)} />
-            ))}
-          </div>
+          <FieldGrid fields={s.fields} data={data} onChange={set} />
         </fieldset>
       ))}
 
@@ -253,6 +326,16 @@ export function DeedForm({
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             <Save className="h-4 w-4" /> {pending ? "Menyimpan..." : "Simpan"}
+          </button>
+        )}
+        {canEdit && submitJobId && (
+          <button
+            type="button"
+            onClick={saveAndSubmit}
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+          >
+            <Send className="h-4 w-4" /> Simpan & Ajukan ke Notaris
           </button>
         )}
         <button

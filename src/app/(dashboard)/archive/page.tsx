@@ -148,7 +148,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Nomor Akta</th>
-                  <th className="px-4 py-3 font-medium">Client</th>
+                  <th className="px-4 py-3 font-medium">Klien</th>
                   <th className="px-4 py-3 font-medium">Jenis Akta</th>
                   <th className="px-4 py-3 font-medium">Tanggal</th>
                   <th className="px-4 py-3 font-medium">File</th>

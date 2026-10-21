@@ -67,19 +67,19 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
   { items: [{ label: "Dashboard", href: "/dashboard", icon: "dashboard" }] },
   { items: [{ label: "Notifikasi", href: "/notifications", icon: "bell" }] },
   {
-    title: "CRM",
+    title: "Data Klien",
     items: [
       // Visits dihapus dari menu (Okt 2026): klien dicatat langsung lewat Tambah Klien oleh Notaris.
-      { label: "Clients", href: "/clients", icon: "users", permissions: [PERMISSIONS.VIEW_CLIENTS] }
+      { label: "Klien", href: "/clients", icon: "users", permissions: [PERMISSIONS.VIEW_CLIENTS] }
     ]
   },
   {
-    title: "Work",
+    title: "Pekerjaan",
     items: [
-      { label: "Joblist", href: "/jobs", icon: "list-checks", permissions: [PERMISSIONS.VIEW_JOBS] },
+      { label: "Daftar Pekerjaan", href: "/jobs", icon: "list-checks", permissions: [PERMISSIONS.VIEW_JOBS] },
       // Calendar & Deadlines menampilkan data job -> page-nya memakai VIEW_JOBS.
-      { label: "Calendar", href: "/calendar", icon: "calendar", permissions: [PERMISSIONS.VIEW_JOBS] },
-      { label: "Deadlines", href: "/deadlines", icon: "clock", permissions: [PERMISSIONS.VIEW_JOBS] },
+      { label: "Kalender", href: "/calendar", icon: "calendar", permissions: [PERMISSIONS.VIEW_JOBS] },
+      { label: "Tenggat", href: "/deadlines", icon: "clock", permissions: [PERMISSIONS.VIEW_JOBS] },
       { label: "Draft Akta", href: "/deeds", icon: "file-pen", permissions: [PERMISSIONS.VIEW_JOBS] },
       // Asisten AI membaca data lewat tool yang masing-masing dibatasi permission;
       // minimal VIEW_JOBS supaya ada yang bisa ditanyakan.
@@ -87,13 +87,13 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
     ]
   },
   {
-    title: "Documents",
+    title: "Dokumen",
     items: [
       { label: "Document Vault", href: "/documents", icon: "file-text", permissions: [PERMISSIONS.VIEW_DOCUMENTS] }
     ]
   },
   {
-    title: "Archive",
+    title: "Arsip",
     items: [
       {
         label: "Minuta / Salinan / Grosse / Kutipan",
@@ -104,7 +104,7 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
     ]
   },
   {
-    title: "Notary Record",
+    title: "Buku Notaris",
     items: [
       {
         label: "Repertorium / Klapper",
@@ -123,19 +123,19 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
     ]
   },
   {
-    title: "Finance",
-    items: [{ label: "Payments", href: "/payments", icon: "wallet", permissions: [PERMISSIONS.VIEW_FINANCE] }]
+    title: "Keuangan",
+    items: [{ label: "Pembayaran", href: "/payments", icon: "wallet", permissions: [PERMISSIONS.VIEW_FINANCE] }]
   },
   {
     // Reports berbasis data job (bagian finance di dalamnya sudah di-gate
     // terpisah oleh VIEW_FINANCE di page-nya).
-    items: [{ label: "Reports", href: "/reports", icon: "bar-chart", permissions: [PERMISSIONS.VIEW_JOBS] }]
+    items: [{ label: "Laporan", href: "/reports", icon: "bar-chart", permissions: [PERMISSIONS.VIEW_JOBS] }]
   },
   {
     title: "Admin",
     items: [
       {
-        label: "Users, Roles & Audit Log",
+        label: "Pengguna, Peran & Log Audit",
         href: "/admin",
         icon: "shield",
         permissions: ADMIN_PAGE_PERMISSIONS

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatStatusLabel, getJakartaToday } from "@/lib/format";
+import { classifyDeadline, formatDate, formatStatusLabel, getJakartaToday } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
@@ -74,11 +74,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const cards = [
     ...(jobStats
       ? [
-          { label: "Total Job", value: jobStats.totalJobs },
-          { label: "In Progress", value: jobStats.inProgress },
-          { label: "Due Today", value: jobStats.dueToday },
-          { label: "Overdue", value: jobStats.overdue },
-          { label: "Completed", value: jobStats.completed },
+          { label: "Total Pekerjaan", value: jobStats.totalJobs },
+          { label: "Sedang Diproses", value: jobStats.inProgress },
+          { label: "Tenggat Hari Ini", value: jobStats.dueToday },
+          { label: "Terlambat", value: jobStats.overdue },
+          { label: "Selesai", value: jobStats.completed },
           // Notaris: antrean persetujuan; staf: pekerjaan yang menjadi tanggungannya.
           canCreateJobs
             ? { label: "Menunggu Persetujuan", value: jobStats.waitingReview, href: "/jobs?status=REVIEW" }
@@ -150,13 +150,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         ) : (
           <div className="divide-y divide-border">
             {recentJobs.map((job) => (
-              <Link key={job.id} href={`/jobs/${job.id}`} className="flex items-center justify-between py-3 text-sm hover:bg-muted/50">
-                <div>
+              <Link key={job.id} href={`/jobs/${job.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:bg-muted/50">
+                <div className="min-w-0">
                   <p className="font-medium text-foreground">{job.jobNumber} — {job.client.fullName}</p>
-                  <p className="text-xs text-muted-foreground">{job.description}</p>
+                  <p className="line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatStatusLabel(job.status)} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(job.status)}</span>
+                  {job.deadline && <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={`Target ${formatDate(job.deadline)}`} />}
                   <span className="text-xs text-muted-foreground">PIC: {job.pic?.name ?? "-"}</span>
                 </div>
               </Link>

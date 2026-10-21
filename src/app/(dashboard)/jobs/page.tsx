@@ -59,16 +59,16 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Joblist</h1>
+          <h1 className="text-xl font-semibold text-foreground">Daftar Pekerjaan</h1>
           <p className="text-sm text-muted-foreground">Seluruh pekerjaan aktif kantor</p>
         </div>
         {canCreate && (
           <Link
-            href="/jobs/new"
+            href="/clients/new"
             className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             <Plus className="h-4 w-4" />
-            New Job
+            Tambah Klien & Pekerjaan
           </Link>
         )}
       </div>
@@ -112,7 +112,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             href={`/jobs?view=table${qsSuffix}`}
             className={cn("rounded px-3 py-1", view === "table" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground")}
           >
-            Table
+            Tabel
           </Link>
           <Link
             href={`/jobs?view=kanban${qsSuffix}`}
@@ -173,7 +173,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Job</th>
-                  <th className="px-4 py-3 font-medium">Client</th>
+                  <th className="px-4 py-3 font-medium">Klien</th>
                   <th className="px-4 py-3 font-medium">Layanan</th>
                   <th className="px-4 py-3 font-medium">Deadline</th>
                   <th className="px-4 py-3 font-medium">Status</th>

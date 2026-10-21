@@ -112,7 +112,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
+          <h1 className="text-xl font-semibold text-foreground">Kalender</h1>
           <p className="text-sm text-muted-foreground">Deadline job dan appointment dalam sebulan</p>
         </div>
         <div className="flex items-center gap-2">

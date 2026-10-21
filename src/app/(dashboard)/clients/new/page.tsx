@@ -31,7 +31,7 @@ export default async function NewClientPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Tambah Client</h1>
+        <h1 className="text-xl font-semibold text-foreground">Tambah Klien</h1>
         <p className="text-sm text-muted-foreground">
           Nomor client{canCreateJobs ? " dan nomor job" : ""} dibuat otomatis saat disimpan.
         </p>

@@ -18,7 +18,7 @@ export function VersionUploadForm({ documentId, accept }: { documentId: string; 
 
   return (
     <form onSubmit={onSubmit} className="mt-4 space-y-2 border-t border-border pt-4">
-      <p className="text-sm font-medium text-foreground">Upload Versi Baru</p>
+      <p className="text-sm font-medium text-foreground">Unggah Versi Baru</p>
       <input type="file" name="file" required accept={accept} className={inputCls} />
       <input type="text" name="notes" placeholder="Catatan versi (opsional)" className={inputCls} />
       <div className="flex items-center gap-3">

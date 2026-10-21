@@ -8,13 +8,13 @@ import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
 import { VALID_TRANSITIONS } from "@/lib/jobStatus";
-import { createJobWithTemplate } from "@/lib/jobCreation";
 import { createNotification } from "@/lib/notifications";
 import { createClientNotification } from "@/lib/clientNotifications";
 import { portalStatusLabel } from "@/lib/portalLabels";
 import { autoSetJobStatus, notifyJobPeople, onChecklistChanged } from "@/lib/jobAutomation";
 import { userHasPermission } from "@/lib/permissions";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateJakarta, fromDateInput } from "@/lib/format";
+import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import type { JobPriority, JobStatus } from "@prisma/client";
 
 /** Status yang hanya boleh diputuskan Notaris (pemberi perintah). */
@@ -23,6 +23,12 @@ const NOTARY_ONLY_STATUSES: JobStatus[] = ["READY_FOR_SIGNING", "COMPLETED", "CA
 /** "Notaris" = pemegang izin create_jobs (pemberi perintah kerja). */
 async function isNotaryLevel(userId: string) {
   return userHasPermission(userId, PERMISSIONS.CREATE_JOBS);
+}
+
+/** Kembali ke halaman job dengan pesan (ditampilkan sebagai banner). */
+function backToJob(jobId: string, key: "ok" | "err", code: string): never {
+  revalidateJob(jobId);
+  redirect(`/jobs/${jobId}?${key}=${code}`);
 }
 
 function revalidateJob(jobId: string) {
@@ -35,77 +41,8 @@ function revalidateJob(jobId: string) {
   revalidatePath("/portal");
 }
 
-const jobSchema = z.object({
-  clientId: z.string().min(1, "Client wajib dipilih"),
-  visitId: z.string().optional().or(z.literal("")),
-  serviceTypeId: z.string().optional().or(z.literal("")),
-  description: z.string().optional().or(z.literal("")),
-  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).default("NORMAL"),
-  deadline: z.string().optional().or(z.literal("")),
-  picId: z.string().optional().or(z.literal("")),
-  reviewerId: z.string().optional().or(z.literal("")),
-  notaryId: z.string().optional().or(z.literal(""))
-});
-
-export type JobFormState = {
-  errors?: Partial<Record<keyof z.infer<typeof jobSchema>, string[]>>;
-  formError?: string;
-};
-
 function toNullable(value: string | undefined) {
   return value && value.trim() !== "" ? value.trim() : null;
-}
-
-/**
- * Job Creation Flow (Blueprint §30): setelah job dibuat, sistem otomatis
- * membuat checklist + task dari Service Template (jika template tersedia
- * untuk service type yang dipilih). Ini yang menghindarkan staff bikin
- * workflow dari nol setiap kali (Blueprint §29).
- */
-export async function createJob(_prevState: JobFormState, formData: FormData): Promise<JobFormState> {
-  const user = await requireUser();
-  await assertPermission(user.id, PERMISSIONS.CREATE_JOBS);
-
-  const parsed = jobSchema.safeParse({
-    clientId: formData.get("clientId"),
-    visitId: formData.get("visitId") || "",
-    serviceTypeId: formData.get("serviceTypeId") || "",
-    description: formData.get("description") || "",
-    priority: formData.get("priority") || "NORMAL",
-    deadline: formData.get("deadline") || "",
-    picId: formData.get("picId") || "",
-    reviewerId: formData.get("reviewerId") || "",
-    notaryId: formData.get("notaryId") || ""
-  });
-
-  if (!parsed.success) {
-    return { errors: parsed.error.flatten().fieldErrors };
-  }
-
-  const data = parsed.data;
-  const visitId = toNullable(data.visitId);
-  const serviceTypeId = toNullable(data.serviceTypeId);
-
-  const job = await createJobWithTemplate(
-    {
-      clientId: data.clientId,
-      visitId,
-      serviceTypeId,
-      description: toNullable(data.description),
-      priority: data.priority,
-      deadline: data.deadline ? new Date(data.deadline) : null,
-      picId: toNullable(data.picId),
-      reviewerId: toNullable(data.reviewerId),
-      notaryId: toNullable(data.notaryId)
-    },
-    user.id
-  );
-
-  revalidatePath("/jobs");
-  revalidatePath("/dashboard");
-  revalidatePath("/deadlines");
-  if (visitId) revalidatePath(`/visits/${visitId}`);
-  redirect(`/jobs/${job.id}`);
 }
 
 export async function updateJobStatus(jobId: string, newStatus: JobStatus) {
@@ -121,7 +58,11 @@ export async function updateJobStatus(jobId: string, newStatus: JobStatus) {
   const allowed = VALID_TRANSITIONS[job.status] ?? [];
   if (!allowed.includes(newStatus)) return;
   // Menyetujui untuk tanda tangan, menyelesaikan, dan membatalkan job adalah keputusan Notaris.
-  if (NOTARY_ONLY_STATUSES.includes(newStatus) && !(await isNotaryLevel(user.id))) return;
+  if (!(await isNotaryLevel(user.id))) {
+    if (NOTARY_ONLY_STATUSES.includes(newStatus)) return;
+    // Pekerjaan yang sedang diperiksa / sudah disetujui Notaris tidak bisa ditarik staf.
+    if (job.status === "REVIEW" || job.status === "READY_FOR_SIGNING") return;
+  }
 
   const updated = await prisma.job.update({
     where: { id: jobId },
@@ -343,17 +284,22 @@ export async function submitJobForReview(jobId: string, formData: FormData) {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
   const note = String(formData.get("note") ?? "").trim().slice(0, 500);
-  const job = await prisma.job.findUnique({ where: { id: jobId }, select: { jobNumber: true } });
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    select: { jobNumber: true, serviceType: { select: { name: true } }, _count: { select: { deedDrafts: true } } }
+  });
   if (!job) return;
+  // Layanan yang punya template akta wajib punya draft sebelum diajukan.
+  const needsDraft = !!SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.deedKey;
+  if (needsDraft && job._count.deedDrafts === 0) backToJob(jobId, "err", "nodraft");
   const moved = await autoSetJobStatus(jobId, "REVIEW", note ? `diajukan: ${note}` : "diajukan ke Notaris", user.id);
-  if (moved) {
-    await notifyJobPeople(
-      jobId,
-      `${user.name ?? "Staf"} mengajukan ${job.jobNumber} untuk diperiksa${note ? `: ${note}` : "."}`,
-      { notary: true }
-    );
-  }
-  revalidateJob(jobId);
+  if (!moved) backToJob(jobId, "err", "submit");
+  await notifyJobPeople(
+    jobId,
+    `${user.name ?? "Staf"} mengajukan ${job.jobNumber} untuk diperiksa${note ? `: ${note}` : "."}`,
+    { notary: true }
+  );
+  backToJob(jobId, "ok", "submitted");
 }
 
 /** Notaris menyetujui: job siap ditandatangani; PIC diberi tahu. */
@@ -363,8 +309,9 @@ export async function approveJobReview(jobId: string) {
   const job = await prisma.job.findUnique({ where: { id: jobId }, select: { jobNumber: true } });
   if (!job) return;
   const moved = await autoSetJobStatus(jobId, "READY_FOR_SIGNING", "disetujui Notaris", user.id, { onlyFrom: ["REVIEW"] });
-  if (moved) await notifyJobPeople(jobId, `Notaris menyetujui ${job.jobNumber}; siapkan penandatanganan.`, { pic: true });
-  revalidateJob(jobId);
+  if (!moved) backToJob(jobId, "err", "state");
+  await notifyJobPeople(jobId, `Notaris menyetujui ${job.jobNumber}; siapkan penandatanganan.`, { pic: true });
+  backToJob(jobId, "ok", "approved");
 }
 
 /** Notaris meminta revisi: job kembali dikerjakan, catatan masuk ke catatan job & notifikasi PIC. */
@@ -372,18 +319,18 @@ export async function requestJobRevision(jobId: string, formData: FormData) {
   const user = await requireUser();
   if (!(await isNotaryLevel(user.id))) return;
   const note = String(formData.get("note") ?? "").trim().slice(0, 1000);
-  if (note.length < 3) return;
+  if (note.length < 3) backToJob(jobId, "err", "note");
   const job = await prisma.job.findUnique({ where: { id: jobId }, select: { jobNumber: true, notes: true } });
   if (!job) return;
   const moved = await autoSetJobStatus(jobId, "IN_PROGRESS", `revisi: ${note}`, user.id, { onlyFrom: ["REVIEW", "READY_FOR_SIGNING"] });
-  if (!moved) return;
-  const stamp = formatDate(new Date());
+  if (!moved) backToJob(jobId, "err", "state");
+  const stamp = formatDateJakarta(new Date());
   await prisma.job.update({
     where: { id: jobId },
     data: { notes: `${job.notes ? `${job.notes}\n` : ""}[${stamp}] Revisi dari Notaris: ${note}` }
   });
   await notifyJobPeople(jobId, `Notaris minta revisi ${job.jobNumber}: ${note}`, { pic: true });
-  revalidateJob(jobId);
+  backToJob(jobId, "ok", "revision");
 }
 
 /* ------------------------------------------------------------------ */
@@ -409,7 +356,7 @@ export async function updateJobDetails(jobId: string, formData: FormData) {
     description: String(formData.get("description") ?? ""),
     notes: String(formData.get("notes") ?? "")
   });
-  if (!parsed.success) return;
+  if (!parsed.success) backToJob(jobId, "err", "edit");
   const d = parsed.data;
 
   const job = await prisma.job.findUnique({ where: { id: jobId } });
@@ -418,10 +365,11 @@ export async function updateJobDetails(jobId: string, formData: FormData) {
   const picId = toNullable(d.picId);
   if (picId) {
     const pic = await prisma.user.findFirst({ where: { id: picId, isActive: true }, select: { id: true } });
-    if (!pic) return;
+    if (!pic) backToJob(jobId, "err", "pic");
   }
-  const deadline = d.deadline ? new Date(`${d.deadline}T00:00:00+07:00`) : null;
-  if (deadline && Number.isNaN(deadline.getTime())) return;
+  // Kolom tanggal-saja disimpan UTC-midnight (lihat lib/format.ts).
+  const deadline = d.deadline ? fromDateInput(d.deadline) : null;
+  if (d.deadline && !deadline) backToJob(jobId, "err", "edit");
 
   const updated = await prisma.job.update({
     where: { id: jobId },
@@ -469,6 +417,5 @@ export async function updateJobDetails(jobId: string, formData: FormData) {
     });
   }
 
-  revalidateJob(jobId);
-  redirect(`/jobs/${jobId}`);
+  backToJob(jobId, "ok", "edited");
 }

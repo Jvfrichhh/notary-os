@@ -3,7 +3,13 @@
  * dipakai form di browser maupun generator di server.
  */
 
-export type FieldDef =
+/** Tampilkan field hanya bila salah satu pilihan di field `key` (jenis "checks") dicentang. */
+export interface ShowIf {
+  key: string;
+  anyOf: string[];
+}
+
+export type FieldDef = (
   | {
       kind: "text" | "textarea" | "date" | "time" | "number" | "money";
       key: string;
@@ -19,7 +25,18 @@ export type FieldDef =
   /** Identitas orang (komparisi). */
   | { kind: "person"; key: string; label: string; help?: string; optional?: boolean }
   /** Daftar berulang (mis. para pemberi kuasa, pemegang saham). */
-  | { kind: "list"; key: string; label: string; itemLabel: string; min?: number; max?: number; fields: FieldDef[]; help?: string };
+  | { kind: "list"; key: string; label: string; itemLabel: string; min?: number; max?: number; fields: FieldDef[]; help?: string }
+  /** Pilihan ganda (kotak centang); nilainya string[]. */
+  | { kind: "checks"; key: string; label: string; options: string[]; help?: string }
+) & { showIf?: ShowIf };
+
+/** Apakah field ditampilkan untuk data ini (tanpa pilihan sama sekali = tampilkan semua). */
+export function isFieldVisible(f: FieldDef, data: Record<string, unknown>): boolean {
+  if (!f.showIf) return true;
+  const chosen = Array.isArray(data[f.showIf.key]) ? (data[f.showIf.key] as string[]) : [];
+  if (chosen.length === 0) return true;
+  return f.showIf.anyOf.some((o) => chosen.includes(o));
+}
 
 export interface SectionDef {
   title: string;
@@ -67,8 +84,8 @@ export const COMMON_SECTIONS: SectionDef[] = [
   {
     title: "Data Akta",
     fields: [
-      { kind: "text", key: "nomorAkta", label: "Nomor akta", placeholder: "mis. 12" },
-      { kind: "date", key: "tanggalAkta", label: "Tanggal akta" },
+      // Nomor akta baru diketahui saat penandatanganan: diisi Notaris di "Sahkan & Daftarkan".
+      { kind: "date", key: "tanggalAkta", label: "Rencana tanggal akta" },
       { kind: "time", key: "jamAkta", label: "Jam", default: "10:00" },
       { kind: "text", key: "kotaPengadilan", label: "Domisili hukum (Pengadilan Negeri)", default: "Bogor" }
     ]

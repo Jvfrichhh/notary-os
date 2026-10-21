@@ -43,7 +43,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Clients</h1>
+          <h1 className="text-xl font-semibold text-foreground">Klien</h1>
           <p className="text-sm text-muted-foreground">Daftar klien kantor notaris</p>
         </div>
         {canCreate && (
@@ -100,7 +100,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">No. Client</th>
+                  <th className="px-4 py-3 font-medium">No. Klien</th>
                   <th className="px-4 py-3 font-medium">Nama</th>
                   <th className="px-4 py-3 font-medium">Tipe</th>
                   <th className="px-4 py-3 font-medium">Kontak</th>

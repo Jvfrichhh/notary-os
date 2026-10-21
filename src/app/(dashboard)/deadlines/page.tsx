@@ -13,10 +13,10 @@ export const dynamic = "force-dynamic";
 type JobWithRelations = Job & { client: Client; pic: User | null };
 
 const GROUPS: { tone: DeadlineTone; title: string }[] = [
-  { tone: "overdue", title: "🔴 Overdue" },
-  { tone: "due-today", title: "🟠 Due Today" },
-  { tone: "due-soon", title: "🟡 Due Soon (≤ 3 hari)" },
-  { tone: "on-track", title: "🟢 Upcoming" }
+  { tone: "overdue", title: "🔴 Terlambat" },
+  { tone: "due-today", title: "🟠 Hari Ini" },
+  { tone: "due-soon", title: "🟡 Segera (≤ 3 hari)" },
+  { tone: "on-track", title: "🟢 Mendatang" }
 ];
 
 export default async function DeadlinesPage() {
@@ -50,7 +50,7 @@ export default async function DeadlinesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Deadlines</h1>
+        <h1 className="text-xl font-semibold text-foreground">Tenggat</h1>
         <p className="text-sm text-muted-foreground">Semua job aktif yang punya deadline, dikelompokkan berdasarkan urgensi</p>
       </div>
 
@@ -75,15 +75,15 @@ export default async function DeadlinesPage() {
                       <Link
                         key={job.id}
                         href={`/jobs/${job.id}`}
-                        className="flex items-center justify-between px-4 py-3 text-sm hover:bg-muted/50"
+                        className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-muted/50"
                       >
-                        <div>
+                        <div className="min-w-0">
                           <p className="font-medium text-foreground">
                             {job.jobNumber} — {job.client.fullName}
                           </p>
-                          <p className="text-xs text-muted-foreground">{job.description}</p>
+                          <p className="line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <span className="text-xs text-muted-foreground">{formatStatusLabel(job.status)}</span>
                           <StatusBadge tone={group.tone} label={formatDate(job.deadline)} />
                           <span className="text-xs text-muted-foreground">{job.pic?.name ?? "-"}</span>

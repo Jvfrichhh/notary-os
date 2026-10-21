@@ -9,7 +9,11 @@ import { classifyDeadline, formatCurrency, formatDate, formatStatusLabel } from 
 import { getValidNextStatuses } from "@/lib/jobStatus";
 import {
   addJobTask,
+  approveJobReview,
   changeJobStatusForm,
+  requestJobRevision,
+  submitJobForReview,
+  updateJobDetails,
   reviewChecklistDocument,
   toggleChecklistItem,
   toggleTaskStatus
@@ -41,6 +45,9 @@ export default async function JobDetailPage({
   const canViewArchive = await userHasPermission(user.id, PERMISSIONS.VIEW_MINUTA);
   const canEditArchive = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
   const canEditClients = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
+  const canEditFinance = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
+  // "Notaris" = pemberi perintah kerja (create_jobs): ubah job, setujui, selesaikan, batalkan.
+  const isNotary = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
   const aiEnabled = isAiEnabled();
 
   const job = await prisma.job.findUnique({
@@ -52,7 +59,6 @@ export default async function JobDetailPage({
       assistant: true,
       reviewer: true,
       notary: true,
-      visit: true,
       tasks: { orderBy: { createdAt: "asc" } },
       deedDrafts: {
         orderBy: { updatedAt: "desc" },
@@ -73,7 +79,21 @@ export default async function JobDetailPage({
 
   if (!job) notFound();
 
-  const nextStatuses = getValidNextStatuses(job.status);
+  const NOTARY_ONLY = ["READY_FOR_SIGNING", "COMPLETED", "CANCELLED"];
+  // Pengajuan/persetujuan punya tombol sendiri; dropdown hanya untuk status lain.
+  const nextStatuses = getValidNextStatuses(job.status).filter(
+    (s) => s !== "REVIEW" && (isNotary || !NOTARY_ONLY.includes(s)) && !(job.status === "REVIEW" && s === "IN_PROGRESS")
+  );
+  const isFinal = job.status === "COMPLETED" || job.status === "CANCELLED";
+  const staffOptions = isNotary && !isFinal
+    ? await prisma.user.findMany({
+        where: { isActive: true, role: { name: "STAFF" } },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" }
+      })
+    : [];
+  const dateInput = (d: Date | null) =>
+    d ? new Date(d.getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10) : "";
 
   // Unggahan klien yang bisa dianalisis AI: analisis terbaru per dokumen.
   const clientUploadIds = job.checklists
@@ -86,9 +106,11 @@ export default async function JobDetailPage({
 
   return (
     <div className="space-y-6">
-      {searchParams?.created === "client" && (
+      {(searchParams?.created === "client" || searchParams?.created === "job") && (
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
-          Klien {job.client.clientNumber} dan pekerjaan {job.jobNumber} berhasil dibuat. Checklist dokumen sudah disiapkan sesuai layanan.
+          {searchParams.created === "client" ? `Klien ${job.client.clientNumber} dan pekerjaan` : "Pekerjaan"} {job.jobNumber} berhasil dibuat.
+          Checklist dokumen sudah disiapkan sesuai layanan
+          {job.pic ? `; ${job.pic.name} sudah diberi tahu dan job langsung berjalan.` : ". Tentukan PIC lewat \"Ubah pekerjaan\" agar staf mulai bekerja."}
         </div>
       )}
       {/* Header */}
@@ -123,18 +145,52 @@ export default async function JobDetailPage({
               <Info label="PIC" value={job.pic?.name} />
               <Info label="Reviewer" value={job.reviewer?.name} />
               <Info label="Notaris" value={job.notary?.name} />
-              {job.visit && (
-                <div>
-                  <dt className="text-xs text-muted-foreground">Dari Kunjungan</dt>
-                  <dd>
-                    <Link href={`/visits/${job.visit.id}`} className="text-sm text-primary hover:underline">
-                      Lihat kunjungan
-                    </Link>
-                  </dd>
-                </div>
-              )}
             </dl>
-            {job.notes && <p className="mt-3 rounded-md bg-muted p-3 text-sm text-muted-foreground">{job.notes}</p>}
+            {job.notes && <p className="mt-3 whitespace-pre-line rounded-md bg-muted p-3 text-sm text-muted-foreground">{job.notes}</p>}
+            {isNotary && !isFinal && (
+              <details className="mt-3 rounded-md border border-border">
+                <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-primary">Ubah pekerjaan (PIC, target, prioritas, catatan)</summary>
+                <form action={updateJobDetails.bind(null, job.id)} className="grid grid-cols-1 gap-3 border-t border-border p-3 sm:grid-cols-3">
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs text-muted-foreground">Staf penanggung jawab (PIC)</span>
+                    <select name="picId" defaultValue={job.picId ?? ""} className={fieldCls}>
+                      <option value="">— Belum ditentukan —</option>
+                      {staffOptions.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                      {job.pic && !staffOptions.some((u) => u.id === job.picId) && <option value={job.pic.id}>{job.pic.name}</option>}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs text-muted-foreground">Target selesai</span>
+                    <input type="date" name="deadline" defaultValue={dateInput(job.deadline)} className={fieldCls} />
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs text-muted-foreground">Prioritas</span>
+                    <select name="priority" defaultValue={job.priority} className={fieldCls}>
+                      <option value="LOW">Rendah</option>
+                      <option value="NORMAL">Normal</option>
+                      <option value="HIGH">Tinggi</option>
+                      <option value="URGENT">Mendesak</option>
+                    </select>
+                  </label>
+                  <label className="text-sm sm:col-span-3">
+                    <span className="mb-1 block text-xs text-muted-foreground">Keterangan</span>
+                    <input name="description" defaultValue={job.description ?? ""} maxLength={500} className={fieldCls} />
+                  </label>
+                  <label className="text-sm sm:col-span-3">
+                    <span className="mb-1 block text-xs text-muted-foreground">Catatan</span>
+                    <textarea name="notes" rows={3} defaultValue={job.notes ?? ""} className={fieldCls} />
+                  </label>
+                  <div className="sm:col-span-3">
+                    <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                      Simpan perubahan
+                    </button>
+                    <span className="ml-2 text-xs text-muted-foreground">PIC baru otomatis menerima notifikasi dan tugas yang belum selesai.</span>
+                  </div>
+                </form>
+              </details>
+            )}
           </Card>
 
           {/* Checklist */}
@@ -388,10 +444,62 @@ export default async function JobDetailPage({
 
         {/* Right column */}
         <div className="space-y-6">
+          {/* Pemeriksaan Notaris */}
+          {!isFinal && (
+            <Card>
+              <h2 className="mb-2 text-sm font-semibold text-foreground">Pemeriksaan Notaris</h2>
+              {job.status === "REVIEW" ? (
+                isNotary ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">Pekerjaan ini diajukan untuk Anda periksa.</p>
+                    <form action={approveJobReview.bind(null, job.id)}>
+                      <button type="submit" className="w-full rounded-md bg-status-on-track py-2 text-sm font-medium text-white hover:opacity-90">
+                        Setujui — siap ditandatangani
+                      </button>
+                    </form>
+                    <form action={requestJobRevision.bind(null, job.id)} className="space-y-2 border-t border-border pt-3">
+                      <textarea name="note" required minLength={3} rows={3} placeholder="Apa yang perlu diperbaiki?" className={fieldCls} />
+                      <button type="submit" className="w-full rounded-md border border-status-overdue/50 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10">
+                        Minta revisi
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Sudah diajukan; menunggu keputusan Notaris.</p>
+                )
+              ) : job.status === "READY_FOR_SIGNING" ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Disetujui Notaris. {isNotary ? "Setelah ditandatangani, buka draft akta lalu klik \"Sahkan & Daftarkan\" — job otomatis selesai." : "Siapkan penandatanganan."}
+                  </p>
+                  {isNotary && (
+                    <form action={requestJobRevision.bind(null, job.id)} className="space-y-2">
+                      <textarea name="note" required minLength={3} rows={2} placeholder="Catatan revisi (bila perlu)" className={fieldCls} />
+                      <button type="submit" className="w-full rounded-md border border-border py-1.5 text-xs font-medium hover:bg-muted">
+                        Kembalikan untuk revisi
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ) : canEdit ? (
+                <form action={submitJobForReview.bind(null, job.id)} className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Draft sudah siap? Ajukan ke Notaris untuk diperiksa.</p>
+                  <input name="note" maxLength={500} placeholder="Catatan untuk Notaris (opsional)" className={fieldCls} />
+                  <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                    Ajukan ke Notaris
+                  </button>
+                </form>
+              ) : (
+                <p className="text-sm text-muted-foreground">Belum diajukan.</p>
+              )}
+            </Card>
+          )}
+
           {/* Status change */}
           <Card>
             <h2 className="mb-3 text-sm font-semibold text-foreground">Ubah Status</h2>
-            {job.status === "COMPLETED" || job.status === "CANCELLED" ? (
+            <p className="mb-2 text-xs text-muted-foreground">Status juga berubah otomatis: dokumen lengkap, diajukan, disetujui, dan akta disahkan.</p>
+            {isFinal ? (
               <p className="text-sm text-muted-foreground">Job ini sudah final ({formatStatusLabel(job.status)}).</p>
             ) : canEdit && nextStatuses.length > 0 ? (
               <form action={changeJobStatusForm.bind(null, job.id)} className="space-y-2">
@@ -414,6 +522,8 @@ export default async function JobDetailPage({
                   Update Status
                 </button>
               </form>
+            ) : canEdit ? (
+              <p className="text-sm text-muted-foreground">Tidak ada perubahan status manual yang tersedia.</p>
             ) : (
               <p className="text-sm text-muted-foreground">Anda tidak punya akses mengubah status job ini.</p>
             )}
@@ -422,12 +532,26 @@ export default async function JobDetailPage({
           {/* Payment */}
           {canViewFinance && (
             <Card>
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Pembayaran</h2>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">Pembayaran</h2>
+                {canEditFinance && job.payments.length === 0 && (
+                  <Link href={`/payments/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
+                    + Catat pembayaran
+                  </Link>
+                )}
+              </div>
               {job.payments.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Belum ada data pembayaran untuk job ini.</p>
               ) : (
                 job.payments.map((p) => (
                   <dl key={p.id} className="space-y-1.5 text-sm">
+                    {canEditFinance && (
+                      <div className="text-right">
+                        <Link href={`/payments/${p.id}/edit`} className="text-xs font-medium text-primary hover:underline">
+                          Perbarui pembayaran
+                        </Link>
+                      </div>
+                    )}
                     <Row label="Total" value={formatCurrency(p.totalAmount)} />
                     <Row label="DP" value={formatCurrency(p.downPayment)} />
                     <Row label="Dibayar" value={formatCurrency(p.paidAmount)} />
@@ -451,6 +575,9 @@ export default async function JobDetailPage({
     </div>
   );
 }
+
+const fieldCls =
+  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 function Info({ label, value }: { label: string; value?: string | null }) {
   return (

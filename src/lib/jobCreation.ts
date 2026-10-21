@@ -34,7 +34,8 @@ export async function createJobWithTemplate(
       serviceTypeId: input.serviceTypeId ?? null,
       description: input.description ?? null,
       priority: input.priority ?? "NORMAL",
-      status: "INBOX",
+      // Sudah ada PIC = langsung dikerjakan; tanpa PIC menunggu di Inbox.
+      status: input.picId ? "IN_PROGRESS" : "INBOX",
       deadline: input.deadline ?? null,
       picId: input.picId ?? null,
       reviewerId: input.reviewerId ?? null,
@@ -60,7 +61,7 @@ export async function createJobWithTemplate(
       const tasks = template.defaultTasks as { title: string; description?: string }[];
       if (Array.isArray(tasks) && tasks.length > 0) {
         await prisma.jobTask.createMany({
-          data: tasks.map((t) => ({ jobId: job.id, title: t.title, description: t.description ?? null }))
+          data: tasks.map((t) => ({ jobId: job.id, title: t.title, description: t.description ?? null, assignedTo: job.picId }))
         });
       }
     }

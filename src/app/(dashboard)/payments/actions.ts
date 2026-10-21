@@ -111,7 +111,8 @@ export async function createPayment(_prevState: PaymentFormState, formData: Form
 
   revalidatePath("/payments");
   if (jobId) revalidatePath(`/jobs/${jobId}`);
-  redirect("/payments");
+  // Dibuat dari halaman job -> kembali ke job tersebut.
+  redirect(jobId ? `/jobs/${jobId}` : "/payments");
 }
 
 export async function updatePayment(id: string, _prevState: PaymentFormState, formData: FormData): Promise<PaymentFormState> {
@@ -164,7 +165,7 @@ export async function updatePayment(id: string, _prevState: PaymentFormState, fo
 
   revalidatePath("/payments");
   if (payment.jobId) revalidatePath(`/jobs/${payment.jobId}`);
-  redirect("/payments");
+  redirect(payment.jobId ? `/jobs/${payment.jobId}` : "/payments");
 }
 
 async function setRecordStatus(id: string, recordStatus: "ACTIVE" | "ARCHIVED") {

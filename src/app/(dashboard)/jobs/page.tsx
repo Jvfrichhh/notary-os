@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 interface JobsPageProps {
-  searchParams: { view?: string; q?: string; status?: string };
+  searchParams: { view?: string; q?: string; status?: string; mine?: string };
 }
 
 export default async function JobsPage({ searchParams }: JobsPageProps) {
@@ -22,10 +22,14 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
   const view = searchParams.view === "kanban" ? "kanban" : "table";
   const q = searchParams.q?.trim() ?? "";
+  const mine = searchParams.mine === "1";
+  const statusFilter = JOB_STATUSES.find((s) => s === searchParams.status);
 
   const jobs = await prisma.job.findMany({
     where: {
       recordStatus: "ACTIVE",
+      ...(mine ? { picId: user.id } : {}),
+      ...(statusFilter ? { status: statusFilter } : {}),
       ...(q
         ? {
             OR: [
@@ -40,7 +44,16 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
     include: { client: true, pic: true, serviceType: true }
   });
 
-  const qsSuffix = q ? `&q=${encodeURIComponent(q)}` : "";
+  const qsSuffix = `${q ? `&q=${encodeURIComponent(q)}` : ""}${mine ? "&mine=1" : ""}${statusFilter ? `&status=${statusFilter}` : ""}`;
+  const filterLink = (opts: { mine?: boolean; status?: string }) => {
+    const p = new URLSearchParams();
+    if (view === "kanban") p.set("view", "kanban");
+    if (q) p.set("q", q);
+    if (opts.mine) p.set("mine", "1");
+    if (opts.status) p.set("status", opts.status);
+    const qs = p.toString();
+    return `/jobs${qs ? `?${qs}` : ""}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -70,7 +83,29 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {view === "kanban" && <input type="hidden" name="view" value="kanban" />}
+          {mine && <input type="hidden" name="mine" value="1" />}
+          {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
         </form>
+
+        <div className="flex flex-wrap gap-1 text-xs">
+          {[
+            { label: "Semua", href: filterLink({}), active: !mine && !statusFilter },
+            { label: "Job Saya", href: filterLink({ mine: true }), active: mine && !statusFilter },
+            { label: "Menunggu Persetujuan", href: filterLink({ status: "REVIEW" }), active: statusFilter === "REVIEW" },
+            { label: "Siap Tanda Tangan", href: filterLink({ status: "READY_FOR_SIGNING" }), active: statusFilter === "READY_FOR_SIGNING" }
+          ].map((f) => (
+            <Link
+              key={f.label}
+              href={f.href}
+              className={cn(
+                "rounded-full border px-3 py-1",
+                f.active ? "border-primary bg-primary/10 font-medium text-primary" : "border-border text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {f.label}
+            </Link>
+          ))}
+        </div>
 
         <div className="flex gap-1 rounded-md bg-muted p-1 text-sm">
           <Link
@@ -90,7 +125,11 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
       {jobs.length === 0 ? (
         <Card>
-          <EmptyState title="Belum ada pekerjaan." actionLabel={canCreate ? "Buat Job Baru" : undefined} actionHref="/jobs/new" />
+          <EmptyState
+            title={mine || statusFilter ? "Tidak ada pekerjaan untuk filter ini." : "Belum ada pekerjaan."}
+            actionLabel={canCreate && !mine && !statusFilter ? "Tambah Klien & Pekerjaan" : undefined}
+            actionHref="/clients/new"
+          />
         </Card>
       ) : view === "kanban" ? (
         <div className="flex gap-4 overflow-x-auto pb-2">

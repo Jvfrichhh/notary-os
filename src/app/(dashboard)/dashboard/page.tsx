@@ -21,35 +21,28 @@ function getTodayRange() {
 // Statistik job -- HANYA dipanggil kalau user punya view_jobs. Query dipisah
 // dari statistik kunjungan supaya server tidak mengeksekusi query untuk data
 // yang tidak boleh dilihat user (pembatasan di sisi data, bukan cuma tampilan).
-async function getJobStats() {
+async function getJobStats(userId: string) {
   const { startOfToday, startOfTomorrow } = getTodayRange();
+  // Hanya job aktif (bukan yang diarsipkan) yang dihitung.
+  const active = { recordStatus: "ACTIVE" as const };
+  const open = { ...active, status: { notIn: ["COMPLETED", "CANCELLED"] as ("COMPLETED" | "CANCELLED")[] } };
 
-  const [totalJobs, inProgress, dueToday, overdue, completed] = await Promise.all([
-    prisma.job.count({ where: { recordStatus: "ACTIVE" } }),
-    prisma.job.count({ where: { status: "IN_PROGRESS" } }),
-    prisma.job.count({
-      where: { deadline: { gte: startOfToday, lt: startOfTomorrow }, status: { notIn: ["COMPLETED", "CANCELLED"] } }
-    }),
-    prisma.job.count({
-      where: { deadline: { lt: startOfToday }, status: { notIn: ["COMPLETED", "CANCELLED"] } }
-    }),
-    prisma.job.count({ where: { status: "COMPLETED" } })
+  const [totalJobs, inProgress, dueToday, overdue, completed, waitingReview, myOpen] = await Promise.all([
+    prisma.job.count({ where: active }),
+    prisma.job.count({ where: { ...active, status: "IN_PROGRESS" } }),
+    prisma.job.count({ where: { ...open, deadline: { gte: startOfToday, lt: startOfTomorrow } } }),
+    prisma.job.count({ where: { ...open, deadline: { lt: startOfToday } } }),
+    prisma.job.count({ where: { ...active, status: "COMPLETED" } }),
+    prisma.job.count({ where: { ...active, status: "REVIEW" } }),
+    prisma.job.count({ where: { ...open, picId: userId } })
   ]);
 
-  return { totalJobs, inProgress, dueToday, overdue, completed };
-}
-
-// Statistik kunjungan -- HANYA dipanggil kalau user punya view_visits.
-async function getVisitStats() {
-  const { startOfToday, startOfTomorrow } = getTodayRange();
-  const todayVisits = await prisma.visit.count({
-    where: { visitDate: { gte: startOfToday, lt: startOfTomorrow } }
-  });
-  return { todayVisits };
+  return { totalJobs, inProgress, dueToday, overdue, completed, waitingReview, myOpen };
 }
 
 async function getRecentJobs() {
   return prisma.job.findMany({
+    where: { recordStatus: "ACTIVE" },
     take: 5,
     orderBy: { createdAt: "desc" },
     include: { client: true, pic: true }
@@ -68,15 +61,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const user = await requireUser();
   const permissions = await getUserPermissions(user.id);
   const canViewJobs = permissions.has(PERMISSIONS.VIEW_JOBS);
-  const canViewVisits = permissions.has(PERMISSIONS.VIEW_VISITS);
   const canCreateJobs = permissions.has(PERMISSIONS.CREATE_JOBS);
   const accessDenied = searchParams.denied === "1";
 
   // Setiap blok query hanya dijalankan kalau izinnya ada; tanpa izin -> null,
   // tidak ada query ke tabel tersebut sama sekali.
-  const [jobStats, visitStats, recentJobs] = await Promise.all([
-    canViewJobs ? getJobStats() : Promise.resolve(null),
-    canViewVisits ? getVisitStats() : Promise.resolve(null),
+  const [jobStats, recentJobs] = await Promise.all([
+    canViewJobs ? getJobStats(user.id) : Promise.resolve(null),
     canViewJobs ? getRecentJobs() : Promise.resolve([])
   ]);
 
@@ -87,10 +78,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           { label: "In Progress", value: jobStats.inProgress },
           { label: "Due Today", value: jobStats.dueToday },
           { label: "Overdue", value: jobStats.overdue },
-          { label: "Completed", value: jobStats.completed }
+          { label: "Completed", value: jobStats.completed },
+          // Notaris: antrean persetujuan; staf: pekerjaan yang menjadi tanggungannya.
+          canCreateJobs
+            ? { label: "Menunggu Persetujuan", value: jobStats.waitingReview, href: "/jobs?status=REVIEW" }
+            : { label: "Job Saya", value: jobStats.myOpen, href: "/jobs?mine=1" }
         ]
-      : []),
-    ...(visitStats ? [{ label: "Klien Datang Hari Ini", value: visitStats.todayVisits }] : [])
+      : [])
   ];
 
   return (
@@ -121,12 +115,21 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       {cards.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {cards.map((c) => (
-            <Card key={c.label} className="text-center">
-              <p className="text-2xl font-semibold text-foreground">{c.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{c.label}</p>
-            </Card>
-          ))}
+          {cards.map((c) => {
+            const body = (
+              <Card className="text-center">
+                <p className="text-2xl font-semibold text-foreground">{c.value}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{c.label}</p>
+              </Card>
+            );
+            return "href" in c && c.href ? (
+              <Link key={c.label} href={c.href} className="block hover:opacity-90">
+                {body}
+              </Link>
+            ) : (
+              <div key={c.label}>{body}</div>
+            );
+          })}
         </div>
       )}
 
@@ -141,8 +144,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         {recentJobs.length === 0 ? (
           <EmptyState
             title="Belum ada pekerjaan."
-            actionLabel={canCreateJobs ? "Buat Job Baru" : undefined}
-            actionHref={canCreateJobs ? "/jobs/new" : undefined}
+            actionLabel={canCreateJobs ? "Tambah Klien & Pekerjaan" : undefined}
+            actionHref={canCreateJobs ? "/clients/new" : undefined}
           />
         ) : (
           <div className="divide-y divide-border">

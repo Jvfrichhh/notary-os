@@ -17,12 +17,15 @@ export function NewJobSection({
   services,
   staff,
   defaultPicId,
-  error
+  error,
+  fixed = false
 }: {
   services: ServiceOption[];
   staff: StaffOption[];
   defaultPicId?: string;
   error?: string;
+  /** Dipakai di halaman klien: selalu membuat job, tanpa kotak centang. */
+  fixed?: boolean;
 }) {
   const [enabled, setEnabled] = useState(true);
   const [serviceId, setServiceId] = useState("");
@@ -37,11 +40,15 @@ export function NewJobSection({
   }, {});
 
   return (
-    <fieldset className="space-y-4 rounded-lg border border-border p-4">
-      <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <input type="checkbox" name="withJob" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-        Langsung buat pekerjaan (job) untuk klien ini
-      </label>
+    <fieldset className={fixed ? "space-y-4" : "space-y-4 rounded-lg border border-border p-4"}>
+      {fixed ? (
+        <input type="hidden" name="withJob" value="on" />
+      ) : (
+        <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <input type="checkbox" name="withJob" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+          Langsung buat pekerjaan (job) untuk klien ini
+        </label>
+      )}
       {!enabled && <p className="text-xs text-muted-foreground">Klien disimpan tanpa job. Job bisa dibuat kapan saja dari halaman klien.</p>}
 
       {enabled && (
@@ -92,6 +99,17 @@ export function NewJobSection({
             <input id="jobDeadline" name="jobDeadline" type="date" className={fieldClass} />
           </div>
           <div>
+            <label htmlFor="jobPriority" className="mb-1 block text-sm font-medium text-foreground">
+              Prioritas
+            </label>
+            <select id="jobPriority" name="jobPriority" defaultValue="NORMAL" className={fieldClass}>
+              <option value="LOW">Rendah</option>
+              <option value="NORMAL">Normal</option>
+              <option value="HIGH">Tinggi</option>
+              <option value="URGENT">Mendesak</option>
+            </select>
+          </div>
+          <div>
             <label htmlFor="jobPicId" className="mb-1 block text-sm font-medium text-foreground">
               Staf penanggung jawab (PIC)
             </label>
@@ -103,7 +121,7 @@ export function NewJobSection({
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-muted-foreground">Staf terpilih langsung mendapat notifikasi tugas baru.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Staf terpilih langsung mendapat notifikasi dan job langsung berstatus Sedang Diproses.</p>
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="jobDescription" className="mb-1 block text-sm font-medium text-foreground">

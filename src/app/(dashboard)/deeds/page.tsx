@@ -21,7 +21,13 @@ export default async function DeedsPage() {
   const [waiting, drafts, jobs] = await Promise.all([
     // Perintah notaris yang belum dibuatkan draft: job aktif tanpa draft akta, terbaru dulu.
     prisma.job.findMany({
-      where: { recordStatus: "ACTIVE", status: { notIn: ["COMPLETED", "CANCELLED"] }, deedDrafts: { none: {} } },
+      where: {
+        recordStatus: "ACTIVE",
+        status: { notIn: ["COMPLETED", "CANCELLED"] },
+        deedDrafts: { none: {} },
+        // Hanya layanan yang memang menghasilkan akta dari template (mis. AJB/PPAT tidak).
+        OR: [{ serviceTypeId: null }, { serviceType: { name: { in: SERVICE_CATALOG.filter((c) => c.deedKey).map((c) => c.name) } } }]
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
       select: {

@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatStatusLabel } from "@/lib/format";
-import { archiveClient, restoreClient } from "@/app/(dashboard)/clients/actions";
+import { archiveClient, createJobForClient, restoreClient } from "@/app/(dashboard)/clients/actions";
+import { ClientNewJobForm } from "@/components/clients/ClientNewJobForm";
 import { ClientPortalAccess } from "@/components/clients/ClientPortalAccess";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
@@ -26,18 +27,30 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const canDelete = await userHasPermission(user.id, PERMISSIONS.DELETE_CLIENTS);
   const canViewDocuments = await userHasPermission(user.id, PERMISSIONS.VIEW_DOCUMENTS);
   const canUploadDocuments = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
+  const canCreateJobs = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
 
   const client = await prisma.client.findUnique({
     where: { id: params.id },
     include: {
-      visits: { orderBy: { visitDate: "desc" }, take: 5 },
-      jobs: { orderBy: { createdAt: "desc" }, take: 5, include: { pic: true } },
+      jobs: { orderBy: { createdAt: "desc" }, take: 10, include: { pic: true } },
       documents: { orderBy: { uploadedAt: "desc" }, take: 5 },
       accounts: { orderBy: { createdAt: "asc" } }
     }
   });
 
   if (!client) notFound();
+
+  const showNewJob = canCreateJobs && client.status === "ACTIVE";
+  const [services, staff] = showNewJob
+    ? await Promise.all([
+        prisma.serviceType.findMany({
+          where: { isActive: true },
+          orderBy: [{ category: "asc" }, { name: "asc" }],
+          select: { id: true, name: true, category: true }
+        }),
+        prisma.user.findMany({ where: { isActive: true, role: { name: "STAFF" } }, orderBy: { name: "asc" }, select: { id: true, name: true } })
+      ])
+    : [[], []];
 
   return (
     <div className="space-y-6">
@@ -110,23 +123,13 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Kunjungan Terakhir</h2>
-          {client.visits.length === 0 ? (
-            <EmptyState title="Belum ada kunjungan." />
-          ) : (
-            <div className="divide-y divide-border">
-              {client.visits.map((v) => (
-                <Link key={v.id} href={`/visits/${v.id}`} className="block py-2.5 text-sm hover:bg-muted/50">
-                  <p className="font-medium text-foreground">{v.purpose ?? "Kunjungan"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(v.visitDate).toLocaleDateString("id-ID")} · {v.serviceCategory ?? "-"}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </Card>
+        {showNewJob && (
+          <Card>
+            <h2 className="mb-1 text-sm font-semibold text-foreground">+ Pekerjaan baru</h2>
+            <p className="mb-3 text-xs text-muted-foreground">Klien lama datang lagi? Buat pekerjaan baru di sini tanpa menambah data klien.</p>
+            <ClientNewJobForm action={createJobForClient.bind(null, client.id)} services={services} staff={staff} />
+          </Card>
+        )}
 
         <Card>
           <h2 className="mb-3 text-sm font-semibold text-foreground">Job Terkait</h2>

@@ -10,6 +10,21 @@ import { PERMISSIONS } from "@/lib/permissionKeys";
 import { writeAuditLog } from "@/lib/audit";
 import { getDeedTemplate } from "@/lib/deeds/registry";
 import { syncDraftToVault } from "@/lib/deeds/vault";
+import { autoSetJobStatus, notifyJobPeople } from "@/lib/jobAutomation";
+
+/** Perbandingan isi JSON tanpa peduli urutan key (jsonb Postgres mengurutkan ulang key). */
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) {
+    const bb = b as unknown[];
+    return a.length === bb.length && a.every((v, i) => sameJson(v, bb[i]));
+  }
+  const ka = Object.keys(a as object).filter((k) => (a as Record<string, unknown>)[k] !== undefined);
+  const kb = Object.keys(b as object).filter((k) => (b as Record<string, unknown>)[k] !== undefined);
+  return ka.length === kb.length && ka.every((k) => sameJson((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+}
 
 const MAX_DATA_BYTES = 200_000;
 
@@ -41,7 +56,11 @@ export async function createDeedDraft(jobId: string, formData: FormData) {
     data: { jobId, templateKey, title: template.title, data: data as Prisma.InputJsonValue, createdById: user.id, updatedById: user.id }
   });
   await writeAuditLog({ userId: user.id, action: "deed_draft_created", entityType: "DeedDraft", entityId: draft.id, newValue: { jobId, templateKey } });
+  // Mulai menyusun akta = pekerjaan berjalan; PIC kosong -> pembuat draft menjadi PIC.
+  await prisma.job.updateMany({ where: { id: jobId, picId: null }, data: { picId: user.id } });
+  await autoSetJobStatus(jobId, "IN_PROGRESS", "draft akta mulai disusun", user.id, { onlyFrom: ["INBOX"] });
   revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/deeds");
   redirect(`/jobs/${jobId}/deeds/${draft.id}`);
 }
 
@@ -61,9 +80,14 @@ export async function saveDeedDraft(
   }
   if (!data || typeof data !== "object" || Array.isArray(data)) return { ok: false, error: "Data tidak valid." };
 
-  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, deedId: true } });
+  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, deedId: true, data: true, updatedAt: true } });
   if (!draft) return { ok: false, error: "Draft tidak ditemukan." };
   if (draft.deedId) return { ok: false, error: "Draft sudah disahkan dan terkunci." };
+  // Tidak ada perubahan -> tidak perlu versi dokumen baru di Document Vault.
+  if (sameJson(draft.data, data)) {
+    const hasVault = await prisma.document.count({ where: { jobId: draft.jobId, description: { contains: `[draft-akta:${draftId}:` } } });
+    if (hasVault > 0) return { ok: true, savedAt: draft.updatedAt.toISOString(), vaultFiles: 0 };
+  }
   const updated = await prisma.deedDraft.update({
     where: { id: draftId },
     data: { data: data as Prisma.InputJsonValue, updatedById: user.id }
@@ -81,8 +105,15 @@ export async function deleteDeedDraft(draftId: string) {
   const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, templateKey: true, deedId: true } });
   if (!draft || draft.deedId) return; // draft yang sudah disahkan tidak boleh dihapus
   await prisma.deedDraft.delete({ where: { id: draftId } });
-  await writeAuditLog({ userId: user.id, action: "deed_draft_deleted", entityType: "DeedDraft", entityId: draftId, previousValue: draft });
+  // File Word draft ini di Document Vault ikut diarsipkan (tidak dihapus, riwayat tetap ada).
+  const archived = await prisma.document.updateMany({
+    where: { jobId: draft.jobId, status: "ACTIVE", description: { contains: `[draft-akta:${draftId}:` } },
+    data: { status: "ARCHIVED" }
+  });
+  await writeAuditLog({ userId: user.id, action: "deed_draft_deleted", entityType: "DeedDraft", entityId: draftId, previousValue: { ...draft, archivedDocuments: archived.count } });
   revalidatePath(`/jobs/${draft.jobId}`);
+  revalidatePath("/documents");
+  revalidatePath("/deeds");
   redirect(`/jobs/${draft.jobId}`);
 }
 
@@ -193,7 +224,15 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     entityId: deedId,
     newValue: { draftId, deedNumber, templateKey: draft.templateKey }
   });
+  // Semua draft akta job ini sudah disahkan -> pekerjaan otomatis selesai.
+  const openDrafts = await prisma.deedDraft.count({ where: { jobId: draft.job.id, deedId: null } });
+  if (openDrafts === 0) {
+    const done = await autoSetJobStatus(draft.job.id, "COMPLETED", `akta ${deedNumber} disahkan`, user.id, { force: true });
+    if (done) await notifyJobPeople(draft.job.id, `Akta ${deedNumber} disahkan; pekerjaan selesai.`, { pic: true });
+  }
   revalidatePath(`/jobs/${draft.job.id}`);
+  revalidatePath("/jobs");
+  revalidatePath("/dashboard");
   revalidatePath("/archive");
   revalidatePath("/notary-record");
   revalidatePath("/deeds");

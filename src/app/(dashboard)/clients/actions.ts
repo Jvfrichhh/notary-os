@@ -25,7 +25,61 @@ const clientSchema = z.object({
 export type ClientFormState = {
   errors?: Partial<Record<keyof z.infer<typeof clientSchema> | "serviceTypeId", string[]>>;
   formError?: string;
+  /** NIK sudah dipakai klien lain -> form menampilkan pilihan "tetap simpan". */
+  duplicateNik?: boolean;
 };
+
+/** Validasi isian bagian "pekerjaan baru" (layanan wajib, izin create_jobs). */
+async function checkNewJobInput(
+  userId: string,
+  formData: FormData
+): Promise<{ service: { id: string; name: string } } | { error: ClientFormState }> {
+  if (!(await userHasPermission(userId, PERMISSIONS.CREATE_JOBS))) {
+    return { error: { formError: "Hanya Notaris yang dapat membuat pekerjaan." } };
+  }
+  const serviceTypeId = String(formData.get("serviceTypeId") ?? "").trim();
+  if (!serviceTypeId) return { error: { errors: { serviceTypeId: ["Pilih layanan yang diminta."] } } };
+  const service = await prisma.serviceType.findFirst({ where: { id: serviceTypeId, isActive: true }, select: { id: true, name: true } });
+  if (!service) return { error: { errors: { serviceTypeId: ["Layanan tidak ditemukan."] } } };
+  return { service };
+}
+
+/** Buat job dari isian bagian "pekerjaan baru"; Notaris pembuat menjadi Notaris penanggung jawab. */
+async function createJobFromForm(clientId: string, service: { id: string; name: string }, formData: FormData, userId: string) {
+  const ptChanges = formData.getAll("ptChanges").map(String).filter(Boolean);
+  const note = String(formData.get("jobDescription") ?? "").trim();
+  const description = [note || service.name, ptChanges.length ? `Perubahan: ${ptChanges.join(", ")}` : ""].filter(Boolean).join(" — ");
+  const deadlineRaw = String(formData.get("jobDeadline") ?? "").trim();
+  const picId = String(formData.get("jobPicId") ?? "").trim();
+  const priority = String(formData.get("jobPriority") ?? "NORMAL");
+  return createJobWithTemplate(
+    {
+      clientId,
+      serviceTypeId: service.id,
+      description: description.slice(0, 500),
+      deadline: deadlineRaw ? new Date(`${deadlineRaw}T00:00:00+07:00`) : null,
+      picId: picId || null,
+      priority: (["LOW", "NORMAL", "HIGH", "URGENT"].includes(priority) ? priority : "NORMAL") as "LOW" | "NORMAL" | "HIGH" | "URGENT",
+      notaryId: userId
+    },
+    userId
+  );
+}
+
+/** "+ Pekerjaan baru" dari halaman klien (klien lama datang lagi). */
+export async function createJobForClient(clientId: string, _prev: ClientFormState, formData: FormData): Promise<ClientFormState> {
+  const user = await requireUser();
+  const checked = await checkNewJobInput(user.id, formData);
+  if ("error" in checked) return checked.error;
+  const client = await prisma.client.findFirst({ where: { id: clientId, status: "ACTIVE" }, select: { id: true } });
+  if (!client) return { formError: "Klien tidak ditemukan." };
+  const job = await createJobFromForm(client.id, checked.service, formData, user.id);
+  revalidatePath(`/clients/${client.id}`);
+  revalidatePath("/jobs");
+  revalidatePath("/deeds");
+  revalidatePath("/dashboard");
+  redirect(`/jobs/${job.id}?created=job`);
+}
 
 /**
  * CLI-0001, CLI-0002, ... = nomor TERBESAR yang ada + 1. (Sebelumnya memakai
@@ -74,15 +128,30 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
   // Bagian "Langsung buat job": divalidasi SEBELUM klien disimpan supaya
   // tidak ada klien tersimpan setengah jalan karena layanan belum dipilih.
   const withJob = formData.get("withJob") === "on";
-  const serviceTypeId = String(formData.get("serviceTypeId") ?? "").trim();
   let service: { id: string; name: string } | null = null;
   if (withJob) {
-    if (!(await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS))) {
-      return { formError: "Anda tidak berhak membuat job. Hilangkan centang 'Langsung buat pekerjaan'." };
+    const checked = await checkNewJobInput(user.id, formData);
+    if ("error" in checked) return checked.error;
+    service = checked.service;
+  }
+
+  // Klien lama datang lagi: jangan buat data ganda, arahkan ke halaman kliennya.
+  const nikInput = toNullable(parsed.data.nik ?? "");
+  if (nikInput && formData.get("allowDuplicateNik") !== "on") {
+    const existing = await prisma.client.findFirst({
+      where: { nik: nikInput, status: "ACTIVE" },
+      select: { fullName: true, clientNumber: true }
+    });
+    if (existing) {
+      return {
+        errors: {
+          nik: [
+            `NIK ini sudah terdaftar atas ${existing.fullName} (${existing.clientNumber}). Buka halaman klien tersebut lalu klik "+ Pekerjaan baru", atau centang "Tetap simpan sebagai klien baru".`
+          ]
+        },
+        duplicateNik: true
+      };
     }
-    if (!serviceTypeId) return { errors: { serviceTypeId: ["Pilih layanan, atau hilangkan centang 'Langsung buat pekerjaan'."] } };
-    service = await prisma.serviceType.findFirst({ where: { id: serviceTypeId, isActive: true }, select: { id: true, name: true } });
-    if (!service) return { errors: { serviceTypeId: ["Layanan tidak ditemukan."] } };
   }
 
   const data = parsed.data;
@@ -126,24 +195,19 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
   revalidatePath("/clients");
 
   if (withJob && service) {
-    const ptChanges = formData.getAll("ptChanges").map(String).filter(Boolean);
-    const note = String(formData.get("jobDescription") ?? "").trim();
-    const description = [note || service.name, ptChanges.length ? `Perubahan: ${ptChanges.join(", ")}` : ""].filter(Boolean).join(" — ");
-    const deadlineRaw = String(formData.get("jobDeadline") ?? "").trim();
-    const picId = String(formData.get("jobPicId") ?? "").trim();
-    const job = await createJobWithTemplate(
-      {
-        clientId: client.id,
-        serviceTypeId: service.id,
-        description: description.slice(0, 500),
-        deadline: deadlineRaw ? new Date(deadlineRaw) : null,
-        picId: picId || null
-      },
-      user.id
-    );
+    let jobId: string;
+    try {
+      jobId = (await createJobFromForm(client.id, service, formData, user.id)).id;
+    } catch (err) {
+      // Klien + job harus jadi bersama: bila job gagal, klien yang baru dibuat dibatalkan.
+      console.error("[clients] gagal membuat job untuk klien baru", err);
+      await prisma.client.delete({ where: { id: client.id } }).catch(() => undefined);
+      return { formError: "Gagal membuat pekerjaan; klien belum disimpan. Coba simpan lagi." };
+    }
     revalidatePath("/jobs");
+    revalidatePath("/deeds");
     revalidatePath("/dashboard");
-    redirect(`/jobs/${job.id}?created=client`);
+    redirect(`/jobs/${jobId}?created=client`);
   }
 
   redirect(`/clients/${client.id}`);

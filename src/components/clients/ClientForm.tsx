@@ -95,7 +95,14 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
           </select>
         </div>
 
-        <Field label="NIK" name="nik" defaultValue={client?.nik} errors={errors.nik} />
+        <div>
+          <Field label="NIK" name="nik" defaultValue={client?.nik} errors={errors.nik} />
+          {state.duplicateNik && (
+            <label className="mt-1 flex items-center gap-2 text-xs text-foreground">
+              <input type="checkbox" name="allowDuplicateNik" /> Tetap simpan sebagai klien baru
+            </label>
+          )}
+        </div>
         <Field label="No. Telepon" name="phone" defaultValue={client?.phone} errors={errors.phone} />
         <Field label="Email" name="email" type="email" defaultValue={client?.email} errors={errors.email} />
         <Field label="Kota" name="city" defaultValue={client?.city} errors={errors.city} />

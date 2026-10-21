@@ -27,16 +27,24 @@ export type ClientFormState = {
   formError?: string;
 };
 
-async function generateClientNumber(): Promise<string> {
-  const last = await prisma.client.findFirst({
-    orderBy: { createdAt: "desc" },
-    select: { clientNumber: true }
-  });
-
-  const lastSeq = last?.clientNumber?.match(/(\d+)$/)?.[1];
-  const next = lastSeq ? parseInt(lastSeq, 10) + 1 : 1;
+/**
+ * CLI-0001, CLI-0002, ... = nomor TERBESAR yang ada + 1. (Sebelumnya memakai
+ * klien yang terakhir dibuat; bila urutan createdAt tidak sama dengan urutan
+ * nomor -- mis. data impor/seed -- nomor bisa bentrok.)
+ */
+async function generateClientNumber(offset = 0): Promise<string> {
+  const rows = await prisma.$queryRaw<{ max: number | null }[]>`
+    SELECT MAX(CAST(SUBSTRING("clientNumber" FROM '([0-9]+)$') AS INTEGER)) AS max FROM clients
+  `;
+  const next = Number(rows[0]?.max ?? 0) + 1 + offset;
   return `CLI-${String(next).padStart(4, "0")}`;
 }
+
+const isUniqueClientNumberError = (err: unknown) =>
+  typeof err === "object" &&
+  err !== null &&
+  (err as { code?: string }).code === "P2002" &&
+  JSON.stringify((err as { meta?: unknown }).meta ?? "").includes("clientNumber");
 
 function toNullable(value: string | undefined) {
   return value && value.trim() !== "" ? value.trim() : null;
@@ -77,25 +85,35 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
     if (!service) return { errors: { serviceTypeId: ["Layanan tidak ditemukan."] } };
   }
 
-  const clientNumber = await generateClientNumber();
   const data = parsed.data;
 
-  const client = await prisma.client.create({
-    data: {
-      clientNumber,
-      fullName: data.fullName,
-      clientType: data.clientType ?? null,
-      nik: toNullable(data.nik),
-      phone: toNullable(data.phone),
-      email: toNullable(data.email),
-      address: toNullable(data.address),
-      city: toNullable(data.city),
-      companyName: toNullable(data.companyName),
-      npwp: toNullable(data.npwp),
-      notes: toNullable(data.notes),
-      createdBy: user.id
+  // Simpan dengan nomor berikutnya; bila bentrok (dua orang menyimpan
+  // bersamaan), coba nomor sesudahnya sampai 5 kali.
+  let client: Awaited<ReturnType<typeof prisma.client.create>> | null = null;
+  for (let attempt = 0; attempt < 5 && !client; attempt++) {
+    const clientNumber = await generateClientNumber(attempt);
+    try {
+      client = await prisma.client.create({
+        data: {
+          clientNumber,
+          fullName: data.fullName,
+          clientType: data.clientType ?? null,
+          nik: toNullable(data.nik),
+          phone: toNullable(data.phone),
+          email: toNullable(data.email),
+          address: toNullable(data.address),
+          city: toNullable(data.city),
+          companyName: toNullable(data.companyName),
+          npwp: toNullable(data.npwp),
+          notes: toNullable(data.notes),
+          createdBy: user.id
+        }
+      });
+    } catch (err) {
+      if (!isUniqueClientNumberError(err)) throw err;
     }
-  });
+  }
+  if (!client) return { formError: "Gagal membuat nomor client. Coba simpan lagi." };
 
   await writeAuditLog({
     userId: user.id,

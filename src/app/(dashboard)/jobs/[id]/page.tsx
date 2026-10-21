@@ -628,7 +628,7 @@ export default async function JobDetailPage({
                 <h2 className="text-sm font-semibold text-foreground">Pembayaran</h2>
                 {canEditFinance && job.payments.length === 0 && (
                   <Link href={`/payments/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
-                    + Catat pembayaran
+                    + Buat tagihan
                   </Link>
                 )}
               </div>
@@ -637,13 +637,12 @@ export default async function JobDetailPage({
               ) : (
                 job.payments.map((p) => (
                   <dl key={p.id} className="space-y-1.5 text-sm">
-                    {canEditFinance && (
-                      <div className="text-right">
-                        <Link href={`/payments/${p.id}/edit`} className="text-xs font-medium text-primary hover:underline">
-                          Perbarui pembayaran
-                        </Link>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{p.invoiceNumber ?? "Tagihan"}</span>
+                      <Link href={`/payments/${p.id}`} className="text-xs font-medium text-primary hover:underline">
+                        {canEditFinance ? "Catat bayar / kuitansi" : "Detail"}
+                      </Link>
+                    </div>
                     <Row label="Total" value={formatCurrency(p.totalAmount)} />
                     <Row label="DP" value={formatCurrency(p.downPayment)} />
                     <Row label="Dibayar" value={formatCurrency(p.paidAmount)} />

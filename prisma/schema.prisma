@@ -147,6 +147,7 @@ model User {
   visitsReceived    Visit[]
   tasksAssigned     JobTask[]
   documentsUploaded Document[]
+  receiptsReceived  PaymentReceipt[] @relation("ReceiptReceiver")
   deedsAsNotary     Deed[]
   auditLogs         AuditLog[]
   notifications     Notification[]
@@ -675,9 +676,35 @@ model Payment {
   paymentDate     DateTime?
   paymentMethod   String?
   notes           String?
+  /// Nomor tagihan, mis. "INV/2026/10/0001" (terisi saat tagihan dibuat).
+  invoiceNumber   String?       @unique
   createdAt       DateTime      @default(now())
 
+  receipts PaymentReceipt[]
+
   @@map("payments")
+}
+
+/// Satu kali pembayaran masuk (DP / angsuran / pelunasan) + kuitansi bernomor.
+/// paidAmount pada Payment bertambah/berkurang mengikuti kuitansi (yang
+/// dibatalkan tidak dihitung; kuitansi tidak pernah dihapus).
+model PaymentReceipt {
+  id            String    @id @default(cuid())
+  paymentId     String
+  payment       Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  receiptNumber String    @unique
+  amount        Decimal   @db.Decimal(14, 2)
+  paidAt        DateTime
+  method        String?
+  note          String?
+  receivedById  String?
+  receivedBy    User?     @relation("ReceiptReceiver", fields: [receivedById], references: [id], onDelete: SetNull)
+  voidedAt      DateTime?
+  voidReason    String?
+  createdAt     DateTime  @default(now())
+
+  @@index([paymentId])
+  @@map("payment_receipts")
 }
 
 // ----------------------------------------------------------------------------

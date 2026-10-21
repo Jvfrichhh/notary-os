@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
+import { ensureInvoiceNumber, recordReceipt, voidReceipt } from "@/lib/billing";
+import { fromDateInput, getJakartaToday } from "@/lib/format";
 
 function toNullable(value: FormDataEntryValue | null | undefined) {
   const v = typeof value === "string" ? value.trim() : "";
@@ -86,20 +88,33 @@ export async function createPayment(_prevState: PaymentFormState, formData: Form
   const remainingAmount = Math.max(totalAmount - paidAmount, 0);
   const status = derivePaymentStatus(totalAmount, paidAmount, data.status);
 
-  const payment = await prisma.payment.create({
+  // Tagihan dibuat dulu (belum dibayar); uang yang sudah diterima dicatat
+  // sebagai kuitansi bernomor agar riwayat pembayarannya lengkap.
+  const created = await prisma.payment.create({
     data: {
       clientId: data.clientId,
       jobId,
       totalAmount,
-      downPayment,
-      paidAmount,
-      remainingAmount,
-      status,
-      paymentDate: data.paymentDate ? new Date(data.paymentDate) : null,
+      downPayment: 0,
+      paidAmount: 0,
+      remainingAmount: totalAmount,
+      status: status === "REFUNDED" ? "REFUNDED" : "UNPAID",
       paymentMethod: toNullable(data.paymentMethod ?? ""),
       notes: toNullable(data.notes ?? "")
     }
   });
+  await ensureInvoiceNumber(created.id);
+  if (paidAmount > 0) {
+    await recordReceipt({
+      paymentId: created.id,
+      amount: paidAmount,
+      paidAt: (data.paymentDate && fromDateInput(data.paymentDate)) || getJakartaToday(),
+      method: toNullable(data.paymentMethod ?? ""),
+      note: downPayment > 0 && downPayment === paidAmount ? "Uang muka" : null,
+      userId: user.id
+    });
+  }
+  const payment = await prisma.payment.findUniqueOrThrow({ where: { id: created.id } });
 
   await writeAuditLog({
     userId: user.id,
@@ -111,8 +126,7 @@ export async function createPayment(_prevState: PaymentFormState, formData: Form
 
   revalidatePath("/payments");
   if (jobId) revalidatePath(`/jobs/${jobId}`);
-  // Dibuat dari halaman job -> kembali ke job tersebut.
-  redirect(jobId ? `/jobs/${jobId}` : "/payments");
+  redirect(`/payments/${payment.id}?ok=created`);
 }
 
 export async function updatePayment(id: string, _prevState: PaymentFormState, formData: FormData): Promise<PaymentFormState> {
@@ -135,8 +149,10 @@ export async function updatePayment(id: string, _prevState: PaymentFormState, fo
   const data = parsed.data;
 
   const totalAmount = toDecimalInput(data.totalAmount);
-  const paidAmount = toDecimalInput(data.paidAmount);
-  const downPayment = toDecimalInput(data.downPayment);
+  // Bila sudah ada kuitansi, "sudah dibayar" hanya berubah lewat kuitansi.
+  const hasReceipts = (await prisma.paymentReceipt.count({ where: { paymentId: id } })) > 0;
+  const paidAmount = hasReceipts ? Number(before.paidAmount) : toDecimalInput(data.paidAmount);
+  const downPayment = hasReceipts ? Number(before.downPayment) : toDecimalInput(data.downPayment);
   const remainingAmount = Math.max(totalAmount - paidAmount, 0);
   const status = derivePaymentStatus(totalAmount, paidAmount, data.status);
 
@@ -165,7 +181,8 @@ export async function updatePayment(id: string, _prevState: PaymentFormState, fo
 
   revalidatePath("/payments");
   if (payment.jobId) revalidatePath(`/jobs/${payment.jobId}`);
-  redirect(payment.jobId ? `/jobs/${payment.jobId}` : "/payments");
+  if (!payment.invoiceNumber) await ensureInvoiceNumber(payment.id);
+  redirect(`/payments/${payment.id}?ok=updated`);
 }
 
 async function setRecordStatus(id: string, recordStatus: "ACTIVE" | "ARCHIVED") {
@@ -190,4 +207,47 @@ export async function archivePayment(id: string) {
 }
 export async function restorePayment(id: string) {
   return setRecordStatus(id, "ACTIVE");
+}
+
+/** Catat uang masuk (DP / angsuran / pelunasan) -> kuitansi bernomor. */
+export async function recordPayment(paymentId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_FINANCE);
+  const amount = Math.round(Number(String(formData.get("amount") ?? "").replace(/\D/g, "")));
+  const paidAt = fromDateInput(String(formData.get("paidAt") ?? "")) ?? getJakartaToday();
+  const method = toNullable(formData.get("method"));
+  const note = toNullable(formData.get("note"));
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { id: true, jobId: true, remainingAmount: true, recordStatus: true } });
+  if (!payment) redirect("/payments");
+  if (!Number.isFinite(amount) || amount <= 0) redirect(`/payments/${paymentId}?err=amount`);
+  const remaining = Number(payment.remainingAmount);
+  if (remaining > 0 && amount > remaining) redirect(`/payments/${paymentId}?err=over`);
+
+  await ensureInvoiceNumber(paymentId);
+  const receipt = await recordReceipt({ paymentId, amount, paidAt, method, note, userId: user.id });
+  await writeAuditLog({
+    userId: user.id,
+    action: "payment_received",
+    entityType: "Payment",
+    entityId: paymentId,
+    newValue: { receiptNumber: receipt.receiptNumber, amount, paidAt, method }
+  });
+  revalidatePath("/payments");
+  if (payment.jobId) revalidatePath(`/jobs/${payment.jobId}`);
+  redirect(`/payments/${paymentId}?ok=receipt&r=${receipt.id}`);
+}
+
+/** Batalkan kuitansi yang salah (tetap tersimpan, ditandai dibatalkan). */
+export async function cancelReceipt(receiptId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_FINANCE);
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 300);
+  const r = await prisma.paymentReceipt.findUnique({ where: { id: receiptId }, select: { paymentId: true, receiptNumber: true, payment: { select: { jobId: true } } } });
+  if (!r) redirect("/payments");
+  if (reason.length < 3) redirect(`/payments/${r.paymentId}?err=reason`);
+  await voidReceipt(receiptId, reason);
+  await writeAuditLog({ userId: user.id, action: "receipt_voided", entityType: "PaymentReceipt", entityId: receiptId, newValue: { receiptNumber: r.receiptNumber, reason } });
+  revalidatePath("/payments");
+  if (r.payment.jobId) revalidatePath(`/jobs/${r.payment.jobId}`);
+  redirect(`/payments/${r.paymentId}?ok=voided`);
 }

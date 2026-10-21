@@ -12,7 +12,7 @@ interface ClientFormProps {
   client?: Client;
   cancelHref: string;
   /** Hanya di form klien BARU: data untuk bagian "Langsung buat job". */
-  newJob?: { services: ServiceOption[]; staff: StaffOption[]; defaultPicId?: string };
+  newJob?: { services: ServiceOption[]; staff: StaffOption[]; defaultPicId?: string; withBilling?: boolean };
 }
 
 const initialState: ClientFormState = {};
@@ -148,6 +148,7 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
           services={newJob.services}
           staff={newJob.staff}
           defaultPicId={newJob.defaultPicId}
+          withBilling={newJob.withBilling}
           error={state.errors?.serviceTypeId?.[0]}
         />
       )}

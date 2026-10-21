@@ -29,6 +29,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
   const canViewDocuments = await userHasPermission(user.id, PERMISSIONS.VIEW_DOCUMENTS);
   const canUploadDocuments = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
   const canCreateJobs = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
+  const canBill = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
 
   const client = await prisma.client.findUnique({
     where: { id: params.id },
@@ -127,7 +128,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
           <Card>
             <h2 className="mb-1 text-sm font-semibold text-foreground">+ Pekerjaan baru</h2>
             <p className="mb-3 text-xs text-muted-foreground">Klien lama datang lagi? Buat pekerjaan baru di sini tanpa menambah data klien.</p>
-            <ClientNewJobForm action={createJobForClient.bind(null, client.id)} services={services} staff={staff} />
+            <ClientNewJobForm action={createJobForClient.bind(null, client.id)} services={services} staff={staff} withBilling={canBill} />
           </Card>
         )}
 

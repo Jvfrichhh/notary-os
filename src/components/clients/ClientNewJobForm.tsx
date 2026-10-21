@@ -21,17 +21,19 @@ function Submit() {
 export function ClientNewJobForm({
   action,
   services,
-  staff
+  staff,
+  withBilling
 }: {
   action: (prev: ClientFormState, formData: FormData) => Promise<ClientFormState>;
   services: ServiceOption[];
   staff: StaffOption[];
+  withBilling?: boolean;
 }) {
   const [state, formAction] = useFormState(action, {});
   return (
     <form action={formAction} className="space-y-3">
       {state.formError && <p className="rounded-md bg-status-overdue/10 px-3 py-2 text-sm text-status-overdue">{state.formError}</p>}
-      <NewJobSection fixed services={services} staff={staff} error={state.errors?.serviceTypeId?.[0]} />
+      <NewJobSection fixed services={services} staff={staff} withBilling={withBilling} error={state.errors?.serviceTypeId?.[0]} />
       <Submit />
     </form>
   );

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatDate, formatDateTime } from "@/lib/format";
+import { classifyDeadline, formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { PORTAL_JOB_STATUS, portalStatusLabel } from "@/lib/portalLabels";
 import type { JobStatus } from "@prisma/client";
 
@@ -33,6 +33,17 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
       createdAt: true,
       serviceType: { select: { name: true, category: true } },
       pic: { select: { name: true } },
+      payments: {
+        where: { recordStatus: "ACTIVE" },
+        select: {
+          id: true,
+          invoiceNumber: true,
+          totalAmount: true,
+          paidAmount: true,
+          remainingAmount: true,
+          receipts: { where: { voidedAt: null }, orderBy: { paidAt: "asc" }, select: { id: true, receiptNumber: true, amount: true, paidAt: true } }
+        }
+      },
       checklists: {
         select: {
           items: {
@@ -115,6 +126,36 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
             <Row label="Penanggung jawab" value={job.pic?.name ?? "—"} />
           </dl>
         </Card>
+
+        {job.payments.map((p) => (
+          <Card key={p.id}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">Tagihan {p.invoiceNumber ?? ""}</h2>
+              <a href={`/api/portal/billing/tagihan/${p.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                <Download className="h-3.5 w-3.5" /> Unduh tagihan
+              </a>
+            </div>
+            <dl className="space-y-1 text-sm">
+              <Row label="Total biaya" value={formatCurrency(p.totalAmount)} />
+              <Row label="Sudah dibayar" value={formatCurrency(p.paidAmount)} />
+              <Row label="Sisa" value={Number(p.remainingAmount) > 0 ? formatCurrency(p.remainingAmount) : "Lunas"} />
+            </dl>
+            {p.receipts.length > 0 && (
+              <ul className="mt-3 space-y-1 border-t border-border pt-2 text-xs">
+                {p.receipts.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground">
+                      {formatDate(r.paidAt)} · {formatCurrency(r.amount)}
+                    </span>
+                    <a href={`/api/portal/billing/kuitansi/${r.id}`} className="font-medium text-primary hover:underline">
+                      Kuitansi {r.receiptNumber}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        ))}
 
         <Card>
           <h2 className="mb-3 text-sm font-semibold text-foreground">Riwayat</h2>

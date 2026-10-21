@@ -7,7 +7,7 @@ import { zip } from "@/lib/deeds/zip";
 
 export type DocBlock =
   | { t: "p"; text: string; bold?: boolean; align?: "left" | "center" | "right" | "both"; size?: number; spaceAfter?: number }
-  | { t: "table"; header: string[]; rows: string[][]; widths?: number[] }
+  | { t: "table"; header: string[]; rows: string[][]; widths?: number[]; noHeader?: boolean }
   | { t: "pageBreak" };
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -50,7 +50,7 @@ function table(b: Extract<DocBlock, { t: "table" }>): string {
     .join("");
   return `<w:tbl><w:tblPr><w:tblW w:w="${total}" w:type="dxa"/><w:tblBorders>${borders}</w:tblBorders><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${tw
     .map((w) => `<w:gridCol w:w="${w}"/>`)
-    .join("")}</w:tblGrid>${row(b.header, true)}${b.rows.map((r) => row(r, false)).join("")}</w:tbl><w:p/>`;
+    .join("")}</w:tblGrid>${b.noHeader ? "" : row(b.header, true)}${b.rows.map((r) => row(r, false)).join("")}</w:tbl><w:p/>`;
 }
 
 export function buildSimpleDocx(blocks: DocBlock[], opts: { title: string; landscape?: boolean } = { title: "Dokumen" }): Buffer {

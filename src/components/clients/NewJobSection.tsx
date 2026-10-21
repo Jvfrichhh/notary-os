@@ -18,7 +18,8 @@ export function NewJobSection({
   staff,
   defaultPicId,
   error,
-  fixed = false
+  fixed = false,
+  withBilling = false
 }: {
   services: ServiceOption[];
   staff: StaffOption[];
@@ -26,6 +27,8 @@ export function NewJobSection({
   error?: string;
   /** Dipakai di halaman klien: selalu membuat job, tanpa kotak centang. */
   fixed?: boolean;
+  /** Tampilkan isian biaya jasa & DP (pemegang izin keuangan). */
+  withBilling?: boolean;
 }) {
   const [enabled, setEnabled] = useState(true);
   const [serviceId, setServiceId] = useState("");
@@ -124,6 +127,35 @@ export function NewJobSection({
             </select>
           </div>
           </div>
+          {withBilling && (
+            <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
+              <div>
+                <label htmlFor="jobFee" className="mb-1 block text-sm font-medium text-foreground">
+                  Biaya jasa (Rp)
+                </label>
+                <input id="jobFee" name="jobFee" inputMode="numeric" placeholder="opsional" className={fieldClass} />
+              </div>
+              <div>
+                <label htmlFor="jobDp" className="mb-1 block text-sm font-medium text-foreground">
+                  DP diterima (Rp)
+                </label>
+                <input id="jobDp" name="jobDp" inputMode="numeric" placeholder="0" className={fieldClass} />
+              </div>
+              <div>
+                <label htmlFor="jobDpMethod" className="mb-1 block text-sm font-medium text-foreground">
+                  Cara bayar DP
+                </label>
+                <select id="jobDpMethod" name="jobDpMethod" defaultValue="Transfer bank" className={fieldClass}>
+                  {["Tunai", "Transfer bank", "QRIS", "Cek / Giro", "Lainnya"].map((m) => (
+                    <option key={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <p className="-mt-2 text-xs text-muted-foreground sm:col-span-3">
+                Bila biaya diisi, tagihan bernomor langsung dibuat; DP yang diterima otomatis dibuatkan kuitansi.
+              </p>
+            </div>
+          )}
           <p className="-mt-2 text-xs text-muted-foreground sm:col-span-2">
             Staf (PIC) yang dipilih langsung mendapat notifikasi dan pekerjaan langsung berstatus Sedang Diproses.
           </p>

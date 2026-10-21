@@ -29,7 +29,8 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
             OR: [
               { client: { fullName: { contains: q, mode: "insensitive" } } },
               { paymentMethod: { contains: q, mode: "insensitive" } },
-              { job: { jobNumber: { contains: q, mode: "insensitive" } } }
+              { job: { jobNumber: { contains: q, mode: "insensitive" } } },
+              { invoiceNumber: { contains: q, mode: "insensitive" } }
             ]
           }
         : {})
@@ -39,16 +40,24 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     take: 100
   });
 
+  const piutang = await prisma.payment.aggregate({
+    where: { recordStatus: "ACTIVE", status: { in: ["UNPAID", "PARTIALLY_PAID"] } },
+    _sum: { remainingAmount: true }
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Pembayaran</h1>
-          <p className="text-sm text-muted-foreground">Pencatatan tagihan dan pembayaran klien.</p>
+          <p className="text-sm text-muted-foreground">
+            Tagihan per pekerjaan; setiap uang masuk dibuatkan kuitansi bernomor. Piutang berjalan:{" "}
+            <span className="font-medium text-foreground">{formatCurrency(piutang._sum.remainingAmount ?? 0)}</span>
+          </p>
         </div>
         {canEdit && (
           <Link href="/payments/new" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-            + Catat Payment
+            + Buat Tagihan
           </Link>
         )}
       </div>
@@ -91,13 +100,14 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
 
         {payments.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Belum ada record payment." />
+            <EmptyState title="Belum ada tagihan." />
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">No. Tagihan</th>
                   <th className="px-4 py-3 font-medium">Klien</th>
                   <th className="px-4 py-3 font-medium">Job</th>
                   <th className="px-4 py-3 font-medium">Total</th>
@@ -111,6 +121,11 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
               <tbody className="divide-y divide-border">
                 {payments.map((p) => (
                   <tr key={p.id} className="hover:bg-muted/50">
+                    <td className="px-4 py-3">
+                      <Link href={`/payments/${p.id}`} className="font-medium text-primary hover:underline">
+                        {p.invoiceNumber ?? "Lihat"}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3">
                       <Link href={`/clients/${p.client.id}`} className="font-medium text-foreground hover:underline">
                         {p.client.fullName}
@@ -137,8 +152,8 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
                     <td className="px-4 py-3">
                       {canEdit && (
                         <div className="flex items-center justify-end gap-3 text-xs">
-                          <Link href={`/payments/${p.id}/edit`} className="font-medium text-primary hover:underline">
-                            Edit
+                          <Link href={`/payments/${p.id}`} className="font-medium text-primary hover:underline">
+                            Catat bayar / kuitansi
                           </Link>
                           {recordStatus === "ACTIVE" ? (
                             <form action={archivePayment.bind(null, p.id)}>

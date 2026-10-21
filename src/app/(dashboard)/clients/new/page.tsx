@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function NewClientPage() {
   const user = await requirePermission(PERMISSIONS.CREATE_CLIENTS);
   const canCreateJobs = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
+  const canBill = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
   let services: { id: string; name: string; category: string | null }[] = [];
   let staff: { id: string; name: string }[] = [];
   if (canCreateJobs) {
@@ -41,7 +42,7 @@ export default async function NewClientPage() {
         <ClientForm
           action={createClient}
           cancelHref="/clients"
-          newJob={canCreateJobs ? { services, staff } : undefined}
+          newJob={canCreateJobs ? { services, staff, withBilling: canBill } : undefined}
         />
       </Card>
     </div>

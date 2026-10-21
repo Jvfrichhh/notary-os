@@ -10,6 +10,7 @@ import { requireUser } from "@/lib/session";
 import { createJobWithTemplate } from "@/lib/jobCreation";
 import { fromDateInput } from "@/lib/format";
 import { createPortalAccountForNewClient } from "@/lib/portalAccounts";
+import { createInvoiceForJob } from "@/lib/billing";
 
 const clientSchema = z.object({
   fullName: z.string().min(2, "Nama minimal 2 karakter"),
@@ -54,7 +55,7 @@ async function createJobFromForm(clientId: string, service: { id: string; name: 
   const deadlineRaw = String(formData.get("jobDeadline") ?? "").trim();
   const picId = String(formData.get("jobPicId") ?? "").trim();
   const priority = String(formData.get("jobPriority") ?? "NORMAL");
-  return createJobWithTemplate(
+  const job = await createJobWithTemplate(
     {
       clientId,
       serviceTypeId: service.id,
@@ -66,6 +67,14 @@ async function createJobFromForm(clientId: string, service: { id: string; name: 
     },
     userId
   );
+  // Biaya jasa diisi -> tagihan langsung dibuat (+ kuitansi DP bila sudah dibayar).
+  const fee = Math.round(Number(String(formData.get("jobFee") ?? "").replace(/\D/g, "")) || 0);
+  if (fee > 0 && (await userHasPermission(userId, PERMISSIONS.EDIT_FINANCE))) {
+    const dp = Math.round(Number(String(formData.get("jobDp") ?? "").replace(/\D/g, "")) || 0);
+    const method = String(formData.get("jobDpMethod") ?? "").trim() || null;
+    await createInvoiceForJob({ clientId, jobId: job.id, total: fee, downPayment: dp, method, userId });
+  }
+  return job;
 }
 
 /** "+ Pekerjaan baru" dari halaman klien (klien lama datang lagi). */

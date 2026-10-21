@@ -8,7 +8,7 @@ import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
 import { VALID_TRANSITIONS } from "@/lib/jobStatus";
-import { generateJobNumber } from "@/lib/idGenerators";
+import { createJobWithTemplate } from "@/lib/jobCreation";
 import { createNotification } from "@/lib/notifications";
 import { createClientNotification } from "@/lib/clientNotifications";
 import { portalStatusLabel } from "@/lib/portalLabels";
@@ -65,77 +65,20 @@ export async function createJob(_prevState: JobFormState, formData: FormData): P
   const visitId = toNullable(data.visitId);
   const serviceTypeId = toNullable(data.serviceTypeId);
 
-  const jobNumber = await generateJobNumber();
-
-  const job = await prisma.job.create({
-    data: {
-      jobNumber,
+  const job = await createJobWithTemplate(
+    {
       clientId: data.clientId,
       visitId,
       serviceTypeId,
       description: toNullable(data.description),
       priority: data.priority,
-      status: "INBOX",
       deadline: data.deadline ? new Date(data.deadline) : null,
       picId: toNullable(data.picId),
       reviewerId: toNullable(data.reviewerId),
-      notaryId: toNullable(data.notaryId),
-      startDate: new Date()
-    }
-  });
-
-  // Auto-generate checklist + tasks dari Service Template, kalau ada.
-  if (serviceTypeId) {
-    const template = await prisma.serviceTemplate.findFirst({ where: { serviceTypeId } });
-
-    if (template?.defaultChecklist) {
-      const checklist = await prisma.jobChecklist.create({
-        data: { jobId: job.id, templateId: template.id }
-      });
-
-      const items = template.defaultChecklist as { label: string; isRequired?: boolean }[];
-      if (Array.isArray(items) && items.length > 0) {
-        await prisma.checklistItem.createMany({
-          data: items.map((item) => ({
-            checklistId: checklist.id,
-            label: item.label,
-            isRequired: item.isRequired ?? true
-          }))
-        });
-      }
-    }
-
-    if (template?.defaultTasks) {
-      const tasks = template.defaultTasks as { title: string; description?: string }[];
-      if (Array.isArray(tasks) && tasks.length > 0) {
-        await prisma.jobTask.createMany({
-          data: tasks.map((t) => ({
-            jobId: job.id,
-            title: t.title,
-            description: t.description ?? null
-          }))
-        });
-      }
-    }
-  }
-
-  await writeAuditLog({
-    userId: user.id,
-    action: "job_created",
-    entityType: "Job",
-    entityId: job.id,
-    newValue: job
-  });
-
-  if (job.picId) {
-    await createNotification({
-      userId: job.picId,
-      type: "assignment",
-      message: `Anda ditugaskan sebagai PIC pada Job ${job.jobNumber}.`,
-      relatedEntityType: "Job",
-      relatedEntityId: job.id
-    });
-  }
+      notaryId: toNullable(data.notaryId)
+    },
+    user.id
+  );
 
   revalidatePath("/jobs");
   revalidatePath("/dashboard");

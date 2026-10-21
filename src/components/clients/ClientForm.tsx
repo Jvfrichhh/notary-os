@@ -5,11 +5,14 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ClientFormState } from "@/app/(dashboard)/clients/actions";
 import type { Client } from "@prisma/client";
+import { NewJobSection, type ServiceOption, type StaffOption } from "@/components/clients/NewJobSection";
 
 interface ClientFormProps {
   action: (prevState: ClientFormState, formData: FormData) => Promise<ClientFormState>;
   client?: Client;
   cancelHref: string;
+  /** Hanya di form klien BARU: data untuk bagian "Langsung buat job". */
+  newJob?: { services: ServiceOption[]; staff: StaffOption[]; defaultPicId?: string };
 }
 
 const initialState: ClientFormState = {};
@@ -63,7 +66,7 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function ClientForm({ action, client, cancelHref }: ClientFormProps) {
+export function ClientForm({ action, client, cancelHref, newJob }: ClientFormProps) {
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
 
@@ -126,8 +129,17 @@ export function ClientForm({ action, client, cancelHref }: ClientFormProps) {
         />
       </div>
 
+      {newJob && (
+        <NewJobSection
+          services={newJob.services}
+          staff={newJob.staff}
+          defaultPicId={newJob.defaultPicId}
+          error={state.errors?.serviceTypeId?.[0]}
+        />
+      )}
+
       <div className="flex items-center gap-3">
-        <SubmitButton label={client ? "Simpan Perubahan" : "Simpan Client"} />
+        <SubmitButton label={client ? "Simpan Perubahan" : newJob ? "Simpan Client & Job" : "Simpan Client"} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal
         </Link>

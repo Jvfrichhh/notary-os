@@ -4,9 +4,10 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { assertPermission, PERMISSIONS } from "@/lib/permissions";
+import { assertPermission, PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
+import { createJobWithTemplate } from "@/lib/jobCreation";
 
 const clientSchema = z.object({
   fullName: z.string().min(2, "Nama minimal 2 karakter"),
@@ -22,7 +23,7 @@ const clientSchema = z.object({
 });
 
 export type ClientFormState = {
-  errors?: Partial<Record<keyof z.infer<typeof clientSchema>, string[]>>;
+  errors?: Partial<Record<keyof z.infer<typeof clientSchema> | "serviceTypeId", string[]>>;
   formError?: string;
 };
 
@@ -62,6 +63,20 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
+  // Bagian "Langsung buat job": divalidasi SEBELUM klien disimpan supaya
+  // tidak ada klien tersimpan setengah jalan karena layanan belum dipilih.
+  const withJob = formData.get("withJob") === "on";
+  const serviceTypeId = String(formData.get("serviceTypeId") ?? "").trim();
+  let service: { id: string; name: string } | null = null;
+  if (withJob) {
+    if (!(await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS))) {
+      return { formError: "Anda tidak berhak membuat job. Hilangkan centang 'Langsung buat pekerjaan'." };
+    }
+    if (!serviceTypeId) return { errors: { serviceTypeId: ["Pilih layanan, atau hilangkan centang 'Langsung buat pekerjaan'."] } };
+    service = await prisma.serviceType.findFirst({ where: { id: serviceTypeId, isActive: true }, select: { id: true, name: true } });
+    if (!service) return { errors: { serviceTypeId: ["Layanan tidak ditemukan."] } };
+  }
+
   const clientNumber = await generateClientNumber();
   const data = parsed.data;
 
@@ -91,6 +106,28 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
   });
 
   revalidatePath("/clients");
+
+  if (withJob && service) {
+    const ptChanges = formData.getAll("ptChanges").map(String).filter(Boolean);
+    const note = String(formData.get("jobDescription") ?? "").trim();
+    const description = [note || service.name, ptChanges.length ? `Perubahan: ${ptChanges.join(", ")}` : ""].filter(Boolean).join(" — ");
+    const deadlineRaw = String(formData.get("jobDeadline") ?? "").trim();
+    const picId = String(formData.get("jobPicId") ?? "").trim();
+    const job = await createJobWithTemplate(
+      {
+        clientId: client.id,
+        serviceTypeId: service.id,
+        description: description.slice(0, 500),
+        deadline: deadlineRaw ? new Date(deadlineRaw) : null,
+        picId: picId || null
+      },
+      user.id
+    );
+    revalidatePath("/jobs");
+    revalidatePath("/dashboard");
+    redirect(`/jobs/${job.id}?created=client`);
+  }
+
   redirect(`/clients/${client.id}`);
 }
 

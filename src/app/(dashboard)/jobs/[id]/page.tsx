@@ -22,7 +22,13 @@ import { isAiEnabled } from "@/lib/ai/client";
 
 export const dynamic = "force-dynamic";
 
-export default async function JobDetailPage({ params }: { params: { id: string } }) {
+export default async function JobDetailPage({
+  params,
+  searchParams
+}: {
+  params: { id: string };
+  searchParams?: { created?: string };
+}) {
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
   const canViewFinance = await userHasPermission(user.id, PERMISSIONS.VIEW_FINANCE);
@@ -72,6 +78,11 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   return (
     <div className="space-y-6">
+      {searchParams?.created === "client" && (
+        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
+          Klien {job.client.clientNumber} dan pekerjaan {job.jobNumber} berhasil dibuat. Checklist dokumen sudah disiapkan sesuai layanan.
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>

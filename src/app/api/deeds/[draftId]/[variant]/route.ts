@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 /** Unduh draft akta sebagai .docx (minuta = garis hitam, salinan = garis merah). */
 export async function GET(_req: Request, { params }: { params: { draftId: string; variant: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.kind === "client") return NextResponse.json({ error: "Akses ditolak." }, { status: 401 });
+  if (!session?.user || session.user.kind === "client" || session.user.revoked) return NextResponse.json({ error: "Akses ditolak." }, { status: 401 });
   if (!(await userHasPermission(session.user.id, PERMISSIONS.VIEW_JOBS))) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }

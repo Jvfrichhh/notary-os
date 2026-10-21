@@ -19,6 +19,8 @@ declare module "next-auth" {
       kind: SessionKind;
       /** Hanya terisi untuk kind === "client". */
       clientId?: string;
+      /** true bila akun ini sudah login di browser lain (sesi ini tidak berlaku lagi). */
+      revoked?: boolean;
       name?: string | null;
       email?: string | null;
     };
@@ -29,6 +31,8 @@ declare module "next-auth" {
     role: string;
     kind: SessionKind;
     clientId?: string;
+    /** Penanda sesi login akun internal. */
+    sid?: string;
   }
 }
 
@@ -38,5 +42,7 @@ declare module "next-auth/jwt" {
     role: string;
     kind: SessionKind;
     clientId?: string;
+    sid?: string;
+    revoked?: boolean;
   }
 }

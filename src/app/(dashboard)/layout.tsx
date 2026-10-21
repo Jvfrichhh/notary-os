@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { SessionWatcher } from "@/components/layout/SessionWatcher";
 import { requireUser } from "@/lib/session";
 import { getUserPermissions } from "@/lib/permissions";
 import { filterNavSections, NAV_SECTIONS } from "@/lib/navigation";
@@ -20,6 +21,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted">
+      <SessionWatcher />
       <Sidebar sections={sections} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />

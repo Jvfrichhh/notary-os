@@ -14,7 +14,7 @@ import { getFileStorage } from "@/lib/storage";
  */
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  if (!session?.user || session.user.revoked) {
     return NextResponse.json({ error: "Anda harus login." }, { status: 401 });
   }
 

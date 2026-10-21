@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { isAllowedRedirectHost } from "@/lib/hosts";
 
@@ -36,9 +37,12 @@ export const authOptions: NextAuthOptions = {
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isValid) return null;
 
+        // Satu akun = satu sesi: login baru mengganti penanda sesi, sehingga
+        // browser lain yang masih login otomatis dikeluarkan (lihat callback jwt).
+        const sid = randomUUID();
         await prisma.user.update({
           where: { id: user.id },
-          data: { lastLoginAt: new Date() }
+          data: { lastLoginAt: new Date(), activeSessionId: sid }
         });
 
         return {
@@ -46,7 +50,8 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role.name,
-          kind: "staff" as const
+          kind: "staff" as const,
+          sid
         };
       }
     }),
@@ -117,10 +122,19 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.kind = user.kind;
         token.clientId = user.clientId;
+        token.sid = user.sid;
+        token.revoked = false;
+        return token;
       }
       // Kompatibilitas: token lama (sebelum portal klien ada) tidak punya
       // `kind` -- semua token lama pasti akun internal.
       if (!token.kind) token.kind = "staff";
+      // Akun internal: sesi ini masih yang berlaku? (dijalankan di server
+      // setiap sesi dibaca; middleware Edge tidak memanggil callback ini).
+      if (token.kind === "staff" && token.id && !token.revoked) {
+        const u = await prisma.user.findUnique({ where: { id: token.id }, select: { activeSessionId: true, isActive: true } });
+        if (!u || !u.isActive || !token.sid || u.activeSessionId !== token.sid) token.revoked = true;
+      }
       return token;
     },
     async session({ session, token }) {
@@ -129,6 +143,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.kind = token.kind;
         session.user.clientId = token.clientId;
+        session.user.revoked = token.revoked === true;
       }
       return session;
     }

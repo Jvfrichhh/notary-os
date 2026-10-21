@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
+// useSearchParams butuh Suspense agar halaman login tetap bisa dirender statis.
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const replaced = useSearchParams().get("reason") === "elsewhere";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +49,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
         <h1 className="text-lg font-semibold text-foreground">Notary Operating System</h1>
         <p className="mt-1 text-sm text-muted-foreground">Masuk ke sistem manajemen kantor notaris</p>
+
+        {replaced && (
+          <p className="mt-4 rounded-md border border-status-due-soon/40 bg-status-due-soon/10 px-3 py-2 text-sm text-foreground">
+            Akun Anda login di perangkat/browser lain, jadi sesi di sini dikeluarkan. Satu akun hanya bisa aktif di satu tempat.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>

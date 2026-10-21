@@ -10,6 +10,9 @@ import { userHasAnyPermission, userHasPermission } from "@/lib/permissions";
  */
 export const ACCESS_DENIED_REDIRECT = "/dashboard?denied=1";
 
+/** Halaman yang menghapus cookie sesi lama lalu kembali ke login dengan pesan. */
+export const SESSION_REPLACED_REDIRECT = "/logout?reason=elsewhere";
+
 /**
  * Dipakai di server components / server actions untuk ambil user yang login.
  * Middleware sudah menjaga route, jadi ini seharusnya selalu ada -- tapi tetap
@@ -26,6 +29,10 @@ export async function requireUser() {
   // depth) untuk server action yang dipanggil langsung.
   if (session.user.kind === "client") {
     redirect("/portal");
+  }
+  // Akun ini sudah login di browser lain -> sesi ini dikeluarkan.
+  if (session.user.revoked) {
+    redirect(SESSION_REPLACED_REDIRECT);
   }
   return session.user;
 }

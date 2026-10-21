@@ -61,8 +61,9 @@ export async function saveDeedDraft(
   }
   if (!data || typeof data !== "object" || Array.isArray(data)) return { ok: false, error: "Data tidak valid." };
 
-  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true } });
+  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, deedId: true } });
   if (!draft) return { ok: false, error: "Draft tidak ditemukan." };
+  if (draft.deedId) return { ok: false, error: "Draft sudah disahkan dan terkunci." };
   const updated = await prisma.deedDraft.update({
     where: { id: draftId },
     data: { data: data as Prisma.InputJsonValue, updatedById: user.id }
@@ -77,10 +78,124 @@ export async function saveDeedDraft(
 export async function deleteDeedDraft(draftId: string) {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
-  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, templateKey: true } });
-  if (!draft) return;
+  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, templateKey: true, deedId: true } });
+  if (!draft || draft.deedId) return; // draft yang sudah disahkan tidak boleh dihapus
   await prisma.deedDraft.delete({ where: { id: draftId } });
   await writeAuditLog({ userId: user.id, action: "deed_draft_deleted", entityType: "DeedDraft", entityId: draftId, previousValue: draft });
   revalidatePath(`/jobs/${draft.jobId}`);
   redirect(`/jobs/${draft.jobId}`);
+}
+
+export interface FinalizeState {
+  error?: string;
+}
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * "Sahkan & Daftarkan" (khusus Notaris): setelah akta ditandatangani,
+ * nomor akta final dimasukkan, lalu dalam satu langkah:
+ *  1. Minuta & Salinan dibuat ulang dengan nomor final dan disimpan ke
+ *     Document Vault sebagai Dokumen Final;
+ *  2. dibuat Akta (Lemari Arsip), Repertorium (nomor urut tahun akta),
+ *     Minuta dan Salinan yang menunjuk ke dokumen tadi -- dalam satu transaksi;
+ *  3. draft dikunci (deedId terisi).
+ * Nomor akta disimpan sebagai "nomor/bulan/tahun" karena penomoran akta
+ * berulang setiap bulan sementara nomor akta di arsip wajib unik.
+ */
+export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, formData: FormData): Promise<FinalizeState> {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_MINUTA);
+  await assertPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
+
+  const nomor = String(formData.get("nomor") ?? "").trim().replace(/\.$/, "");
+  const tanggal = String(formData.get("tanggal") ?? "").trim();
+  if (!/^\d{1,4}$/.test(nomor)) return { error: "Nomor akta harus angka, mis. 12." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return { error: "Tanggal akta wajib diisi." };
+  if (formData.get("ditandatangani") !== "on") return { error: "Centang konfirmasi bahwa akta sudah ditandatangani." };
+
+  const draft = await prisma.deedDraft.findUnique({
+    where: { id: draftId },
+    select: { id: true, deedId: true, templateKey: true, data: true, job: { select: { id: true, clientId: true } } }
+  });
+  const template = draft ? getDeedTemplate(draft.templateKey) : null;
+  if (!draft || !template) return { error: "Draft tidak ditemukan." };
+  if (draft.deedId) return { error: "Draft ini sudah disahkan." };
+
+  const [y, m] = tanggal.split("-").map(Number);
+  const deedNumber = `${Number(nomor)}/${pad2(m)}/${y}`;
+  if (await prisma.deed.findUnique({ where: { deedNumber }, select: { id: true } })) {
+    return { error: `Nomor akta ${nomor} untuk bulan ${pad2(m)}/${y} sudah terdaftar di arsip.` };
+  }
+
+  // 1. Kunci nomor & tanggal final ke isian draft, lalu buat file final.
+  const data = { ...((draft.data ?? {}) as Record<string, unknown>), nomorAkta: String(Number(nomor)), tanggalAkta: tanggal };
+  await prisma.deedDraft.update({ where: { id: draftId }, data: { data: data as Prisma.InputJsonValue, updatedById: user.id } });
+  const vault = await syncDraftToVault(draftId, user.id, { final: true });
+  if (vault.error || !vault.documentIds.minuta) return { error: vault.error ?? "Gagal menyimpan file akta. Coba lagi." };
+
+  const signers = template.signers(data).map((p) => (typeof p.nama === "string" ? p.nama.trim().toUpperCase() : "")).filter(Boolean);
+  const deedDate = new Date(`${tanggal}T00:00:00.000Z`);
+
+  // 2. Arsip + repertorium dalam satu transaksi (nomor urut repertorium tidak
+  //    "terpakai" bila langkah lain gagal).
+  let deedId: string;
+  try {
+    deedId = await prisma.$transaction(async (tx) => {
+      const deed = await tx.deed.create({
+        data: {
+          deedNumber,
+          deedDate,
+          deedType: template.title.replace(/^Akta\s+/i, ""),
+          clientId: draft.job.clientId,
+          jobId: draft.job.id,
+          notaryId: user.id,
+          status: "DONE"
+        }
+      });
+      const seq = await tx.$queryRaw<{ value: number }[]>`
+        INSERT INTO repertorium_counters (year, value) VALUES (${y}, 1)
+        ON CONFLICT (year) DO UPDATE SET value = repertorium_counters.value + 1
+        RETURNING value
+      `;
+      const repertorium = await tx.repertorium.create({
+        data: {
+          sequenceNumber: seq[0].value,
+          year: y,
+          deedId: deed.id,
+          deedDate,
+          deedType: deed.deedType,
+          appearerName: signers.join(", ").slice(0, 500) || "[...]",
+          description: `Nomor akta ${deedNumber}`,
+          clientId: draft.job.clientId,
+          jobId: draft.job.id,
+          createdBy: user.id
+        }
+      });
+      await tx.minuta.create({
+        data: { deedId: deed.id, jobId: draft.job.id, documentId: vault.documentIds.minuta, repertoriumId: repertorium.id, notes: "Dibuat otomatis dari draft akta" }
+      });
+      if (vault.documentIds.salinan) {
+        await tx.salinan.create({ data: { deedId: deed.id, jobId: draft.job.id, documentId: vault.documentIds.salinan, createdBy: user.id } });
+      }
+      await tx.deedDraft.update({ where: { id: draftId }, data: { deedId: deed.id } });
+      return deed.id;
+    });
+  } catch (err) {
+    console.error("[akta] gagal mengesahkan draft", err);
+    return { error: "Gagal mendaftarkan akta. Periksa apakah nomor akta sudah dipakai, lalu coba lagi." };
+  }
+
+  await writeAuditLog({
+    userId: user.id,
+    action: "deed_draft_finalized",
+    entityType: "Deed",
+    entityId: deedId,
+    newValue: { draftId, deedNumber, templateKey: draft.templateKey }
+  });
+  revalidatePath(`/jobs/${draft.job.id}`);
+  revalidatePath("/archive");
+  revalidatePath("/notary-record");
+  revalidatePath("/deeds");
+  redirect(`/archive/deed/${deedId}`);
 }

@@ -43,6 +43,7 @@ export default async function DeedsPage() {
         title: true,
         templateKey: true,
         updatedAt: true,
+        deed: { select: { deedNumber: true } },
         job: { select: { id: true, jobNumber: true, client: { select: { fullName: true } } } }
       }
     }),
@@ -171,6 +172,13 @@ export default async function DeedsPage() {
                   <Link href={`/jobs/${d.job.id}/deeds/${d.id}`} className="font-medium text-primary hover:underline">
                     {d.title ?? d.templateKey}
                   </Link>
+                  {d.deed ? (
+                    <span className="ml-2 rounded-full bg-status-on-track/10 px-2 py-0.5 text-[11px] font-medium text-status-on-track">
+                      Disahkan · Akta No. {d.deed.deedNumber}
+                    </span>
+                  ) : (
+                    <span className="ml-2 rounded-full bg-status-due-soon/10 px-2 py-0.5 text-[11px] font-medium text-status-due-soon">Draft</span>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {d.job.jobNumber} · {d.job.client.fullName} · diperbarui {formatDateTime(d.updatedAt)}
                   </p>

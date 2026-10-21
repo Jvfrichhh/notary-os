@@ -54,7 +54,10 @@ export default async function JobDetailPage({
       notary: true,
       visit: true,
       tasks: { orderBy: { createdAt: "asc" } },
-      deedDrafts: { orderBy: { updatedAt: "desc" }, select: { id: true, templateKey: true, title: true, updatedAt: true } },
+      deedDrafts: {
+        orderBy: { updatedAt: "desc" },
+        select: { id: true, templateKey: true, title: true, updatedAt: true, deed: { select: { deedNumber: true } } }
+      },
       checklists: {
         include: {
           items: {
@@ -239,6 +242,7 @@ export default async function JobDetailPage({
                   <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <Link href={`/jobs/${job.id}/deeds/${d.id}`} className="font-medium text-primary hover:underline">
                       {d.title ?? d.templateKey}
+                      {d.deed ? <span className="ml-2 text-xs font-normal text-status-on-track">Disahkan · No. {d.deed.deedNumber}</span> : null}
                     </Link>
                     <span className="flex items-center gap-3 text-xs text-muted-foreground">
                       diperbarui {fmtDeedTime(d.updatedAt)}

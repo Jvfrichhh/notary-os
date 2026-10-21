@@ -16,13 +16,20 @@ const marker = (draftId: string, variant: "minuta" | "salinan") => `[draft-akta:
  * Mengembalikan jumlah file yang tersimpan; error storage tidak menggagalkan
  * penyimpanan draft (dilaporkan ke pemanggil).
  */
-export async function syncDraftToVault(draftId: string, userId: string): Promise<{ saved: number; error?: string }> {
+export async function syncDraftToVault(
+  draftId: string,
+  userId: string,
+  opts: { final?: boolean } = {}
+): Promise<{ saved: number; error?: string; documentIds: Partial<Record<"minuta" | "salinan", string>> }> {
+  const documentIds: Partial<Record<"minuta" | "salinan", string>> = {};
   const draft = await prisma.deedDraft.findUnique({
     where: { id: draftId },
     select: { id: true, templateKey: true, data: true, job: { select: { id: true, jobNumber: true, clientId: true } } }
   });
   const template = draft ? getDeedTemplate(draft.templateKey) : null;
-  if (!draft || !template) return { saved: 0, error: "Draft tidak ditemukan." };
+  if (!draft || !template) return { saved: 0, error: "Draft tidak ditemukan.", documentIds };
+  // Setelah disahkan, dokumen berpindah ke kategori Dokumen Final.
+  const category = opts.final ? "FINAL_DOCUMENT" : "WORKING_DOCUMENT";
 
   let saved = 0;
   try {
@@ -47,7 +54,7 @@ export async function syncDraftToVault(draftId: string, userId: string): Promise
               fileName,
               fileType: DOCX_MIME,
               fileSize: upload.size,
-              category: "WORKING_DOCUMENT",
+              category,
               description: `${label} ${template.title} — draft dari Notary OS ${tag}`,
               storageKey: upload.storageKey,
               uploadedBy: userId
@@ -58,6 +65,7 @@ export async function syncDraftToVault(draftId: string, userId: string): Promise
           });
           return d;
         });
+        documentIds[variant] = doc.id;
         await writeAuditLog({ userId, action: "deed_draft_saved_to_vault", entityType: "Document", entityId: doc.id, newValue: { draftId, variant, versionNumber: 1 } });
       } else {
         const last = await prisma.documentVersion.findFirst({ where: { documentId: existing.id }, orderBy: { versionNumber: "desc" }, select: { versionNumber: true } });
@@ -76,16 +84,17 @@ export async function syncDraftToVault(draftId: string, userId: string): Promise
           });
           await tx.document.update({
             where: { id: existing.id },
-            data: { fileName, fileType: DOCX_MIME, fileSize: upload.size, storageKey: upload.storageKey, status: "ACTIVE" }
+            data: { fileName, fileType: DOCX_MIME, fileSize: upload.size, storageKey: upload.storageKey, status: "ACTIVE", category }
           });
         });
+        documentIds[variant] = existing.id;
         await writeAuditLog({ userId, action: "deed_draft_saved_to_vault", entityType: "Document", entityId: existing.id, newValue: { draftId, variant, versionNumber: next } });
       }
       saved++;
     }
   } catch (err) {
     console.error("[akta] gagal menyimpan ke Document Vault", err);
-    return { saved, error: "Draft tersimpan, tetapi file Word gagal disimpan ke Document Vault. Coba simpan lagi." };
+    return { saved, error: "Draft tersimpan, tetapi file Word gagal disimpan ke Document Vault. Coba simpan lagi.", documentIds };
   }
-  return { saved };
+  return { saved, documentIds };
 }

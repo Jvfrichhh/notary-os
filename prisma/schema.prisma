@@ -498,6 +498,7 @@ model Deed {
   grosse       Grosse[]
   kutipan      Kutipan[]
   repertorium  Repertorium?
+  deedDraft    DeedDraft?
 
   @@map("deeds")
 }
@@ -761,6 +762,9 @@ model DeedDraft {
   templateKey String
   title       String?
   data        Json
+  /// Terisi setelah "Sahkan & Daftarkan": akta resmi di Lemari Arsip. Draft terkunci.
+  deedId      String?  @unique
+  deed        Deed?    @relation(fields: [deedId], references: [id], onDelete: SetNull)
   createdById String?
   updatedById String?
   createdAt   DateTime @default(now())

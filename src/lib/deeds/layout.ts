@@ -77,24 +77,39 @@ function tokenize(text: string): Tok[] {
   return toks;
 }
 
-/** Gabungkan token jadi segmen per baris (kata bertanda glue menempel tanpa spasi). */
+/**
+ * Satu "kata" untuk pemenggalan: token yang menempel (glue) digabung ke kata
+ * sebelumnya, sehingga tanda baca tidak pernah terpisah ke baris berikutnya.
+ */
+interface Word {
+  parts: Seg[];
+  len: number;
+}
+
+function toWords(toks: Tok[]): Word[] {
+  const words: Word[] = [];
+  for (const t of toks) {
+    const last = words[words.length - 1];
+    if (t.glue && last) {
+      last.parts.push({ text: t.text, bold: t.bold });
+      last.len += t.text.length;
+    } else words.push({ parts: [{ text: t.text, bold: t.bold }], len: t.text.length });
+  }
+  return words;
+}
+
+/** Tambahkan segmen ke baris, menggabungkan segmen bertetangga dengan gaya sama. */
+function appendSeg(line: Seg[], seg: Seg) {
+  const last = line[line.length - 1];
+  if (last && !!last.bold === !!seg.bold) last.text += seg.text;
+  else line.push({ text: seg.text, bold: seg.bold });
+}
+
 function wrapTokens(toks: Tok[], firstWidth: number, nextWidth: number): Seg[][] {
   const lines: Seg[][] = [];
   let cur: Seg[] = [];
   let len = 0;
   let width = firstWidth;
-
-  const pushWord = (w: Tok) => {
-    const sep = len === 0 || w.glue ? "" : " ";
-    const last = cur[cur.length - 1];
-    if (last && last.bold === w.bold) last.text += sep + w.text;
-    else {
-      if (sep && last) last.text += sep;
-      cur.push({ text: w.text, bold: w.bold });
-    }
-    len += sep.length + w.text.length;
-  };
-
   const flush = () => {
     lines.push(cur);
     cur = [];
@@ -102,18 +117,28 @@ function wrapTokens(toks: Tok[], firstWidth: number, nextWidth: number): Seg[][]
     width = nextWidth;
   };
 
-  for (const w of toks) {
-    const need = (len === 0 || w.glue ? 0 : 1) + w.text.length;
-    if (len > 0 && len + need > width) flush();
-    // Kata lebih panjang dari baris: potong keras.
-    let word = w;
-    while (word.text.length > width) {
+  for (const w of toWords(toks)) {
+    if (len > 0 && len + 1 + w.len > width) flush();
+    if (w.len > width) {
+      // Kata lebih panjang dari baris (mis. nomor panjang): potong keras.
+      let rest = w.parts.map((p) => p.text).join("");
+      const bold = w.parts[0]?.bold;
       if (len > 0) flush();
-      pushWord({ ...word, text: word.text.slice(0, width), glue: false });
-      flush();
-      word = { ...word, text: word.text.slice(width), glue: false };
+      while (rest.length > width) {
+        cur.push({ text: rest.slice(0, width), bold });
+        flush();
+        rest = rest.slice(width);
+      }
+      cur.push({ text: rest, bold });
+      len = rest.length;
+      continue;
     }
-    pushWord(word);
+    if (len > 0) {
+      appendSeg(cur, { text: " ", bold: w.parts[0].bold && !!cur[cur.length - 1]?.bold });
+      len += 1;
+    }
+    for (const p of w.parts) appendSeg(cur, p);
+    len += w.len;
   }
   if (cur.length) lines.push(cur);
   return lines;

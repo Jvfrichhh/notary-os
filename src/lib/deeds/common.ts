@@ -144,13 +144,13 @@ function wrapPlain(text: string, width: number): string[] {
 const plain = (text: string, bold = false): Line => ({ segs: [{ text, bold }], col: 0, border: false, plain: true });
 
 /** Minuta: tiga kolom Penghadap – Saksi-saksi – Notaris. */
-export function tandaTanganMinuta(penghadap: Person[], data: DeedData): { lines: Line[]; minLines: number } {
+export function tandaTanganMinuta(penghadap: Person[], data: DeedData, pejabat = "Notaris"): { lines: Line[]; minLines: number } {
   const saksi = [person(data.saksi1), person(data.saksi2)];
   const lines: Line[] = [plain(""), {
     segs: [
       { text: "Penghadap".padEnd(COL_W + 1), bold: true },
       { text: "Saksi-saksi".padEnd(COL_W + 1), bold: true },
-      { text: "Notaris", bold: true }
+      { text: pejabat, bold: true }
     ],
     col: 0,
     border: false,

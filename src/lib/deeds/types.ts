@@ -1,6 +1,5 @@
 import type { Block } from "./layout";
 import type { DeedData, Person, SectionDef } from "./schema";
-import type { DocBlock } from "../office/simpleDocx";
 
 export interface DeedTemplate {
   key: string;
@@ -17,14 +16,13 @@ export interface DeedTemplate {
   /** Isian awal dari data klien/job. */
   prefill?(ctx: PrefillContext): DeedData;
   /**
-   * Akta PPAT: dicetak dengan format akta PPAT (bukan format mesin tik
-   * notaris) dan saat disahkan didaftarkan di Buku Daftar Akta PPAT.
+   * Akta PPAT: dicetak dengan format akta kantor yang sama (build), tetapi
+   * kedua lembar asli bergaris hitam dengan blok tanda tangan PPAT, dan saat
+   * disahkan didaftarkan di Buku Daftar Akta PPAT.
    */
   ppat?: {
     /** Jenis perbuatan hukum (PPAT_DEED_TYPES). */
     deedType: string;
-    /** Isi akta; lembar 1 = disimpan PPAT, lembar 2 = untuk Kantor Pertanahan. */
-    build(data: DeedData, lembar: 1 | 2): DocBlock[];
     /** Data untuk Buku Daftar Akta PPAT. */
     register(data: DeedData): PpatRegisterData;
   };

@@ -4,7 +4,6 @@ import { tandaTanganMinuta, tandaTanganSalinan } from "./common";
 import type { DeedTemplate } from "./types";
 import { isFieldVisible, type DeedData, type FieldDef } from "./schema";
 import { sectionsFor } from "./registry";
-import { buildSimpleDocx } from "../office/simpleDocx";
 
 /** Isi nilai bawaan isian yang masih kosong (termasuk di dalam daftar berulang). */
 export function applyDefaults(fields: FieldDef[], data: DeedData): DeedData {
@@ -34,15 +33,18 @@ export function renderDeed(
   opts: { notes?: boolean } = {}
 ): { buffer: Buffer; pages: number; placeholders: number } {
   const data = applyDefaults(sectionsFor(template).flatMap((s) => s.fields), rawData);
-  if (template.ppat) {
-    // Akta PPAT: format akta PPAT (Word biasa); "minuta" = lembar pertama, "salinan" = lembar kedua.
-    const blocks = template.ppat.build(data, variant === "minuta" ? 1 : 2);
-    const placeholders = blocks.reduce((n, b) => n + (b.t === "p" ? b.text.match(/\[\.\.\.\]/g)?.length ?? 0 : 0), 0);
-    return { buffer: buildSimpleDocx(blocks, { title: template.title }), pages: 0, placeholders };
-  }
+  const isPpat = !!template.ppat;
   const blocks = template.build(data, variant);
+  // Akta PPAT: dua lembar asli (bukan salinan) -> keterangan lembar di judul.
+  if (isPpat && blocks[0]?.t === "title") {
+    blocks[0] = { ...blocks[0], lines: [...blocks[0].lines, variant === "minuta" ? "LEMBAR PERTAMA" : "LEMBAR KEDUA"] };
+  }
   const { title, body, closingIndex } = blocksToLines(blocks);
-  const sig = variant === "minuta" ? tandaTanganMinuta(template.signers(data), data) : tandaTanganSalinan();
+  const sig = isPpat
+    ? tandaTanganMinuta(template.signers(data), data, "PPAT")
+    : variant === "minuta"
+      ? tandaTanganMinuta(template.signers(data), data)
+      : tandaTanganSalinan();
   const lines = paginate(title, body, closingIndex, sig.lines, sig.minLines);
 
   const placeholders = body.reduce((n, l) => n + l.segs.reduce((m, s) => m + (s.text.match(/\[\.\.\.\]/g)?.length ?? 0), 0), 0);
@@ -60,5 +62,6 @@ export function renderDeed(
         ]
       : undefined;
 
-  return { buffer: buildDocx(lines, variant, { title: template.title, notes }), pages, placeholders };
+  // Kedua lembar akta PPAT bergaris hitam (asli); catatan penyusunan hanya di lembar pertama.
+  return { buffer: buildDocx(lines, isPpat ? "minuta" : variant, { title: template.title, notes }), pages, placeholders };
 }

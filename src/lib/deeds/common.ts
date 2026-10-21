@@ -141,7 +141,7 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { w
       ? ([
           {
             t: "p",
-            text: "Kedua saksi tersebut bukan ahli waris atau penerima hibah wasiat dalam akta ini, dan tidak mempunyai hubungan keluarga sedarah atau semenda sampai derajat keempat dengan mereka, maupun dengan saya, Notaris."
+            text: "Kedua saksi tersebut bukan ahli waris atau penerima hibah wasiat dalam akta ini, dan tidak mempunyai hubungan keluarga sedarah atau semenda sampai derajat keempat dengan Pewasiat maupun dengan para penerima hibah wasiat, maupun dengan saya, Notaris."
           },
           {
             t: "p",

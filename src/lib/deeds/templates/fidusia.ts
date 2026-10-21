@@ -23,7 +23,8 @@ export const fidusia: DeedTemplate = {
       title: "Penerima Fidusia",
       fields: [
         partyList("penerima", "Penerima fidusia (kreditor) / wakilnya", "Penerima fidusia", 1, 2),
-        { kind: "text", key: "namaKreditur", label: "Nama kreditor (bila badan hukum)", wide: true, placeholder: "PT Bank ABC Tbk., berkedudukan di Jakarta" }
+        { kind: "text", key: "namaKreditur", label: "Nama kreditor (bila badan hukum)", wide: true, placeholder: "PT Bank ABC Tbk., berkedudukan di Jakarta" },
+        { kind: "text", key: "kuasaKreditor", label: "Dasar kuasa wakil kreditor", wide: true, placeholder: "Surat Kuasa tanggal 1 Oktober 2026 Nomor 123/SK/2026" }
       ]
     },
     {
@@ -69,7 +70,8 @@ export const fidusia: DeedTemplate = {
     const penerima = parties(d.penerima);
     const pasangan = person(d.pasangan);
     const ada = !!str(pasangan.nama);
-    const objek = list<Objek>(d.objek);
+    const objekIsi = list<Objek>(d.objek);
+    const objek: Objek[] = objekIsi.length ? objekIsi : [{}];
     const kreditorAwal = str(d.namaKreditur);
     const pen = [
       ...denganPasangan(pemberi.map((x) => x.p), pasangan, "").map((x, i) => (i < pemberi.length ? { ...x, peran: peranDari(pemberi[i]) } : x)),
@@ -78,7 +80,7 @@ export const fidusia: DeedTemplate = {
         // Wakil kreditor badan hukum: kedudukan bertindak harus sesuai dengan nama kreditor.
         peran:
           kreditorAwal && x.kapasitas === "untuk diri sendiri"
-            ? `menurut keterangannya dalam hal ini bertindak selaku kuasa dari dan oleh karena itu untuk dan atas nama **${kreditorAwal}**`
+            ? `menurut keterangannya dalam hal ini bertindak berdasarkan ${str(d.kuasaKreditor).replace(/[\s.;,]+$/, "") || "Surat Kuasa tanggal [...] Nomor [...]"}, selaku kuasa dari dan oleh karena itu untuk dan atas nama **${kreditorAwal}**`
             : peranDari(x)
       }))
     ];

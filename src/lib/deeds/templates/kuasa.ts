@@ -47,7 +47,7 @@ export const kuasa: DeedTemplate = {
       dikenal(pemberi.length),
       {
         t: "p",
-        text: `${banyak ? "Para penghadap" : "Penghadap"} untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
+        text: `${banyak ? "Para penghadap" : "Penghadap"}, untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
       },
       ...penerima.map((p, i) => ({ t: "item" as const, marker: penerima.length > 1 ? `${i + 1}.` : "", text: komparisi(p, i === penerima.length - 1 ? "." : ";") })),
       { t: "p", text: `${penerima.length > 1 ? "Baik bersama-sama maupun sendiri-sendiri, untuk" : "Untuk"} selanjutnya disebut **PENERIMA KUASA**.` },

@@ -56,7 +56,8 @@ export const waris: DeedTemplate = {
   ],
   build(d, variant) {
     const pw = person(d.pewaris);
-    const ahli = list<AhliWaris>(d.ahliWaris);
+    const ahliDiisi = list<AhliWaris>(d.ahliWaris);
+    const ahli: AhliWaris[] = ahliDiisi.length ? ahliDiisi : [{}];
     const blocks: Block[] = [
       judul("KETERANGAN HAK WARIS", d),
       ...pembuka(d),
@@ -202,7 +203,8 @@ export const wasiat: DeedTemplate = {
   ],
   build(d, variant) {
     const p = person(d.pewasiat);
-    const isi = list<Wasiat>(d.isi);
+    const isiDiisi = list<Wasiat>(d.isi);
+    const isi: Wasiat[] = isiDiisi.length ? isiDiisi : [{}];
     const blocks: Block[] = [
       judul("WASIAT", d),
       ...pembuka(d),

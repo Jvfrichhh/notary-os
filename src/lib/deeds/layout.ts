@@ -127,6 +127,9 @@ function wrapTokens(toks: Tok[], firstWidth: number, nextWidth: number): Seg[][]
 
   for (const w of toWords(toks)) {
     if (len > 0 && len + 1 + w.len > width) flush();
+    // Hindari satu garis penutup tepat setelah huruf/angka ("BUDI-"): terbaca seperti
+    // tanda hubung pemenggalan. Kata itu dipindah ke baris berikutnya.
+    else if (len > 0 && len + 1 + w.len === width - 1 && /[A-Za-z0-9]$/.test(w.parts.map((p) => p.text).join(""))) flush();
     if (w.len > width) {
       // Kata lebih panjang dari baris (mis. nomor panjang): potong keras,
       // gaya (tebal/biasa) tiap huruf dipertahankan.

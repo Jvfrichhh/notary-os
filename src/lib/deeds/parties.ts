@@ -28,7 +28,9 @@ export function partyList(key: string, label: string, itemLabel: string, min = 1
 export type Party = { p: Person; kapasitas: string };
 
 export function parties(v: unknown): Party[] {
-  return list<{ orang?: Person; kapasitas?: string }>(v).map((x) => ({ p: person(x.orang), kapasitas: str(x.kapasitas) || "untuk diri sendiri" }));
+  const out = list<{ orang?: Person; kapasitas?: string }>(v).map((x) => ({ p: person(x.orang), kapasitas: str(x.kapasitas) || "untuk diri sendiri" }));
+  // Belum ada pihak yang diisi: satu tempat isian supaya penomoran & susunan akta tetap utuh.
+  return out.length ? out : [{ p: {}, kapasitas: "untuk diri sendiri" }];
 }
 
 export const peranDari = (x: Party) => `menurut keterangannya dalam hal ini bertindak ${x.kapasitas}`;

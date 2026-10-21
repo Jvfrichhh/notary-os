@@ -84,16 +84,17 @@ function objek(d: DeedData, sebut: string): Block[] {
 
 function pasalBaku(d: DeedData, sebut: string): Block[] {
   const s = sebut.toLowerCase();
+  const o = `Objek ${sebut}`;
   const tglPernyataan = str(d.tanggalPernyataan) || str(d.tanggalAkta);
   const p = (n: number, text: string): Block[] => [...pasal(n), { t: "p", text }];
   return [
     ...p(
       1,
-      `Mulai hari ini objek ${s} yang diuraikan dalam akta ini telah menjadi milik Pihak Kedua dan karenanya segala keuntungan yang didapat dari, dan segala kerugian/beban atas objek ${s} tersebut di atas menjadi hak/beban Pihak Kedua.`
+      `Mulai hari ini ${o} yang diuraikan dalam akta ini telah menjadi milik Pihak Kedua dan karenanya segala keuntungan yang didapat dari, dan segala kerugian/beban atas ${o} tersebut di atas menjadi hak/beban Pihak Kedua.`
     ),
     ...p(
       2,
-      `Pihak Pertama menjamin, bahwa objek ${s} tersebut di atas tidak tersangkut dalam suatu sengketa, bebas dari sitaan, tidak terikat sebagai jaminan untuk sesuatu utang yang tidak tercatat dalam sertipikat, dan bebas dari beban-beban lainnya yang berupa apa pun.`
+      `Pihak Pertama menjamin, bahwa ${o} tersebut di atas tidak tersangkut dalam suatu sengketa, bebas dari sitaan, tidak terikat sebagai jaminan untuk sesuatu utang yang tidak tercatat dalam sertipikat, dan bebas dari beban-beban lainnya yang berupa apa pun.`
     ),
     ...p(
       3,
@@ -101,7 +102,7 @@ function pasalBaku(d: DeedData, sebut: string): Block[] {
     ),
     ...p(
       4,
-      `Dalam hal terdapat perbedaan luas tanah yang menjadi objek ${s} dalam akta ini dengan hasil pengukuran oleh instansi Badan Pertanahan Nasional, maka para pihak akan menerima hasil pengukuran instansi Badan Pertanahan Nasional tersebut${sebut === "Jual Beli" ? " dengan tidak memperhitungkan kembali harga jual beli dan" : " dan"} tidak akan saling mengadakan gugatan.`
+      `Dalam hal terdapat perbedaan luas tanah yang menjadi ${o} dalam akta ini dengan hasil pengukuran oleh instansi Badan Pertanahan Nasional, maka para pihak akan menerima hasil pengukuran instansi Badan Pertanahan Nasional tersebut${sebut === "Jual Beli" ? " dengan tidak memperhitungkan kembali harga jual beli dan" : " dan"} tidak akan saling mengadakan gugatan.`
     ),
     ...p(
       5,
@@ -294,7 +295,7 @@ export const hibahPpat: DeedTemplate = {
       ...objek(d, "Hibah"),
       { t: "p", text: "Pihak Pertama dan Pihak Kedua menerangkan bahwa:" },
       { t: "item", marker: "a.", text: "Hibah ini dilakukan dengan cuma-cuma dan tidak dapat ditarik kembali, kecuali dalam hal-hal yang ditentukan undang-undang;" },
-      { t: "item", marker: "b.", text: `Untuk keperluan pendaftaran, objek hibah ini bernilai ${nilai ? rupiah(nilai) : "Rp[...] ([...] Rupiah)"};` },
+      { t: "item", marker: "b.", text: `Untuk keperluan pendaftaran, Objek Hibah ini bernilai ${nilai ? rupiah(nilai) : "Rp[...] ([...] Rupiah)"};` },
       { t: "item", marker: "c.", text: "Hibah ini dilakukan dengan syarat-syarat sebagai berikut:" },
       ...pasalBaku(d, "Hibah"),
       ...persetujuan(d, person(d.pasangan), pemberi, "Hibah"),

@@ -18,7 +18,9 @@ function butir(teks: string[], level = 1): Block[] {
 }
 
 /** Penegasan sebutan para pihak, ditempatkan sebelum pasal-pasal. */
-function sebutan(s: Person, i: Person): Block {
+function sebutan(suami: Person, istri: Person): Block {
+  const s: Person = { ...suami, sapaan: "Tuan" };
+  const i: Person = { ...istri, sapaan: str(istri.sapaan) === "Nona" ? "Nona" : "Nyonya" };
   return { t: "p", text: `${namaTebal(s)} untuk selanjutnya disebut **PIHAK SUAMI**, dan ${namaTebal(i)} untuk selanjutnya disebut **PIHAK ISTRI**; Pihak Suami dan Pihak Istri bersama-sama disebut **PARA PIHAK**.` };
 }
 

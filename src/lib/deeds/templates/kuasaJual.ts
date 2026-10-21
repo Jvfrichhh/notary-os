@@ -57,7 +57,7 @@ export const kuasaJual: DeedTemplate = {
           ? `Penghadap ${nomorPenghadap(1, pemberi.length)}${pemberi.length > 1 ? " selaku para pemilik" : " selaku pemilik"}, dengan persetujuan penghadap ${nomorPenghadap(pemberi.length + 1, 1)}, untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
           : `{Penghadap}${pemberi.length > 1 ? " selaku para pemilik" : " selaku pemilik"}, untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
       },
-      ...penerima.map((p, i) => ({ t: "item" as const, marker: `${i + 1}.`, text: komparisi(p, i === penerima.length - 1 ? "." : ";") })),
+      ...penerima.map((p, i) => ({ t: "item" as const, marker: penerima.length > 1 ? `${i + 1}.` : "", text: komparisi(p, i === penerima.length - 1 ? "." : ";") })),
       { t: "p", text: `${penerima.length > 1 ? "Baik bersama-sama maupun sendiri-sendiri, untuk" : "Untuk"} selanjutnya disebut **PENERIMA KUASA**.` },
       { t: "center", text: "KHUSUS", bold: true },
       { t: "p", text: `Untuk dan atas nama Pemberi Kuasa menjual ${uraianTanah(d)}; untuk selanjutnya disebut **OBJEK**.` },

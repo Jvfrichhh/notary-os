@@ -10,6 +10,13 @@ const pct = (v: unknown) => {
   return Number.isFinite(n) && n > 0 ? `${angka(n)} persen` : "[...] persen";
 };
 
+/** Batas pembayaran bagi hasil sesuai periodenya. */
+function jatuhTempo(periode: string): string {
+  if (periode === "setiap tahun") return "paling lambat tiga puluh (30) hari setelah laporan keuangan tahunan Usaha selesai disusun";
+  if (periode.startsWith("setiap tiga")) return "paling lambat tanggal sepuluh (10) bulan pertama setelah berakhirnya setiap periode tiga (3) bulan";
+  return "paling lambat tanggal sepuluh (10) bulan berikutnya";
+}
+
 function pembukaDuaPihak(d: Record<string, unknown>, label1: string, label2: string): Block[] {
   const p1 = parties(d.pihak1);
   const p2 = parties(d.pihak2);
@@ -144,7 +151,7 @@ export const kerjasamaInvestasi: DeedTemplate = {
         "Investor berhak memeriksa pembukuan dan lokasi Usaha sewaktu-waktu dengan pemberitahuan terlebih dahulu."
       ]),
       ...pasal(4, "Bagi Hasil"),
-      { t: "p", text: `Keuntungan bersih Usaha dibagi dengan perbandingan Investor sebesar ${pct(d.bagianInvestor)} dan Pengelola sebesar ${bagianPengelola}; bagian Investor dibayarkan oleh Pengelola ${str(d.periode) || "setiap bulan"} paling lambat tanggal sepuluh (10) bulan berikutnya.` },
+      { t: "p", text: `Keuntungan bersih Usaha dibagi dengan perbandingan Investor sebesar ${pct(d.bagianInvestor)} dan Pengelola sebesar ${bagianPengelola}; bagian Investor dibayarkan oleh Pengelola ${str(d.periode) || "setiap bulan"} ${jatuhTempo(str(d.periode))}.` },
       ...pasal(5, "Jangka Waktu dan Pengembalian Modal"),
       ...ayat([
         `Perjanjian ini berlaku untuk jangka waktu ${str(d.lamaBulan) ? angka(str(d.lamaBulan)) : "[...]"} bulan terhitung sejak tanggal ${tanggalHuruf(str(d.mulai))}.`,

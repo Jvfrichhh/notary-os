@@ -70,9 +70,17 @@ export const fidusia: DeedTemplate = {
     const pasangan = person(d.pasangan);
     const ada = !!str(pasangan.nama);
     const objek = list<Objek>(d.objek);
+    const kreditorAwal = str(d.namaKreditur);
     const pen = [
       ...denganPasangan(pemberi.map((x) => x.p), pasangan, "").map((x, i) => (i < pemberi.length ? { ...x, peran: peranDari(pemberi[i]) } : x)),
-      ...penerima.map((x) => ({ p: x.p, peran: peranDari(x) }))
+      ...penerima.map((x) => ({
+        p: x.p,
+        // Wakil kreditor badan hukum: kedudukan bertindak harus sesuai dengan nama kreditor.
+        peran:
+          kreditorAwal && x.kapasitas === "untuk diri sendiri"
+            ? `menurut keterangannya dalam hal ini bertindak selaku kuasa dari dan oleh karena itu untuk dan atas nama **${kreditorAwal}**`
+            : peranDari(x)
+      }))
     ];
     const n1 = pemberi.length + (ada ? 1 : 0);
     const kreditor = str(d.namaKreditur);
@@ -82,17 +90,17 @@ export const fidusia: DeedTemplate = {
       ...daftarPenghadap(pen),
       {
         t: "p",
-        text: `Penghadap ${nomorPenghadap(1, pemberi.length)}${ada ? " (dengan persetujuan pasangannya)" : ""} untuk selanjutnya disebut **PEMBERI FIDUSIA**; dan penghadap ${nomorPenghadap(n1 + 1, penerima.length)}${kreditor ? `, dalam hal ini bertindak untuk dan atas nama **${kreditor}**,` : ""} untuk selanjutnya disebut **PENERIMA FIDUSIA**.`
+        text: `Penghadap ${nomorPenghadap(1, pemberi.length)}${ada ? `, dengan persetujuan penghadap ${nomorPenghadap(pemberi.length + 1, 1)},` : ""} untuk selanjutnya disebut **PEMBERI FIDUSIA**; dan ${kreditor ? `**${kreditor}**, yang diwakili oleh penghadap ${nomorPenghadap(n1 + 1, penerima.length)},` : `penghadap ${nomorPenghadap(n1 + 1, penerima.length)}`} untuk selanjutnya disebut **PENERIMA FIDUSIA**.`
       },
       dikenal(pen.length),
-      { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
+      { t: "p", text: "{Penghadap} dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
       {
         t: "item",
         marker: "a.",
         text: `bahwa antara Penerima Fidusia sebagai kreditor dan Pemberi Fidusia sebagai debitor telah dibuat dan ditandatangani ${str(d.perjanjianPokok) || "[...]"} tertanggal ${tanggalHuruf(str(d.tanggalPerjanjian))}, dengan nilai utang sebesar ${rupiah(str(d.nilaiUtang))}, berikut segala perubahan, perpanjangan, dan pembaruannya, untuk selanjutnya disebut **PERJANJIAN POKOK**;`
       },
-      { t: "item", marker: "b.", text: "bahwa untuk menjamin pelunasan utang berdasarkan Perjanjian Pokok, Pemberi Fidusia bersedia memberikan jaminan fidusia atas benda-benda miliknya kepada Penerima Fidusia;" },
-      { t: "p", text: "Sehubungan dengan hal-hal tersebut di atas, para penghadap menerangkan dengan ini telah sepakat membuat perjanjian dengan syarat-syarat sebagai berikut:" },
+      { t: "item", marker: "b.", text: "bahwa untuk menjamin pelunasan utang berdasarkan Perjanjian Pokok, Pemberi Fidusia bersedia memberikan jaminan fidusia atas benda-benda miliknya kepada Penerima Fidusia." },
+      { t: "p", text: "Sehubungan dengan hal-hal tersebut di atas, {PENGHADAP} menerangkan dengan ini telah sepakat membuat perjanjian dengan syarat-syarat sebagai berikut:" },
       ...pasal(1, "Pembebanan"),
       { t: "p", text: `Pemberi Fidusia dengan ini memberikan jaminan fidusia kepada Penerima Fidusia, yang menerima dari Pemberi Fidusia, dengan nilai penjaminan sebesar ${rupiah(str(d.nilaiPenjaminan))}, atas benda-benda sebagai berikut:` },
       ...objek.map((o, i) => ({

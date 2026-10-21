@@ -97,7 +97,7 @@ export const ppjb: DeedTemplate = {
         text: `Penghadap ${nomorPenghadap(1, penjual.length)} tersebut di atas${adaPasangan ? `, dengan persetujuan penghadap ${nomorPenghadap(penjual.length + 1, 1)},` : ""} untuk selanjutnya disebut **PIHAK PERTAMA**; dan penghadap ${nomorPenghadap(penjual.length + (adaPasangan ? 1 : 0) + 1, pembeli.length)} tersebut di atas untuk selanjutnya disebut **PIHAK KEDUA**.`
       },
       dikenal(penghadap.length),
-      { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
+      { t: "p", text: "{Penghadap} dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
       { t: "item", marker: "a.", text: `bahwa Pihak Pertama adalah pemilik yang sah atas ${uraianTanah(d)}; untuk selanjutnya disebut **OBJEK JUAL BELI**;` },
       { t: "item", marker: "b.", text: "bahwa Pihak Pertama bermaksud menjual Objek Jual Beli kepada Pihak Kedua dan Pihak Kedua bermaksud membeli Objek Jual Beli tersebut dari Pihak Pertama;" },
       { t: "item", marker: "c.", text: `bahwa oleh karena ${str(d.alasanPpjb) || "[...]"}, maka para pihak sepakat untuk terlebih dahulu membuat perjanjian pengikatan jual beli dengan syarat-syarat dan ketentuan-ketentuan sebagai berikut:` },

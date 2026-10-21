@@ -25,7 +25,7 @@ export type Block =
   /** Judul akta di tengah tanpa garis tepi (maks. 4 baris; sisanya garis penuh). */
   | { t: "title"; lines: string[] }
   /** Alinea: diawali "-" menempel pada kata pertama. Gunakan **tebal**. */
-  | { t: "p"; text: string; noDash?: boolean }
+  | { t: "p"; text: string; noDash?: boolean; carryStart?: boolean }
   /** Butir bernomor: kolom nomor 3 huruf; level 0,1,2 menjorok 3 huruf per level. */
   | { t: "item"; marker: string; text: string; level?: number }
   /** Baris di tengah diapit garis putus-putus (mis. "Pasal 1", "DEMIKIAN AKTA INI"). */
@@ -46,6 +46,8 @@ export interface Line {
   plain?: boolean;
   /** Baris pertama sebuah alinea/butir (untuk memindah kalimat utuh ke halaman berikutnya). */
   paraStart?: boolean;
+  /** Awal kalimat penutup yang sebisa mungkin pindah bersama blok tanda tangan. */
+  carryStart?: boolean;
   /** Awal satu baris tanda tangan (celah + nama) yang tidak boleh terpotong halaman. */
   rowStart?: boolean;
   /** Judul (Pasal, DEMIKIAN AKTA INI, dst.) yang harus satu halaman dengan baris berikutnya. */
@@ -210,7 +212,7 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
       // Tanda "-" pembuka alinea selalu huruf biasa, menempel pada kata pertama.
       if (!b.noDash && toks.length) toks.unshift({ text: DASH, bold: false }, { ...toks.shift()!, glue: true });
       wrapTokens(toks, LINE_WIDTH, LINE_WIDTH).forEach((segs, i) => {
-        body.push({ segs: fillRight(segs, LINE_WIDTH), col: 0, border: true, paraStart: i === 0 });
+        body.push({ segs: fillRight(segs, LINE_WIDTH), col: 0, border: true, paraStart: i === 0, carryStart: i === 0 && !!b.carryStart });
       });
       continue;
     }
@@ -307,8 +309,23 @@ export function paginate(
   const room = LINES_PER_PAGE - lineOnPage;
   let carry = 1;
   while (carry < lineOnPage && !out[out.length - carry].paraStart) carry++;
+  // Lebih baik lagi: seluruh kalimat penutup sejak "Segera setelah akta ini dibacakan ..."
+  // (ditandai carryStart) ikut pindah, bila masih muat satu halaman bersama blok.
+  let fromMark = 0;
+  for (let k = 1; k < lineOnPage; k++) {
+    if (out[out.length - k].carryStart) {
+      fromMark = k;
+      break;
+    }
+  }
+  if (fromMark > carry && fromMark < lineOnPage && sig.length + fromMark <= LINES_PER_PAGE) carry = fromMark;
   const keep = sig.length + carry <= LINES_PER_PAGE ? sig.length : Math.min(minSigLines, sig.length);
-  if (room < Math.min(sig.length, keep) && keep + carry <= LINES_PER_PAGE && lineOnPage > carry) {
+  if (room < sig.length && sig.length + carry > LINES_PER_PAGE && sig.length <= LINES_PER_PAGE && sig.length > minSigLines) {
+    // Blok tanda tangan (banyak penandatangan) tidak muat bersama kalimat penutup
+    // dalam satu halaman: lebih baik blok UTUH di halaman baru daripada barisnya
+    // terpecah ke dua halaman. Sisa halaman ditutup garis penuh.
+    while (lineOnPage < LINES_PER_PAGE) pushBody(fullDashLine());
+  } else if (room < Math.min(sig.length, keep) && keep + carry <= LINES_PER_PAGE && lineOnPage > carry) {
     const carried = out.splice(out.length - carry, carry).map((l) => ({ ...l, markTop: false, markBottom: false, pageBreakBefore: false }));
     lineOnPage -= carry;
     while (lineOnPage < LINES_PER_PAGE) pushBody(fullDashLine());

@@ -95,10 +95,10 @@ export const peralihanSaham: DeedTemplate = {
         text: `Penghadap ${nomorPenghadap(1, penjual.length)}${ada ? `, dengan persetujuan penghadap ${nomorPenghadap(penjual.length + 1, 1)},` : ""} untuk selanjutnya disebut **PENJUAL**; dan penghadap ${nomorPenghadap(n1 + 1, pembeli.length)} untuk selanjutnya disebut **PEMBELI**.`
       },
       dikenal(pen.length),
-      { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
+      { t: "p", text: "{Penghadap} dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
       { t: "item", marker: "a.", text: `bahwa Penjual adalah pemilik sah atas ${lembar(jumlah)} dalam ${premisPt(d)};` },
-      { t: "item", marker: "b.", text: `bahwa penjualan saham tersebut telah ditawarkan terlebih dahulu kepada pemegang saham lain sesuai ketentuan anggaran dasar Perseroan, dan telah memperoleh persetujuan pemegang saham Perseroan sebagaimana ternyata dari ${str(d.persetujuan).replace(/[\s.;,]+$/, "") || "[...]"};` },
-      { t: "p", text: "Selanjutnya para penghadap menerangkan telah sepakat mengadakan jual beli saham dengan syarat-syarat sebagai berikut:" },
+      { t: "item", marker: "b.", text: `bahwa penjualan saham tersebut telah ditawarkan terlebih dahulu kepada pemegang saham lain sesuai ketentuan anggaran dasar Perseroan, dan telah memperoleh persetujuan pemegang saham Perseroan sebagaimana ternyata dari ${str(d.persetujuan).replace(/[\s.;,]+$/, "") || "[...]"}.` },
+      { t: "p", text: "Selanjutnya {PENGHADAP} menerangkan telah sepakat mengadakan jual beli saham dengan syarat-syarat sebagai berikut:" },
       ...pasal(1, "Jual Beli"),
       ...(rincian.length
         ? ([

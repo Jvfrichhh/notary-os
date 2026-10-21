@@ -60,10 +60,10 @@ export const sewa: DeedTemplate = {
       ...daftarPenghadap(pen),
       {
         t: "p",
-        text: `Penghadap ${nomorPenghadap(1, p1.length)}${ada ? " (dengan persetujuan pasangannya)" : ""} untuk selanjutnya disebut **PIHAK PERTAMA**; dan penghadap ${nomorPenghadap(n1 + 1, p2.length)} untuk selanjutnya disebut **PIHAK KEDUA**.`
+        text: `Penghadap ${nomorPenghadap(1, p1.length)}${ada ? `, dengan persetujuan penghadap ${nomorPenghadap(p1.length + 1, 1)},` : ""} untuk selanjutnya disebut **PIHAK PERTAMA**; dan penghadap ${nomorPenghadap(n1 + 1, p2.length)} untuk selanjutnya disebut **PIHAK KEDUA**.`
       },
       dikenal(pen.length),
-      { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan bahwa Pihak Pertama menyewakan kepada Pihak Kedua, dan Pihak Kedua menyewa dari Pihak Pertama, dengan syarat-syarat dan ketentuan-ketentuan sebagai berikut:" },
+      { t: "p", text: "{Penghadap} dengan bertindak sebagaimana tersebut di atas menerangkan bahwa Pihak Pertama menyewakan kepada Pihak Kedua, dan Pihak Kedua menyewa dari Pihak Pertama, dengan syarat-syarat dan ketentuan-ketentuan sebagai berikut:" },
       ...pasal(1, "Objek Sewa"),
       { t: "p", text: `Yang disewakan dalam perjanjian ini adalah ${str(d.objek).replace(/[\s.;,]+$/, "") || "[...]"}, untuk selanjutnya disebut **OBJEK SEWA**. Objek Sewa akan dipergunakan oleh Pihak Kedua sebagai ${str(d.peruntukan).replace(/[\s.;,]+$/, "") || "[...]"}.` },
       ...pasal(2, "Jangka Waktu"),
@@ -96,8 +96,8 @@ export const sewa: DeedTemplate = {
       ]),
       ...pasal(8, "Wanprestasi"),
       ...ayat([
-        "Apabila Pihak Kedua lalai membayar harga sewa pada waktunya atau melanggar ketentuan Pasal 6 akta ini, Pihak Pertama memberikan teguran tertulis kepada Pihak Kedua untuk memenuhi kewajibannya dalam jangka waktu paling lambat empat belas (14) hari sejak tanggal teguran.",
-        "Apabila setelah lewatnya jangka waktu teguran tersebut Pihak Kedua tetap lalai, Pihak Pertama berhak mengakhiri sewa-menyewa ini dengan pemberitahuan tertulis, dan Pihak Kedua wajib menyerahkan kembali Objek Sewa sesuai ketentuan Pasal 7 ayat (1) akta ini, tanpa mengurangi hak Pihak Pertama atas harga sewa yang telah jatuh tempo.",
+        `Apabila Pihak Kedua ${tahunan ? "lalai membayar harga sewa pada waktunya atau " : ""}melanggar ketentuan Pasal 6 akta ini, Pihak Pertama memberikan teguran tertulis kepada Pihak Kedua untuk memenuhi kewajibannya dalam jangka waktu paling lambat empat belas (14) hari sejak tanggal teguran.`,
+        `Apabila setelah lewatnya jangka waktu teguran tersebut Pihak Kedua tetap lalai, Pihak Pertama berhak mengakhiri sewa-menyewa ini dengan pemberitahuan tertulis, dan Pihak Kedua wajib menyerahkan kembali Objek Sewa sesuai ketentuan Pasal 7 ayat (1) akta ini${tahunan ? ", tanpa mengurangi hak Pihak Pertama atas harga sewa yang telah jatuh tempo" : ""}.`,
         "Untuk pengakhiran sebagaimana dimaksud dalam ayat (2), para pihak sepakat mengesampingkan ketentuan Pasal 1266 dan Pasal 1267 Kitab Undang-Undang Hukum Perdata sepanjang mengenai diperlukannya putusan pengadilan."
       ]),
       ...pasal(9, "Domisili"),

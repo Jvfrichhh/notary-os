@@ -165,7 +165,7 @@ export const pendirianPt: DeedTemplate = {
       ...pasal(4),
       ...ayat([
         `Modal dasar Perseroan berjumlah ${rupiah(dasar)}, terbagi atas ${lembar(lembarDasar)}, masing-masing saham bernilai nominal ${rupiah(nominal)}.`,
-        `Dari modal dasar tersebut telah ditempatkan dan disetor penuh sebesar ${persenSetor} atau sejumlah ${lembar(totalSaham)} dengan nilai nominal seluruhnya sebesar ${rupiah(ditempatkan)} oleh para pendiri yang telah mengambil bagian saham dan rincian serta nilai nominal saham yang disebutkan pada bagian akhir akta ini.`,
+        `Dari modal dasar tersebut telah ditempatkan dan disetor penuh sebesar ${persenSetor} atau sejumlah ${lembar(totalSaham)} dengan nilai nominal seluruhnya sebesar ${rupiah(ditempatkan)} oleh para pendiri yang telah mengambil bagian saham dengan rincian serta nilai nominal saham yang disebutkan pada bagian akhir akta ini.`,
         "Saham-saham yang masih dalam simpanan akan dikeluarkan oleh Perseroan menurut keperluan modal Perseroan dengan persetujuan Rapat Umum Pemegang Saham, dengan memperhatikan peraturan perundang-undangan yang berlaku."
       ]),
 
@@ -282,14 +282,14 @@ export const pendirianPt: DeedTemplate = {
       },
       { t: "item", marker: "b.", text: "Penyetoran modal tersebut telah dilakukan oleh masing-masing pendiri dengan bukti penyetoran yang sah." },
       { t: "item", marker: "c.", text: "Menyimpang dari ketentuan tentang tata cara pengangkatan anggota Direksi dan Dewan Komisaris, telah diangkat untuk pertama kalinya, untuk masa jabatan lima (5) tahun terhitung sejak tanggal Perseroan memperoleh pengesahan sebagai badan hukum dari Menteri Hukum Republik Indonesia:" },
-      { t: "item", marker: "", level: 1, text: "**DIREKSI**:" },
+      { t: "item", marker: "", level: 0, text: "**DIREKSI**:" },
       ...direksi.map((x, i) => ({
         t: "item" as const,
         marker: `${i + 1}.`,
         level: 1,
         text: `${str(x.jabatan) || "Direktur"}: ${komparisi(person(x.orang), "")};`
       })),
-      { t: "item", marker: "", level: 1, text: "**DEWAN KOMISARIS**:" },
+      { t: "item", marker: "", level: 0, text: "**DEWAN KOMISARIS**:" },
       ...komisaris.map((x, i) => ({
         t: "item" as const,
         marker: `${i + 1}.`,

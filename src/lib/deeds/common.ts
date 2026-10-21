@@ -96,7 +96,7 @@ export function daftarPenghadap(items: { p: Person; peran?: string }[]): Block[]
   return items.map((it, i) => ({
     t: "item" as const,
     marker: `${i + 1}.`,
-    text: `${komparisi(it.p, "")}${it.peran ? `; ${it.peran}` : ""};`
+    text: `${komparisi(it.p, "")}${it.peran ? `; ${it.peran}` : ""}${i === items.length - 1 ? "." : ";"}`
   }));
 }
 
@@ -104,7 +104,7 @@ export function dikenal(jumlah: number): Block {
   return {
     t: "p",
     text:
-      jumlah > 1
+      jumlah !== 1
         ? "Para penghadap telah dikenal oleh saya, Notaris, dari identitas yang diperlihatkan kepada saya, Notaris."
         : "Penghadap telah dikenal oleh saya, Notaris, dari identitas yang diperlihatkan kepada saya, Notaris."
   };
@@ -145,17 +145,19 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { w
           },
           {
             t: "p",
+            carryStart: true,
             text: "Pewasiat telah menerangkan kehendaknya kepada saya, Notaris, di hadapan saksi-saksi, dan saya, Notaris, telah menuliskan kehendak tersebut dalam akta ini dengan kata-kata yang jelas."
           },
           {
             t: "p",
             text: "Segera setelah itu akta ini dibacakan oleh saya, Notaris, kepada Pewasiat di hadapan saksi-saksi, dan atas pertanyaan saya, Notaris, Pewasiat menerangkan bahwa apa yang dibacakan itu benar memuat kehendak terakhirnya; maka akta ini ditandatangani oleh Pewasiat, saksi-saksi dan saya, Notaris."
           },
-          { t: "p", text: "Segala ketentuan Pasal 938 sampai dengan Pasal 940 Kitab Undang-Undang Hukum Perdata telah dipenuhi dalam pembuatan akta wasiat ini." }
+          { t: "p", text: "Segala ketentuan Pasal 938 dan Pasal 939 Kitab Undang-Undang Hukum Perdata telah dipenuhi dalam pembuatan akta wasiat ini." }
         ] as Block[])
       : ([
           {
             t: "p",
+            carryStart: true,
             text: "Segera setelah akta ini dibacakan oleh saya, Notaris, kepada {PENGHADAP} dan saksi-saksi, maka akta ini ditandatangani oleh {PENGHADAP}, saksi-saksi dan saya, Notaris."
           }
         ] as Block[])),
@@ -215,7 +217,9 @@ export function tandaTanganMinuta(penghadap: Person[], data: DeedData, pejabat =
   for (let i = 0; i < rows; i++) {
     const rowStartAt = lines.length;
     // Celah 4 baris untuk tanda tangan; baris pertama menandai awal satu baris tanda tangan.
-    for (let g = 0; g < 4; g++) lines.push(g === 0 ? { ...plain(""), rowStart: true } : plain(""));
+    // Banyak penandatangan: celah 3 baris supaya seluruh blok tetap muat satu halaman.
+    const gap = rows > 4 ? 3 : 4;
+    for (let g = 0; g < gap; g++) lines.push(g === 0 ? { ...plain(""), rowStart: true } : plain(""));
     const cols = [
       penghadap[i] ? wrapPlain(str(penghadap[i].nama).toUpperCase() || "[...]", COL_W) : [""],
       saksi[i] ? wrapPlain(str(saksi[i].nama).toUpperCase() || "[...]", COL_W) : [""],
@@ -262,6 +266,17 @@ export function tandaTanganSalinan(): { lines: Line[]; minLines: number } {
  * Penghadap + pasangannya (persetujuan suami/istri atas harta bersama,
  * Pasal 36 ayat (1) UU Perkawinan). Pasangan menjadi penghadap tersendiri.
  */
+/**
+ * Pihak yang disetujui oleh pasangan: dicocokkan ke pihak berlawanan jenis
+ * (Tuan <-> Nyonya/Nona), utamakan yang alamatnya sama; bila tidak dapat
+ * ditentukan, pihak pertama.
+ */
+export function pasanganDari(pihak: Person[], pasangan: Person): Person | undefined {
+  const lawan = str(pasangan.sapaan) === "Tuan" ? ["Nyonya", "Nona"] : str(pasangan.sapaan) ? ["Tuan"] : [];
+  const kandidat = pihak.filter((p) => lawan.includes(str(p.sapaan)));
+  return kandidat.find((p) => str(p.alamat) && str(p.alamat).toLowerCase() === str(pasangan.alamat).toLowerCase()) ?? kandidat[0] ?? pihak[0];
+}
+
 export function denganPasangan(
   pihak: Person[],
   pasangan: Person,
@@ -269,12 +284,7 @@ export function denganPasangan(
 ): { p: Person; peran?: string }[] {
   const out: { p: Person; peran?: string }[] = pihak.map((p) => ({ p, peran: peranPihak }));
   if (str(pasangan.nama)) {
-    // Pasangan dicocokkan ke pihak berlawanan jenis (Tuan <-> Nyonya), utamakan yang
-    // alamatnya sama; bila tidak dapat ditentukan, pihak pertama.
-    const lawan = str(pasangan.sapaan) === "Tuan" ? ["Nyonya", "Nona"] : str(pasangan.sapaan) ? ["Tuan"] : [];
-    const kandidat = pihak.filter((p) => lawan.includes(str(p.sapaan)));
-    const utama =
-      kandidat.find((p) => str(p.alamat) && str(p.alamat).toLowerCase() === str(pasangan.alamat).toLowerCase()) ?? kandidat[0] ?? pihak[0];
+    const utama = pasanganDari(pihak, pasangan);
     const hubungan = str(pasangan.sapaan) === "Tuan" ? "istrinya" : "suaminya";
     out.push({
       p: pasangan,

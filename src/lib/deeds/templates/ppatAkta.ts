@@ -2,7 +2,8 @@ import type { DeedTemplate, PpatRegisterData } from "../types";
 import { personFromClient } from "../types";
 import type { Block } from "../layout";
 import type { DeedData, Person } from "../schema";
-import { judul, komparisi, list, NOTARIS, pasal, person, PPAT, str } from "../common";
+import { judul, komparisi, list, namaTebal, NOTARIS, pasal, pasanganDari, person, PPAT, str } from "../common";
+import { nomorPenghadap } from "../parties";
 import { LAND_FIELDS } from "../land";
 import { angka, hari, orBlank, rupiah, tanggalHuruf } from "../words";
 
@@ -36,33 +37,48 @@ function pembukaPpat(d: DeedData): Block[] {
   return [
     {
       t: "p",
-      text: `Pada hari ini, ${hari(tgl)}, tanggal ${tanggalHuruf(tgl)}, hadir di hadapan saya, **${NOTARIS.namaLengkap}**, yang berdasarkan Keputusan Kepala Badan Pertanahan Nasional tanggal ${orBlank(PPAT.skTanggal)} Nomor ${orBlank(PPAT.skNomor)} diangkat sebagai Pejabat Pembuat Akta Tanah, yang selanjutnya disebut PPAT, yang dimaksud dalam Pasal 5 ayat (3) Peraturan Pemerintah Nomor 37 Tahun 1998, dengan daerah kerja ${PPAT.daerahKerja} dan berkantor di ${orBlank(PPAT.alamatKantor)}, dengan dihadiri oleh saksi-saksi yang saya kenal dan akan disebut pada bagian akhir akta ini:`
+      text: `Pada hari ini, ${hari(tgl)}, tanggal ${tanggalHuruf(tgl)}, hadir di hadapan saya, **${NOTARIS.namaLengkap}**, yang berdasarkan Keputusan Menteri Agraria dan Tata Ruang/Kepala Badan Pertanahan Nasional tanggal ${orBlank(PPAT.skTanggal)} Nomor ${orBlank(PPAT.skNomor)} diangkat sebagai Pejabat Pembuat Akta Tanah, yang selanjutnya disebut PPAT, yang dimaksud dalam Pasal 7 Peraturan Pemerintah Nomor 24 Tahun 1997 tentang Pendaftaran Tanah, dengan daerah kerja ${PPAT.daerahKerja} dan berkantor di ${orBlank(PPAT.alamatKantor)}, dengan dihadiri oleh saksi-saksi yang saya kenal dan akan disebut pada bagian akhir akta ini:`
     }
   ];
 }
 
-/** Para pihak bernomor; sebutan (PIHAK PERTAMA/KEDUA) pada pihak terakhir kelompoknya. */
+/** Para pihak bernomor (satu kelompok), lalu kalimat sebutan untuk seluruh kelompok. */
 function pihak(ps: Person[], start: number, peran: string, sebutan: string): Block[] {
-  return ps.map((p, i) => ({
-    t: "item" as const,
-    marker: `${start + i}.`,
-    text: `${komparisi(p, "")}; menurut keterangannya dalam hal ini bertindak untuk diri sendiri${
-      i === ps.length - 1 ? `; selaku ${peran}, selanjutnya disebut **${sebutan}**.` : ";"
-    }`
-  }));
+  return [
+    ...ps.map((p, i) => ({
+      t: "item" as const,
+      marker: `${start + i}.`,
+      text: `${komparisi(p, "")}; menurut keterangannya dalam hal ini bertindak untuk diri sendiri${i === ps.length - 1 ? "." : ";"}`
+    })),
+    {
+      t: "p" as const,
+      text: `Penghadap ${nomorPenghadap(start, ps.length)} selaku ${peran}, selanjutnya ${ps.length > 1 ? "bersama-sama " : ""}disebut **${sebutan}**.`
+    }
+  ];
 }
+
+const PENGENALAN = ["dikenal oleh saya", "diperkenalkan kepada saya oleh saksi-saksi yang turut hadir"];
+const pengenalan = (d: DeedData, jumlah: number) =>
+  `${jumlah > 1 ? "Para penghadap" : "Penghadap"} ${PENGENALAN.includes(str(d.pengenalan)) ? str(d.pengenalan) : PENGENALAN[0]}.`;
+
+/** "Jual Beli" -> "Jual beli" (awal kalimat). */
+const kalimat = (sebut: string) => sebut.charAt(0) + sebut.slice(1).toLowerCase();
 
 function objek(d: DeedData, sebut: string): Block[] {
   const luas = Number(str(d.luas));
   const bangunan = str(d.bangunan);
   return [
     {
-      t: "item",
-      marker: "-",
-      text: `${str(d.jenisHak) || "Hak Milik"} Nomor ${orBlank(str(d.nomorSertipikat))} atas sebidang tanah sebagaimana diuraikan dalam Surat Ukur tanggal ${tanggalHuruf(str(d.tanggalSuratUkur))} Nomor ${orBlank(str(d.suratUkur))} seluas ${Number.isFinite(luas) && luas > 0 ? angka(luas) : "[...]"} m² (meter persegi), dengan Nomor Identifikasi Bidang Tanah (NIB) ${orBlank(str(d.nib))}, tercatat atas nama **${orBlank(str(d.atasNama)).toUpperCase()}**, dan Surat Pemberitahuan Pajak Terhutang Pajak Bumi dan Bangunan (SPPT PBB) Nomor Objek Pajak (NOP) ${orBlank(str(d.nop))}, terletak di Provinsi ${orBlank(str(d.letakProvinsi))}, ${orBlank(str(d.letakKota))}, Kecamatan ${orBlank(str(d.letakKecamatan))}, ${orBlank(str(d.letakKelurahan))}, setempat dikenal sebagai ${orBlank(str(d.letakAlamat))}.`
+      t: "p",
+      text: `${str(d.jenisHak) || "Hak Milik"} Nomor ${orBlank(str(d.nomorSertipikat))} atas sebidang tanah sebagaimana diuraikan dalam Surat Ukur tanggal ${tanggalHuruf(str(d.tanggalSuratUkur))} Nomor ${orBlank(str(d.suratUkur))} seluas ${Number.isFinite(luas) && luas > 0 ? angka(luas) : "[...]"} m² (meter persegi), dengan Nomor Identifikasi Bidang Tanah (NIB) ${orBlank(str(d.nib))}, tercatat atas nama **${orBlank(str(d.atasNama)).toUpperCase()}**, dan Surat Pemberitahuan Pajak Terutang Pajak Bumi dan Bangunan (SPPT PBB) Nomor Objek Pajak (NOP) ${orBlank(str(d.nop))}, terletak di Provinsi ${orBlank(str(d.letakProvinsi))}, ${orBlank(str(d.letakKota))}, Kecamatan ${orBlank(str(d.letakKecamatan))}, ${orBlank(str(d.letakKelurahan))}, setempat dikenal sebagai ${orBlank(str(d.letakAlamat))}.`
     },
-    { t: "p", text: `${sebut} ini meliputi pula: ${bangunan ? `${bangunan} yang berdiri di atas tanah tersebut` : "tidak ada"}.` },
-    { t: "p", text: `Selanjutnya semua yang diuraikan di atas dalam akta ini disebut "Obyek ${sebut}".` }
+    {
+      t: "p",
+      text: bangunan
+        ? `${kalimat(sebut)} ini meliputi pula: ${bangunan.replace(/[\s.;,]+$/, "")} yang berdiri di atas tanah tersebut.`
+        : `${kalimat(sebut)} ini tidak meliputi bangunan atau benda lain di atas tanah tersebut.`
+    },
+    { t: "p", text: `Selanjutnya semua yang diuraikan di atas dalam akta ini disebut "Objek ${sebut}".` }
   ];
 }
 
@@ -73,11 +89,11 @@ function pasalBaku(d: DeedData, sebut: string): Block[] {
   return [
     ...p(
       1,
-      `Mulai hari ini obyek ${s} yang diuraikan dalam akta ini telah menjadi milik Pihak Kedua dan karenanya segala keuntungan yang didapat dari, dan segala kerugian/beban atas obyek ${s} tersebut di atas menjadi hak/beban Pihak Kedua.`
+      `Mulai hari ini objek ${s} yang diuraikan dalam akta ini telah menjadi milik Pihak Kedua dan karenanya segala keuntungan yang didapat dari, dan segala kerugian/beban atas objek ${s} tersebut di atas menjadi hak/beban Pihak Kedua.`
     ),
     ...p(
       2,
-      `Pihak Pertama menjamin, bahwa obyek ${s} tersebut di atas tidak tersangkut dalam suatu sengketa, bebas dari sitaan, tidak terikat sebagai jaminan untuk sesuatu utang yang tidak tercatat dalam sertipikat, dan bebas dari beban-beban lainnya yang berupa apapun.`
+      `Pihak Pertama menjamin, bahwa objek ${s} tersebut di atas tidak tersangkut dalam suatu sengketa, bebas dari sitaan, tidak terikat sebagai jaminan untuk sesuatu utang yang tidak tercatat dalam sertipikat, dan bebas dari beban-beban lainnya yang berupa apa pun.`
     ),
     ...p(
       3,
@@ -85,7 +101,7 @@ function pasalBaku(d: DeedData, sebut: string): Block[] {
     ),
     ...p(
       4,
-      `Dalam hal terdapat perbedaan luas tanah yang menjadi obyek ${s} dalam akta ini dengan hasil pengukuran oleh instansi Badan Pertanahan Nasional, maka para pihak akan menerima hasil pengukuran instansi Badan Pertanahan Nasional tersebut${sebut === "Jual Beli" ? " dengan tidak memperhitungkan kembali harga jual beli dan" : " dan"} tidak akan saling mengadakan gugatan.`
+      `Dalam hal terdapat perbedaan luas tanah yang menjadi objek ${s} dalam akta ini dengan hasil pengukuran oleh instansi Badan Pertanahan Nasional, maka para pihak akan menerima hasil pengukuran instansi Badan Pertanahan Nasional tersebut${sebut === "Jual Beli" ? " dengan tidak memperhitungkan kembali harga jual beli dan" : " dan"} tidak akan saling mengadakan gugatan.`
     ),
     ...p(
       5,
@@ -95,22 +111,27 @@ function pasalBaku(d: DeedData, sebut: string): Block[] {
   ];
 }
 
-function persetujuan(pasangan: Person, utama: Person | undefined, sebut: string): Block[] {
+function persetujuan(d: DeedData, pasangan: Person, pihakPertama: Person[], sebut: string): Block[] {
   if (!str(pasangan.nama)) return [];
+  const utama = pasanganDari(pihakPertama, pasangan);
   const hubungan = str(pasangan.sapaan) === "Tuan" ? "istrinya" : "suaminya";
   return [
     { t: "p", text: "Akhirnya hadir juga di hadapan saya, dengan dihadiri oleh saksi-saksi yang sama:" },
-    { t: "item", marker: "-", text: `${komparisi(pasangan, "")};` },
+    { t: "item", marker: "", text: `${komparisi(pasangan, "")};` },
     {
       t: "p",
-      text: `yang menerangkan telah mengetahui dan menyetujui ${sebut.toLowerCase()} yang dilakukan oleh ${hubungan}, ${utama ? `**${(str(utama.nama) || "[...]").toUpperCase()}**` : "[...]"}, dalam akta ini.`
-    }
+      noDash: true,
+      text: `yang menerangkan telah mengetahui dan menyetujui ${sebut.toLowerCase()} yang dilakukan oleh ${hubungan}, ${utama ? namaTebal(utama) : "[...]"}, dalam akta ini.`
+    },
+    { t: "p", text: `Penghadap tersebut ${PENGENALAN.includes(str(d.pengenalan)) ? str(d.pengenalan) : PENGENALAN[0]}.` }
   ];
 }
 
 function penutupPpat(d: DeedData, sebut: string): Block[] {
   const s1 = person(d.saksi1);
   const s2 = person(d.saksi2);
+  const pasangan = person(d.pasangan);
+  const setuju = str(pasangan.nama) ? `${namaTebal(pasangan)} yang memberikan persetujuan, ` : "";
   return [
     { t: "closingStart" },
     { t: "center", text: "DEMIKIAN AKTA INI", bold: true },
@@ -119,7 +140,9 @@ function penutupPpat(d: DeedData, sebut: string): Block[] {
     { t: "item", marker: "2.", text: komparisi(s2) },
     {
       t: "p",
-      text: `sebagai saksi-saksi, dan setelah dibacakan serta dijelaskan, maka sebagai bukti kebenaran pernyataan yang dikemukakan oleh Pihak Pertama dan Pihak Kedua tersebut di atas, akta ini ditandatangani/cap ibu jari oleh Pihak Pertama, Pihak Kedua, para saksi dan saya, PPAT, sebanyak dua (2) rangkap asli, yaitu satu (1) rangkap lembar pertama disimpan di kantor saya, dan satu (1) rangkap lembar kedua disampaikan kepada Kepala Kantor Pertanahan ${orBlank(str(d.kantorPertanahan))} untuk keperluan pendaftaran peralihan hak akibat ${sebut.toLowerCase()} dalam akta ini.`
+      noDash: true,
+      carryStart: true,
+      text: `sebagai saksi-saksi, dan setelah dibacakan serta dijelaskan, maka sebagai bukti kebenaran pernyataan yang dikemukakan oleh Pihak Pertama dan Pihak Kedua tersebut di atas, akta ini ditandatangani/cap ibu jari oleh Pihak Pertama, Pihak Kedua, ${setuju}para saksi dan saya, PPAT, sebanyak dua (2) rangkap asli, yaitu satu (1) rangkap lembar pertama disimpan di kantor saya, dan satu (1) rangkap lembar kedua disampaikan kepada Kepala Kantor Pertanahan ${orBlank(str(d.kantorPertanahan))} untuk keperluan pendaftaran peralihan hak akibat ${sebut.toLowerCase()} dalam akta ini.`
     }
   ];
 }
@@ -152,7 +175,8 @@ const PIHAK_SECTIONS = (pertama: string, kedua: string, keyA: string, keyB: stri
     title: `Pihak Pertama (${pertama})`,
     fields: [
       { kind: "list" as const, key: keyA, label: pertama, itemLabel: pertama, min: 1, max: 4, fields: [{ kind: "person" as const, key: "orang", label: "Identitas" }] },
-      { kind: "person" as const, key: "pasangan", label: `Suami/istri ${pertama.toLowerCase()} (persetujuan; kosongkan bila tidak ada)`, optional: true }
+      { kind: "person" as const, key: "pasangan", label: `Suami/istri ${pertama.toLowerCase()} (persetujuan; kosongkan bila tidak ada)`, optional: true },
+      { kind: "select" as const, key: "pengenalan", label: "Para penghadap", options: PENGENALAN, default: PENGENALAN[0] }
     ]
   },
   {
@@ -185,7 +209,7 @@ export const ajbPpat: DeedTemplate = {
   description: "Akta Jual Beli selaku PPAT (format akta kantor; didaftarkan di Buku Akta PPAT).",
   sections: [
     ...PIHAK_SECTIONS("Penjual", "Pembeli", "penjual", "pembeli"),
-    OBJEK_SECTION("Obyek Jual Beli"),
+    OBJEK_SECTION("Objek Jual Beli"),
     {
       title: "Harga, Biaya & Pajak",
       fields: [
@@ -213,7 +237,7 @@ export const ajbPpat: DeedTemplate = {
       ...pembukaPpat(d),
       ...pihak(penjual, 1, "Penjual", "PIHAK PERTAMA"),
       ...pihak(pembeli, penjual.length + 1, "Pembeli", "PIHAK KEDUA"),
-      { t: "p", text: "Para penghadap dikenal oleh saya/diperkenalkan kepada saya oleh saksi-saksi yang turut hadir." },
+      { t: "p", text: pengenalan(d, penjual.length + pembeli.length) },
       { t: "p", text: "Pihak Pertama menerangkan dengan ini menjual kepada Pihak Kedua dan Pihak Kedua menerangkan dengan ini membeli dari Pihak Pertama:" },
       ...objek(d, "Jual Beli"),
       { t: "p", text: "Pihak Pertama dan Pihak Kedua menerangkan bahwa:" },
@@ -221,11 +245,11 @@ export const ajbPpat: DeedTemplate = {
       {
         t: "item",
         marker: "b.",
-        text: "Pihak Pertama mengaku telah menerima sepenuhnya uang tersebut di atas dari Pihak Kedua dan untuk penerimaan uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kwitansi);"
+        text: "Pihak Pertama mengaku telah menerima sepenuhnya uang tersebut di atas dari Pihak Kedua dan untuk penerimaan uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kuitansi);"
       },
       { t: "item", marker: "c.", text: "Jual beli ini dilakukan dengan syarat-syarat sebagai berikut:" },
       ...pasalBaku(d, "Jual Beli"),
-      ...persetujuan(person(d.pasangan), penjual[0], "Jual Beli"),
+      ...persetujuan(d, person(d.pasangan), penjual, "Jual Beli"),
       ...penutupPpat(d, "Jual Beli")
     ];
   },
@@ -242,11 +266,11 @@ export const hibahPpat: DeedTemplate = {
       title: "Hubungan Para Pihak",
       fields: [{ kind: "text", key: "hubungan", label: "Hubungan Pihak Kedua dengan Pihak Pertama", placeholder: "mis. anak kandung", wide: true }]
     },
-    OBJEK_SECTION("Obyek Hibah"),
+    OBJEK_SECTION("Objek Hibah"),
     {
       title: "Nilai, Biaya & Pajak",
       fields: [
-        { kind: "money", key: "nilai", label: "Nilai obyek hibah (Rp)", help: "Untuk keperluan pendaftaran & pajak" },
+        { kind: "money", key: "nilai", label: "Nilai objek hibah (Rp)", help: "Untuk keperluan pendaftaran & pajak" },
         { kind: "select", key: "biaya", label: "Biaya akta & peralihan hak dibayar oleh", options: ["Pihak Kedua", "Pihak Pertama"], default: "Pihak Kedua" },
         ...TAX_FIELDS
       ]
@@ -264,16 +288,16 @@ export const hibahPpat: DeedTemplate = {
       ...pembukaPpat(d),
       ...pihak(pemberi, 1, "Pemberi Hibah", "PIHAK PERTAMA"),
       ...pihak(penerima, pemberi.length + 1, "Penerima Hibah", "PIHAK KEDUA"),
-      { t: "p", text: "Para penghadap dikenal oleh saya/diperkenalkan kepada saya oleh saksi-saksi yang turut hadir." },
+      { t: "p", text: pengenalan(d, pemberi.length + penerima.length) },
       ...(str(d.hubungan) ? [{ t: "p" as const, text: `Pihak Kedua adalah ${str(d.hubungan)} dari Pihak Pertama.` }] : []),
       { t: "p", text: "Pihak Pertama menerangkan dengan ini menghibahkan kepada Pihak Kedua dan Pihak Kedua menerangkan dengan ini menerima hibah dari Pihak Pertama:" },
       ...objek(d, "Hibah"),
       { t: "p", text: "Pihak Pertama dan Pihak Kedua menerangkan bahwa:" },
       { t: "item", marker: "a.", text: "Hibah ini dilakukan dengan cuma-cuma dan tidak dapat ditarik kembali, kecuali dalam hal-hal yang ditentukan undang-undang;" },
-      { t: "item", marker: "b.", text: `Untuk keperluan pendaftaran, obyek hibah ini bernilai ${nilai ? rupiah(nilai) : "Rp[...] ([...] Rupiah)"};` },
+      { t: "item", marker: "b.", text: `Untuk keperluan pendaftaran, objek hibah ini bernilai ${nilai ? rupiah(nilai) : "Rp[...] ([...] Rupiah)"};` },
       { t: "item", marker: "c.", text: "Hibah ini dilakukan dengan syarat-syarat sebagai berikut:" },
       ...pasalBaku(d, "Hibah"),
-      ...persetujuan(person(d.pasangan), pemberi[0], "Hibah"),
+      ...persetujuan(d, person(d.pasangan), pemberi, "Hibah"),
       ...penutupPpat(d, "Hibah")
     ];
   },

@@ -70,14 +70,20 @@ export const waris: DeedTemplate = {
       },
       { t: "item", marker: "b.", text: `bahwa semasa hidupnya Pewaris ${str(d.perkawinan) || "[...]"}, dan perkawinan tersebut merupakan satu-satunya perkawinan Pewaris;` },
       { t: "item", marker: "c.", text: `bahwa Pewaris tidak meninggalkan surat wasiat, sebagaimana ternyata dari ${str(d.keteranganWasiat) || "[...]"};` },
-      { t: "item", marker: "d.", text: `bahwa menurut ${str(d.hukum) || "Kitab Undang-Undang Hukum Perdata"}, yang berhak atas harta peninggalan Pewaris adalah para ahli waris berikut dengan bagian masing-masing:` },
+      { t: "item", marker: "d.", text: `bahwa menurut ${str(d.hukum) || "Kitab Undang-Undang Hukum Perdata"}, yang berhak atas harta peninggalan Pewaris adalah ${ahli.length > 1 ? "para ahli waris berikut dengan bagian masing-masing" : "ahli waris berikut"}:` },
       ...ahli.map((a, i) => ({
         t: "item" as const,
         marker: `${i + 1}.`,
         level: 1,
         text: `${namaTebal(person(a.orang))}, selaku ${str(a.hubungan) || "[...]"} Pewaris, berhak atas ${pecahan(str(a.bagian)) || "[...]"} bagian${i === ahli.length - 1 ? "." : ";"}`
       })),
-      { t: "p", text: "Para ahli waris tersebut di atas merupakan satu-satunya ahli waris Pewaris, dan selain mereka tidak ada lagi orang lain yang berhak atas harta peninggalan Pewaris." },
+      {
+        t: "p",
+        text:
+          ahli.length > 1
+            ? "Para ahli waris tersebut di atas merupakan satu-satunya ahli waris Pewaris, dan selain mereka tidak ada lagi orang lain yang berhak atas harta peninggalan Pewaris."
+            : "Ahli waris tersebut di atas merupakan satu-satunya ahli waris Pewaris, dan selain dia tidak ada lagi orang lain yang berhak atas harta peninggalan Pewaris."
+      },
       {
         t: "p",
         text: "{Penghadap} bertanggung jawab sepenuhnya atas kebenaran keterangan yang diberikan dalam akta ini, dan membebaskan Notaris dari segala tuntutan apabila di kemudian hari ternyata keterangan tersebut tidak benar."
@@ -192,7 +198,7 @@ export const wasiat: DeedTemplate = {
   prefill: (ctx) => ({ pewasiat: personFromClient(ctx.client) }),
   notes: () => [
     "Wasiat tidak boleh mengurangi bagian mutlak (legitieme portie) ahli waris menurut KUHPerdata; untuk muslim, wasiat kepada bukan ahli waris paling banyak sepertiga harta (KHI Pasal 195).",
-    "Notaris wajib mengirim daftar akta wasiat ke Daftar Pusat Wasiat paling lambat tanggal 5 bulan berikutnya (Pasal 16 ayat (1) huruf i UUJN)."
+    "Notaris wajib membuat daftar akta wasiat (Pasal 16 ayat (1) huruf i UUJN) dan mengirimkannya ke Daftar Pusat Wasiat dalam waktu lima hari pada minggu pertama bulan berikutnya (Pasal 16 ayat (1) huruf j UUJN)."
   ],
   build(d, variant) {
     const p = person(d.pewasiat);

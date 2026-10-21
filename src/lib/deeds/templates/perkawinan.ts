@@ -11,7 +11,7 @@ const lines = (v: unknown) =>
     .map((s) => s.trim().replace(/^(?:[-•]\s*|\d{1,2}[.)]\s+|[a-z][.)]\s+)/i, "").replace(/[\s.;,]+$/, ""))
     .filter(Boolean);
 
-const BIAYA_OPTS = ["ditanggung oleh pihak suami", "ditanggung bersama oleh suami dan istri secara seimbang dengan penghasilan masing-masing"];
+const BIAYA_OPTS = ["ditanggung oleh Pihak Suami", "ditanggung bersama oleh suami dan istri secara seimbang dengan penghasilan masing-masing"];
 
 function butir(teks: string[], level = 1): Block[] {
   return teks.map((t, i) => ({ t: "item" as const, marker: `${String.fromCharCode(97 + (i % 26))}.`, level, text: `${t}${i === teks.length - 1 ? "." : ";"}` }));
@@ -47,13 +47,13 @@ function pasalPemisahan(d: Record<string, unknown>, pasca: boolean): Block[] {
     {
       t: "p",
       text: pasca
-        ? "Utang yang dibuat oleh masing-masing pihak terhitung sejak tanggal akta ini menjadi tanggungan pihak yang membuatnya dan tidak dapat ditagihkan kepada pihak lainnya; adapun utang yang telah ada sebelum tanggal akta ini tunduk pada ketentuan pasal mengenai pihak ketiga dalam akta ini."
+        ? "Utang yang dibuat oleh masing-masing pihak terhitung sejak tanggal akta ini menjadi tanggungan pihak yang membuatnya dan tidak dapat ditagihkan kepada pihak lainnya; adapun utang yang telah ada sebelum tanggal akta ini tunduk pada ketentuan Pasal 8 akta ini."
         : "Utang yang dibuat oleh masing-masing pihak, baik sebelum maupun selama perkawinan, menjadi tanggungan pihak yang membuatnya, dan tidak dapat ditagihkan kepada pihak lainnya."
     },
     ...pasal(4, "Pengurusan Harta"),
     { t: "p", text: "Masing-masing pihak berhak mengurus, menguasai, menikmati hasil, dan melakukan perbuatan hukum apa pun atas harta miliknya sendiri tanpa memerlukan persetujuan atau bantuan pihak lainnya." },
     ...pasal(5, "Biaya Rumah Tangga"),
-    { t: "p", text: `Biaya rumah tangga, pemeliharaan dan pendidikan anak-anak ${str(d.biaya) || BIAYA_OPTS[0]}.` },
+    { t: "p", text: `Biaya rumah tangga, pemeliharaan dan pendidikan anak-anak ${(str(d.biaya) || BIAYA_OPTS[0]).replace("pihak suami", "Pihak Suami")}.` },
     ...pasal(6, "Pemakaian Bersama"),
     { t: "p", text: "Barang-barang yang dipergunakan bersama dalam rumah tangga yang tidak dapat dibuktikan kepemilikannya oleh salah satu pihak dianggap milik Para Pihak masing-masing untuk satu per dua (1/2) bagian." }
   );

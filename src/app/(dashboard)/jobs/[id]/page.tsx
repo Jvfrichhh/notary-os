@@ -79,6 +79,12 @@ export default async function JobDetailPage({
 
   if (!job) notFound();
 
+  // Membuka halaman job = notifikasi Anda tentang job ini dianggap sudah dibaca.
+  await prisma.notification.updateMany({
+    where: { userId: user.id, isRead: false, relatedEntityType: "Job", relatedEntityId: job.id },
+    data: { isRead: true }
+  });
+
   const NOTARY_ONLY = ["READY_FOR_SIGNING", "COMPLETED", "CANCELLED"];
   // Pengajuan/persetujuan punya tombol sendiri; dropdown hanya untuk status lain.
   const nextStatuses = getValidNextStatuses(job.status).filter(

@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/format";
-import { markAllClientNotificationsRead, markClientNotificationRead } from "./actions";
+import { markAllClientNotificationsRead, markClientNotificationRead, openClientNotification } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -44,17 +43,21 @@ export default async function PortalNotificationsPage() {
               return (
                 <li key={n.id} className="flex items-start justify-between gap-3 py-3 text-sm">
                   <div className="min-w-0">
-                    <p className={n.isRead ? "text-muted-foreground" : "font-medium text-foreground"}>{n.message}</p>
+                    {href ? (
+                      // Membuka notifikasi = otomatis ditandai dibaca, lalu ke halaman pekerjaan.
+                      <form action={openClientNotification.bind(null, n.id)}>
+                        <button
+                          type="submit"
+                          className={`text-left hover:underline ${n.isRead ? "text-muted-foreground" : "font-medium text-foreground"}`}
+                        >
+                          {n.message}
+                        </button>
+                      </form>
+                    ) : (
+                      <p className={n.isRead ? "text-muted-foreground" : "font-medium text-foreground"}>{n.message}</p>
+                    )}
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {formatDateTime(n.createdAt)}
-                      {href && (
-                        <>
-                          {" · "}
-                          <Link href={href} className="text-primary hover:underline">
-                            Lihat pekerjaan
-                          </Link>
-                        </>
-                      )}
                     </p>
                   </div>
                   {!n.isRead && (

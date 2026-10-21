@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/session";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/format";
-import { markNotificationRead, markAllNotificationsRead } from "@/app/(dashboard)/notifications/actions";
+import { markNotificationRead, markAllNotificationsRead, openNotification } from "@/app/(dashboard)/notifications/actions";
+import { notificationHref } from "@/lib/notificationLinks";
 
 export const dynamic = "force-dynamic";
 
@@ -15,42 +16,6 @@ const TYPE_LABEL: Record<string, string> = {
   document: "Dokumen",
   info: "Info"
 };
-
-// Peta relatedEntityType -> halaman detail yang sudah ada di app ini.
-// Cukup ditambah barisnya kalau ada entity baru yang mengirim notifikasi.
-function entityHref(type: string | null, id: string | null): string | null {
-  if (!type || !id) return null;
-  switch (type) {
-    case "Job":
-      return `/jobs/${id}`;
-    case "Client":
-      return `/clients/${id}`;
-    case "Document":
-      return `/documents/${id}`;
-    case "Deed":
-      return `/archive/deed/${id}`;
-    case "Minuta":
-      return `/archive/minuta/${id}`;
-    case "Salinan":
-      return `/archive/salinan/${id}`;
-    case "Grosse":
-      return `/archive/grosse/${id}`;
-    case "Kutipan":
-      return `/archive/kutipan/${id}`;
-    case "Repertorium":
-      return `/notary-record/${id}`;
-    case "Visit":
-      return `/visits/${id}`;
-    case "Legalisasi":
-      return `/legalisasi/${id}`;
-    case "Waarmerking":
-      return `/waarmerking/${id}`;
-    case "Wasiat":
-      return `/wasiat/${id}`;
-    default:
-      return null;
-  }
-}
 
 interface PageProps {
   searchParams: { filter?: string };
@@ -108,7 +73,7 @@ export default async function NotificationsPage({ searchParams }: PageProps) {
         ) : (
           <div className="divide-y divide-border">
             {notifications.map((n) => {
-              const href = entityHref(n.relatedEntityType, n.relatedEntityId);
+              const href = notificationHref(n.relatedEntityType, n.relatedEntityId);
               return (
                 <div key={n.id} className={`flex items-start justify-between gap-3 px-4 py-3 ${!n.isRead ? "bg-primary/5" : ""}`}>
                   <div className="flex items-start gap-3">
@@ -118,9 +83,12 @@ export default async function NotificationsPage({ searchParams }: PageProps) {
                         {TYPE_LABEL[n.type] ?? n.type}
                       </p>
                       {href ? (
-                        <Link href={href} className="text-sm text-foreground hover:underline">
-                          {n.message}
-                        </Link>
+                        // Membuka notifikasi = otomatis ditandai dibaca, lalu diarahkan ke halamannya.
+                        <form action={openNotification.bind(null, n.id)}>
+                          <button type="submit" className="text-left text-sm text-foreground hover:underline">
+                            {n.message}
+                          </button>
+                        </form>
                       ) : (
                         <p className="text-sm text-foreground">{n.message}</p>
                       )}

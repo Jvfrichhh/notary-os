@@ -179,7 +179,12 @@ export function DeedForm({
       const res = await saveDeedDraft(draftId, JSON.stringify(data));
       if (res.ok) {
         setDirty(false);
-        setStatus(`Tersimpan ${new Date(res.savedAt!).toLocaleTimeString("id-ID")}`);
+        const time = new Date(res.savedAt!).toLocaleTimeString("id-ID");
+        setStatus(
+          res.warning
+            ? res.warning
+            : `Tersimpan ${time}${res.vaultFiles ? " · Minuta & Salinan masuk Document Vault" : ""}`
+        );
         then?.();
       } else setStatus(res.error ?? "Gagal menyimpan.");
     });

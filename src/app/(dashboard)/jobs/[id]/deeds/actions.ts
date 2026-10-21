@@ -9,6 +9,7 @@ import { assertPermission } from "@/lib/permissions";
 import { PERMISSIONS } from "@/lib/permissionKeys";
 import { writeAuditLog } from "@/lib/audit";
 import { getDeedTemplate } from "@/lib/deeds/registry";
+import { syncDraftToVault } from "@/lib/deeds/vault";
 
 const MAX_DATA_BYTES = 200_000;
 
@@ -45,7 +46,10 @@ export async function createDeedDraft(jobId: string, formData: FormData) {
 }
 
 /** Simpan isian draft (JSON dari form). */
-export async function saveDeedDraft(draftId: string, json: string): Promise<{ ok: boolean; error?: string; savedAt?: string }> {
+export async function saveDeedDraft(
+  draftId: string,
+  json: string
+): Promise<{ ok: boolean; error?: string; warning?: string; savedAt?: string; vaultFiles?: number }> {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
   if (json.length > MAX_DATA_BYTES) return { ok: false, error: "Data terlalu besar." };
@@ -63,8 +67,11 @@ export async function saveDeedDraft(draftId: string, json: string): Promise<{ ok
     where: { id: draftId },
     data: { data: data as Prisma.InputJsonValue, updatedById: user.id }
   });
+  // Minuta & Salinan (.docx) ikut tersimpan di Document Vault sebagai Dokumen Kerja.
+  const vault = await syncDraftToVault(draftId, user.id);
   revalidatePath(`/jobs/${draft.jobId}`);
-  return { ok: true, savedAt: updated.updatedAt.toISOString() };
+  revalidatePath("/documents");
+  return { ok: true, savedAt: updated.updatedAt.toISOString(), vaultFiles: vault.saved, warning: vault.error };
 }
 
 export async function deleteDeedDraft(draftId: string) {

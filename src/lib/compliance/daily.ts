@@ -1,0 +1,72 @@
+import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
+import { formatDate, getJakartaToday } from "@/lib/format";
+import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, REPORT_LABEL, reportSentInfo, type ReportKind } from "@/lib/compliance/monthly";
+import { createDatabaseBackup, lastBackupAt } from "@/lib/compliance/backup";
+
+/**
+ * Pengecekan harian (dipanggil cron Vercel ~06.00 WIB):
+ *  1. tugas bertenggat (termasuk kewajiban hukum setelah akta) yang jatuh
+ *     tempo <= 3 hari atau terlambat -> pengingat ke penanggung jawab & Notaris;
+ *  2. laporan bulanan MPD / Daftar Pusat Wasiat bulan lalu yang belum
+ *     ditandai terkirim -> pengingat ke Notaris menjelang tenggat;
+ *  3. backup database otomatis bila backup terakhir sudah >= 7 hari.
+ * Aman dipanggil berulang: pengingat yang sama tidak dikirim dua kali sehari.
+ */
+
+async function notaries(): Promise<string[]> {
+  const rows = await prisma.user.findMany({ where: { isActive: true, role: { name: "NOTARY" } }, select: { id: true } });
+  return rows.map((r) => r.id);
+}
+
+/** Kirim notifikasi kecuali pesan yang sama sudah dikirim ke user itu hari ini. */
+async function notifyOnce(userId: string, message: string, type: "deadline" | "overdue" | "info", jobId?: string) {
+  const today = getJakartaToday();
+  const since = new Date(today.getTime() - 7 * 3600 * 1000); // 00.00 WIB dalam UTC
+  const dup = await prisma.notification.findFirst({ where: { userId, message, createdAt: { gte: since } }, select: { id: true } });
+  if (dup) return false;
+  await createNotification({ userId, type, message, relatedEntityType: jobId ? "Job" : undefined, relatedEntityId: jobId });
+  return true;
+}
+
+export async function runDailyChecks() {
+  const today = getJakartaToday();
+  const soon = new Date(today.getTime() + 3 * 86400000);
+  const notaryIds = await notaries();
+  let reminders = 0;
+
+  // 1. Tugas bertenggat
+  const tasks = await prisma.jobTask.findMany({
+    where: { status: { not: "DONE" }, dueDate: { not: null, lte: soon }, job: { recordStatus: "ACTIVE", status: { not: "CANCELLED" } } },
+    select: { title: true, dueDate: true, assignedTo: true, job: { select: { id: true, jobNumber: true, picId: true } } }
+  });
+  for (const t of tasks) {
+    const late = t.dueDate! < today;
+    const msg = `${late ? "TERLAMBAT" : "Segera jatuh tempo"}: ${t.title} (${t.job.jobNumber}, tenggat ${formatDate(t.dueDate)}).`;
+    const to = new Set<string>([...(t.assignedTo ? [t.assignedTo] : t.job.picId ? [t.job.picId] : []), ...notaryIds]);
+    for (const u of Array.from(to)) if (await notifyOnce(u, msg, late ? "overdue" : "deadline", t.job.id)) reminders++;
+  }
+
+  // 2. Laporan bulanan bulan lalu
+  const ym = previousYm(today);
+  const day = today.getUTCDate();
+  const data = await gatherMonth(ym);
+  for (const kind of ["mpd", "wasiat"] as ReportKind[]) {
+    const due = REPORT_DUE_DAY[kind];
+    if (kind === "wasiat" && data.wasiat.length === 0) continue;
+    // Pengingat mulai 5 hari sebelum tenggat, berlanjut setelah tenggat terlewat.
+    if (day < Math.max(1, due - 5)) continue;
+    if (await reportSentInfo(kind, ym)) continue;
+    const msg = `${REPORT_LABEL[kind]} bulan ${monthLabel(ym)} belum ditandai terkirim (tenggat tanggal ${due}). Buka menu Laporan Bulanan.`;
+    for (const u of notaryIds) if (await notifyOnce(u, msg, day > due ? "overdue" : "deadline")) reminders++;
+  }
+
+  // 3. Backup mingguan
+  const last = await lastBackupAt();
+  let backup: string | null = null;
+  if (!last || Date.now() - last.getTime() >= 7 * 86400000 - 3600000) {
+    backup = (await createDatabaseBackup(null, "otomatis")).storageKey;
+  }
+
+  return { reminders, backup, tasksChecked: tasks.length };
+}

@@ -151,8 +151,15 @@ export async function addJobTask(jobId: string, formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
 
+  const job0 = await prisma.job.findUnique({ where: { id: jobId }, select: { picId: true } });
   const task = await prisma.jobTask.create({
-    data: { jobId, title, assignedTo: toNullable(String(formData.get("assignedTo") ?? "")) }
+    data: {
+      jobId,
+      title,
+      // Tanpa pilihan khusus, tugas baru menjadi tanggung jawab PIC job.
+      assignedTo: toNullable(String(formData.get("assignedTo") ?? "")) ?? job0?.picId ?? null,
+      dueDate: fromDateInput(String(formData.get("dueDate") ?? ""))
+    }
   });
 
   await writeAuditLog({
@@ -418,4 +425,26 @@ export async function updateJobDetails(jobId: string, formData: FormData) {
   }
 
   backToJob(jobId, "ok", "edited");
+}
+
+/** Notaris mengatur tenggat tugas (mis. menyesuaikan tenggat kewajiban hukum). */
+export async function updateTaskDueDate(taskId: string, jobId: string, formData: FormData) {
+  const user = await requireUser();
+  if (!(await isNotaryLevel(user.id))) return;
+  const raw = String(formData.get("dueDate") ?? "");
+  const dueDate = raw ? fromDateInput(raw) : null;
+  if (raw && !dueDate) return;
+  const task = await prisma.jobTask.findFirst({ where: { id: taskId, jobId }, select: { id: true, dueDate: true } });
+  if (!task) return;
+  await prisma.jobTask.update({ where: { id: task.id }, data: { dueDate } });
+  await writeAuditLog({
+    userId: user.id,
+    action: "task_due_changed",
+    entityType: "JobTask",
+    entityId: task.id,
+    previousValue: { dueDate: task.dueDate },
+    newValue: { dueDate }
+  });
+  revalidateJob(jobId);
+  revalidatePath("/compliance");
 }

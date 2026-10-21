@@ -35,7 +35,9 @@ export type NavIconKey =
   | "bar-chart"
   | "shield"
   | "sparkles"
-  | "file-pen";
+  | "file-pen"
+  | "calendar-check"
+  | "database";
 
 export interface NavItemConfig {
   label: string;
@@ -111,6 +113,13 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
         href: "/notary-record",
         icon: "book-open",
         permissions: [PERMISSIONS.VIEW_REPERTORIUM]
+      },
+      {
+        // Laporan bulanan MPD & Daftar Pusat Wasiat + tenggat hukum setelah akta.
+        label: "Laporan Bulanan",
+        href: "/compliance",
+        icon: "calendar-check",
+        permissions: [PERMISSIONS.VIEW_REPERTORIUM]
       }
     ]
   },
@@ -139,7 +148,8 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
         href: "/admin",
         icon: "shield",
         permissions: ADMIN_PAGE_PERMISSIONS
-      }
+      },
+      { label: "Backup & Ekspor Protokol", href: "/backup", icon: "database", permissions: [PERMISSIONS.MANAGE_USERS] }
     ]
   }
 ];

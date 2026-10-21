@@ -25,7 +25,9 @@ import {
   ScrollText,
   Bell,
   Menu,
-  X
+  X,
+  CalendarCheck,
+  Database
 } from "lucide-react";
 
 // Pemetaan key ikon (string, aman dikirim server -> client) ke komponen lucide.
@@ -47,7 +49,9 @@ const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
   "bar-chart": BarChart3,
   shield: Shield,
   sparkles: Sparkles,
-  "file-pen": PenLine
+  "file-pen": PenLine,
+  "calendar-check": CalendarCheck,
+  database: Database
 };
 
 interface SidebarProps {

@@ -7,6 +7,25 @@ import { classifyDeadline, formatDate, formatStatusLabel, getJakartaToday } from
 import { requireUser } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
+import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, reportSentInfo } from "@/lib/compliance/monthly";
+
+/** Pengingat Notaris: laporan bulanan bulan lalu yang belum terkirim & tugas bertenggat terlambat. */
+async function getComplianceAlerts() {
+  const today = getJakartaToday();
+  const ym = previousYm(today);
+  const [mpd, wasiatSent, data, lateTasks] = await Promise.all([
+    reportSentInfo("mpd", ym),
+    reportSentInfo("wasiat", ym),
+    gatherMonth(ym),
+    prisma.jobTask.count({ where: { status: { not: "DONE" }, dueDate: { lt: today }, job: { recordStatus: "ACTIVE", status: { not: "CANCELLED" } } } })
+  ]);
+  const alerts: string[] = [];
+  if (!mpd) alerts.push(`Laporan bulanan MPD ${monthLabel(ym)} belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.mpd}).`);
+  if (!wasiatSent && data.wasiat.length > 0)
+    alerts.push(`Laporan ${data.wasiat.length} akta wasiat ${monthLabel(ym)} ke Daftar Pusat Wasiat belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.wasiat}).`);
+  if (lateTasks > 0) alerts.push(`${lateTasks} tugas bertenggat (termasuk kewajiban hukum setelah akta) sudah lewat tenggat.`);
+  return alerts;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +81,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const permissions = await getUserPermissions(user.id);
   const canViewJobs = permissions.has(PERMISSIONS.VIEW_JOBS);
   const canCreateJobs = permissions.has(PERMISSIONS.CREATE_JOBS);
+  const complianceAlerts = permissions.has(PERMISSIONS.EDIT_REPERTORIUM) ? await getComplianceAlerts() : [];
   const accessDenied = searchParams.denied === "1";
 
   // Setiap blok query hanya dijalankan kalau izinnya ada; tanpa izin -> null,
@@ -98,6 +118,18 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
           Password berhasil diganti.
         </div>
+      )}
+
+      {complianceAlerts.length > 0 && (
+        <Link
+          href="/compliance"
+          className="block rounded-md border border-status-due-soon/40 bg-status-due-soon/10 px-3 py-2 text-sm text-foreground hover:opacity-90"
+        >
+          {complianceAlerts.map((a) => (
+            <p key={a}>• {a}</p>
+          ))}
+          <p className="mt-1 text-xs font-medium text-primary">Buka Laporan Bulanan →</p>
+        </Link>
       )}
 
       {accessDenied && (

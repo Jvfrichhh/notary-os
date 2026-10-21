@@ -14,6 +14,7 @@ import {
   requestJobRevision,
   submitJobForReview,
   updateJobDetails,
+  updateTaskDueDate,
   reviewChecklistDocument,
   toggleChecklistItem,
   toggleTaskStatus
@@ -418,11 +419,8 @@ export default async function JobDetailPage({
             <h2 className="mb-3 text-sm font-semibold text-foreground">Tugas ({job.tasks.length})</h2>
             <div className="space-y-1.5">
               {job.tasks.map((task) => (
-                <form
-                  key={task.id}
-                  action={canEdit ? toggleTaskStatus.bind(null, task.id, job.id) : undefined}
-                  className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted/50"
-                >
+                <div key={task.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
+                <form action={canEdit ? toggleTaskStatus.bind(null, task.id, job.id) : undefined} className="min-w-0 flex-1">
                   <button type="submit" disabled={!canEdit} className="flex items-center gap-2 text-left text-sm disabled:cursor-default">
                     <span
                       className={
@@ -438,6 +436,20 @@ export default async function JobDetailPage({
                     </span>
                   </button>
                 </form>
+                {task.dueDate && task.status !== "DONE" && !isNotary && (
+                  <StatusBadge tone={classifyDeadline(task.dueDate, "OPEN")} label={`Tenggat ${formatDate(task.dueDate)}`} />
+                )}
+                {isNotary && task.status !== "DONE" && (
+                  // Notaris dapat mengatur / menyesuaikan tenggat tugas.
+                  <form action={updateTaskDueDate.bind(null, task.id, job.id)} className="flex items-center gap-1">
+                    {task.dueDate && <StatusBadge tone={classifyDeadline(task.dueDate, "OPEN")} label={formatDate(task.dueDate)} />}
+                    <input type="date" name="dueDate" defaultValue={toDateInput(task.dueDate)} className="rounded border border-border bg-background px-1.5 py-0.5 text-xs" />
+                    <button type="submit" className="rounded border border-border px-1.5 py-0.5 text-xs hover:bg-muted">
+                      Simpan
+                    </button>
+                  </form>
+                )}
+                </div>
               ))}
               {job.tasks.length === 0 && <p className="text-sm text-muted-foreground">Belum ada tugas.</p>}
             </div>
@@ -448,7 +460,13 @@ export default async function JobDetailPage({
                   name="title"
                   required
                   placeholder="Tambah tugas baru..."
-                  className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <input
+                  type="date"
+                  name="dueDate"
+                  title="Tenggat (opsional)"
+                  className="w-36 rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
                 />
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
                   Tambah

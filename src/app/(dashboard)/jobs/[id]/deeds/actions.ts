@@ -12,6 +12,7 @@ import { getDeedTemplate } from "@/lib/deeds/registry";
 import { syncDraftToVault } from "@/lib/deeds/vault";
 import { autoSetJobStatus, notifyJobPeople } from "@/lib/jobAutomation";
 import { nextDeedNumber } from "@/lib/deeds/numbering";
+import { createStatutoryTasks } from "@/lib/compliance/statutory";
 import { PT_CHANGE_OPTIONS } from "@/lib/serviceCatalog";
 import type { Person } from "@/lib/deeds/schema";
 import type { ExtractedFields } from "@/lib/ai/documentFields";
@@ -280,6 +281,32 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     entityId: deedId,
     newValue: { draftId, deedNumber, templateKey: draft.templateKey }
   });
+  // Kewajiban setelah akta (fidusia, pengesahan PT, dst) menjadi tugas bertenggat.
+  const jobInfo = await prisma.job.findUnique({ where: { id: draft.job.id }, select: { picId: true } });
+  await createStatutoryTasks({
+    templateKey: draft.templateKey,
+    jobId: draft.job.id,
+    deedNumber,
+    deedDate,
+    assigneeId: jobInfo?.picId ?? user.id
+  });
+  // Akta wasiat otomatis masuk register Wasiat (dilaporkan lewat Laporan Bulanan).
+  if (draft.templateKey === "wasiat") {
+    const rep = await prisma.repertorium.findUnique({ where: { deedId }, select: { id: true } });
+    await prisma.wasiat.create({
+      data: {
+        clientId: draft.job.clientId,
+        jobId: draft.job.id,
+        deedNumber,
+        date: deedDate,
+        wasiatType: template.title.replace(/^Akta\s+/i, ""),
+        repertoriumId: rep?.id ?? null,
+        status: "DICATAT"
+      }
+    });
+    revalidatePath("/wasiat");
+  }
+
   // Semua draft akta job ini sudah disahkan -> pekerjaan otomatis selesai.
   const openDrafts = await prisma.deedDraft.count({ where: { jobId: draft.job.id, deedId: null } });
   if (openDrafts === 0) {

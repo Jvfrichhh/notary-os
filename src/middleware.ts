@@ -56,6 +56,9 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Cron Vercel: tanpa sesi login; route-nya memeriksa CRON_SECRET sendiri.
+  if (pathname === "/api/cron/daily") return NextResponse.next();
+
   // Halaman login (keduanya) tidak butuh token -- lewatkan di sini, SETELAH
   // routing domain, supaya "/login" di host portal sudah menjadi /portal/login.
   if (pathname === "/login" || pathname === "/portal/login") {

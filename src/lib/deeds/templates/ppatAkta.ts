@@ -37,7 +37,7 @@ function pembukaPpat(d: DeedData): Block[] {
   return [
     {
       t: "p",
-      text: `Pada hari ini, ${hari(tgl)}, tanggal ${tanggalHuruf(tgl)}, hadir di hadapan saya, **${NOTARIS.namaLengkap}**, yang berdasarkan Keputusan Menteri Agraria dan Tata Ruang/Kepala Badan Pertanahan Nasional tanggal ${orBlank(PPAT.skTanggal)} Nomor ${orBlank(PPAT.skNomor)} diangkat sebagai Pejabat Pembuat Akta Tanah, yang selanjutnya disebut PPAT, yang dimaksud dalam Pasal 7 Peraturan Pemerintah Nomor 24 Tahun 1997 tentang Pendaftaran Tanah, dengan daerah kerja ${PPAT.daerahKerja} dan berkantor di ${orBlank(PPAT.alamatKantor)}, dengan dihadiri oleh saksi-saksi yang saya kenal dan akan disebut pada bagian akhir akta ini:`
+      text: `Pada hari ini, ${hari(tgl)}, tanggal ${tanggalHuruf(tgl)}, hadir di hadapan saya, **${NOTARIS.namaLengkap}**, yang berdasarkan Keputusan Menteri Agraria dan Tata Ruang/Kepala Badan Pertanahan Nasional tanggal ${PPAT.skTanggal ? tanggalHuruf(PPAT.skTanggal) : "[...]"} Nomor ${orBlank(PPAT.skNomor)} diangkat sebagai Pejabat Pembuat Akta Tanah, yang selanjutnya disebut PPAT, yang dimaksud dalam Pasal 7 Peraturan Pemerintah Nomor 24 Tahun 1997 tentang Pendaftaran Tanah, dengan daerah kerja ${PPAT.daerahKerja} dan berkantor di ${orBlank(PPAT.alamatKantor)}, dengan dihadiri oleh saksi-saksi yang saya kenal dan akan disebut pada bagian akhir akta ini:`
     }
   ];
 }

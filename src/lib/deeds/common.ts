@@ -16,10 +16,16 @@ export const NOTARIS = {
  * di akta PPAT supaya terlihat dan dilengkapi.
  */
 export const PPAT = {
-  skNomor: "",
-  skTanggal: "",
+  /** SK Menteri ATR/Kepala BPN (papan nama kantor). */
+  skNomor: "88/SK-HR.03.04.PPAT/I/2024",
+  /** ISO; ditulis dengan huruf di akta. */
+  skTanggal: "2024-01-17",
   daerahKerja: "Kota Bogor",
-  alamatKantor: ""
+  alamatKantor:
+    "Tata Hill Townhouse Yasmin Blok D Nomor 6, Jalan Cimanggu Pabuaran, Kelurahan Cilendek Timur, Kecamatan Bogor Barat, Kota Bogor",
+  /** Untuk kop surat (covernote, tagihan). */
+  alamatSurat: "Tata Hill Townhouse Yasmin Blok D No. 6, Jl. Cimanggu Pabuaran, Kel. Cilendek Timur, Kec. Bogor Barat, Kota Bogor 16112",
+  telepon: "0812-1311-5252 / 0817-985-4676"
 };
 
 export const str = (v: unknown): string => (typeof v === "string" ? v.trim() : v == null ? "" : String(v));

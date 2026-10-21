@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { NOTARIS } from "@/lib/deeds/common";
+import { NOTARIS, PPAT } from "@/lib/deeds/common";
 import { formatThousands, terbilang } from "@/lib/deeds/words";
 import { buildSimpleDocx, type DocBlock } from "@/lib/office/simpleDocx";
 import { formatDate, getJakartaToday } from "@/lib/format";
@@ -168,7 +168,8 @@ const tglPanjang = (d: Date) => `${d.getUTCDate()} ${BULAN[d.getUTCMonth()]} ${d
 function kop(): DocBlock[] {
   return [
     { t: "p", text: `**KANTOR NOTARIS ${NOTARIS.namaSingkat}**`, align: "center", spaceAfter: 0, size: 13 },
-    { t: "p", text: NOTARIS.kedudukan, align: "center", spaceAfter: 240 }
+    { t: "p", text: `${NOTARIS.kedudukan} · PPAT daerah kerja ${PPAT.daerahKerja}`, align: "center", spaceAfter: 0 },
+    { t: "p", text: `${PPAT.alamatSurat} · Telp. ${PPAT.telepon}`, align: "center", spaceAfter: 240, size: 10 }
   ];
 }
 

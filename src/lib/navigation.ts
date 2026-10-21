@@ -34,7 +34,8 @@ export type NavIconKey =
   | "wallet"
   | "bar-chart"
   | "shield"
-  | "sparkles";
+  | "sparkles"
+  | "file-pen";
 
 export interface NavItemConfig {
   label: string;
@@ -79,6 +80,7 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
       // Calendar & Deadlines menampilkan data job -> page-nya memakai VIEW_JOBS.
       { label: "Calendar", href: "/calendar", icon: "calendar", permissions: [PERMISSIONS.VIEW_JOBS] },
       { label: "Deadlines", href: "/deadlines", icon: "clock", permissions: [PERMISSIONS.VIEW_JOBS] },
+      { label: "Draft Akta", href: "/deeds", icon: "file-pen", permissions: [PERMISSIONS.VIEW_JOBS] },
       // Asisten AI membaca data lewat tool yang masing-masing dibatasi permission;
       // minimal VIEW_JOBS supaya ada yang bisa ditanyakan.
       { label: "Asisten AI", href: "/assistant", icon: "sparkles", permissions: [PERMISSIONS.VIEW_JOBS], requiresAi: true }

@@ -18,6 +18,7 @@ import {
   BarChart3,
   Shield,
   Sparkles,
+  PenLine,
   FileCheck2,
   Stamp,
   ScrollText,
@@ -42,7 +43,8 @@ const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
   wallet: Wallet,
   "bar-chart": BarChart3,
   shield: Shield,
-  sparkles: Sparkles
+  sparkles: Sparkles,
+  "file-pen": PenLine
 };
 
 interface SidebarProps {

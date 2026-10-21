@@ -12,6 +12,13 @@ import { getDeedTemplate } from "@/lib/deeds/registry";
 
 const MAX_DATA_BYTES = 200_000;
 
+/** Buat draft akta baru dari halaman Draft Akta (job dipilih di form). */
+export async function createDeedDraftFromList(formData: FormData) {
+  const jobId = String(formData.get("jobId") ?? "");
+  if (!jobId) return;
+  return createDeedDraft(jobId, formData);
+}
+
 /** Buat draft akta baru untuk job, terisi awal dari data klien/job. */
 export async function createDeedDraft(jobId: string, formData: FormData) {
   const user = await requireUser();

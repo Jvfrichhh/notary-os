@@ -8,7 +8,7 @@ import { tanggalHuruf } from "../words";
 const lines = (v: unknown) =>
   str(v)
     .split(/\n+/)
-    .map((s) => s.trim().replace(/^[-•\d.)\s]+/, ""))
+    .map((s) => s.trim().replace(/^(?:[-•]\s*|\d{1,2}[.)]\s+|[a-z][.)]\s+)/i, ""))
     .filter(Boolean);
 
 const BIAYA_OPTS = ["ditanggung oleh pihak suami", "ditanggung bersama oleh suami dan istri secara seimbang dengan penghasilan masing-masing"];

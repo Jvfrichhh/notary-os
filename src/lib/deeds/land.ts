@@ -1,7 +1,7 @@
 import type { FieldDef } from "./schema";
 import type { DeedData } from "./schema";
 import { str } from "./common";
-import { angka, orBlank, tanggalSingkat } from "./words";
+import { angka, orBlank, tanggalHuruf } from "./words";
 
 /** Isian objek tanah/bangunan (dipakai PPJB, Kuasa Jual, Sewa, AJB). */
 export const LAND_FIELDS: FieldDef[] = [
@@ -28,9 +28,9 @@ export function uraianTanah(d: DeedData): string {
   return [
     `sebidang tanah ${str(d.jenisHak) || "Hak Milik"} Nomor ${orBlank(str(d.nomorSertipikat))}`,
     `Nomor Identifikasi Bidang Tanah (NIB) ${orBlank(str(d.nib))}`,
-    `sebagaimana diuraikan dalam Surat Ukur Nomor ${orBlank(str(d.suratUkur))} tanggal ${tanggalSingkat(str(d.tanggalSuratUkur))}`,
+    `sebagaimana diuraikan dalam Surat Ukur Nomor ${orBlank(str(d.suratUkur))} tanggal ${tanggalHuruf(str(d.tanggalSuratUkur))}`,
     `seluas ${Number.isFinite(luas) && luas > 0 ? angka(luas) : "[...]"} meter persegi`,
-    `tercatat atas nama ${orBlank(str(d.atasNama))}`,
+    `tercatat atas nama **${orBlank(str(d.atasNama)).toUpperCase()}**`,
     `terletak di Provinsi ${orBlank(str(d.letakProvinsi))}, ${orBlank(str(d.letakKota))}, Kecamatan ${orBlank(str(d.letakKecamatan))}, ${orBlank(str(d.letakKelurahan))}, setempat dikenal sebagai ${orBlank(str(d.letakAlamat))}`,
     `dengan Nomor Objek Pajak (NOP) ${orBlank(str(d.nop))}`,
     bangunan ? `berikut ${bangunan} yang berdiri di atasnya` : ""

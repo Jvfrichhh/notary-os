@@ -1,6 +1,6 @@
 import { blocksToLines, paginate } from "./layout";
 import { buildDocx, type Variant } from "./docx";
-import { tandaTanganMinuta, tandaTanganSalinan } from "./common";
+import { resolvePenghadap, tandaTanganMinuta, tandaTanganSalinan } from "./common";
 import type { DeedTemplate } from "./types";
 import { isFieldVisible, type DeedData, type FieldDef } from "./schema";
 import { sectionsFor } from "./registry";
@@ -34,7 +34,7 @@ export function renderDeed(
 ): { buffer: Buffer; pages: number; placeholders: number } {
   const data = applyDefaults(sectionsFor(template).flatMap((s) => s.fields), rawData);
   const isPpat = !!template.ppat;
-  const blocks = template.build(data, variant);
+  const blocks = resolvePenghadap(template.build(data, variant), template.signers(data).length);
   // Akta PPAT: dua lembar asli (bukan salinan) -> keterangan lembar di judul.
   if (isPpat && blocks[0]?.t === "title") {
     blocks[0] = { ...blocks[0], lines: [...blocks[0].lines, variant === "minuta" ? "LEMBAR PERTAMA" : "LEMBAR KEDUA"] };

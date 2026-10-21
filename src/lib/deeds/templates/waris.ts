@@ -119,7 +119,7 @@ export const kuasaWaris: DeedTemplate = {
     const pw = person(d.pewaris);
     const wewenang = str(d.wewenang)
       .split(/\n+/)
-      .map((s) => s.trim().replace(/^[-•\d.)\s]+/, ""))
+      .map((s) => s.trim().replace(/^(?:[-•]\s*|\d{1,2}[.)]\s+|[a-z][.)]\s+)/i, ""))
       .filter(Boolean);
     const blocks: Block[] = [
       judul("KUASA", d),

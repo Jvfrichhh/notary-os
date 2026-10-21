@@ -37,11 +37,14 @@ export function rupiah(n: number | string | null | undefined): string {
   return `Rp${formatThousands(v)},00 (${terbilang(v)} Rupiah)`;
 }
 
-/** "dua (2)" */
+/** "dua (2)"; pecahan: "lima puluh koma lima (50,5)". */
 export function angka(n: number | string | null | undefined): string {
-  const v = Number(n);
+  const v = Number(typeof n === "string" ? n.replace(",", ".") : n);
   if (!Number.isFinite(v)) return "[...]";
-  return `${terbilang(v)} (${v})`;
+  if (Number.isInteger(v)) return `${terbilang(v)} (${formatThousands(v)})`;
+  const [int, frac] = String(v).split(".");
+  const fracWords = frac.split("").map((d) => (d === "0" ? "nol" : terbilang(Number(d)))).join(" ");
+  return `${terbilang(Number(int))} koma ${fracWords} (${formatThousands(Number(int))},${frac})`;
 }
 
 export const BULAN = [
@@ -81,11 +84,12 @@ export function hari(iso: string | null | undefined): string {
 /** "10:30" -> "10.30 WIB (sepuluh lewat tiga puluh menit Waktu Indonesia Barat)" */
 export function jamHuruf(hhmm: string | null | undefined): string {
   const m = /^(\d{1,2})[:.](\d{2})/.exec(hhmm ?? "");
-  if (!m) return "[...] WIB ([...] Waktu Indonesia Barat)";
+  if (!m) return "[...] Waktu Indonesia Barat ([...] WIB)";
   const h = Number(m[1]);
   const mi = Number(m[2]);
   const words = mi === 0 ? `${terbilang(h)} tepat` : `${terbilang(h)} lewat ${terbilang(mi)} menit`;
-  return `${String(h).padStart(2, "0")}.${String(mi).padStart(2, "0")} WIB (${words} Waktu Indonesia Barat)`;
+  // Huruf dahulu, angka dalam kurung (gaya akta).
+  return `${words} Waktu Indonesia Barat (${String(h).padStart(2, "0")}.${String(mi).padStart(2, "0")} WIB)`;
 }
 
 /** "001" -> "001", dipakai untuk RT/RW. Kosong -> placeholder. */

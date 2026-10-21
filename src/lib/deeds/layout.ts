@@ -44,6 +44,12 @@ export interface Line {
   pageBreakBefore?: boolean;
   /** Baris blok tanda tangan (tanpa isian garis putus-putus). */
   plain?: boolean;
+  /** Baris pertama sebuah alinea/butir (untuk memindah kalimat utuh ke halaman berikutnya). */
+  paraStart?: boolean;
+  /** Awal satu baris tanda tangan (celah + nama) yang tidak boleh terpotong halaman. */
+  rowStart?: boolean;
+  /** Judul (Pasal, DEMIKIAN AKTA INI, dst.) yang harus satu halaman dengan baris berikutnya. */
+  keepNext?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,17 +126,18 @@ function wrapTokens(toks: Tok[], firstWidth: number, nextWidth: number): Seg[][]
   for (const w of toWords(toks)) {
     if (len > 0 && len + 1 + w.len > width) flush();
     if (w.len > width) {
-      // Kata lebih panjang dari baris (mis. nomor panjang): potong keras.
-      let rest = w.parts.map((p) => p.text).join("");
-      const bold = w.parts[0]?.bold;
+      // Kata lebih panjang dari baris (mis. nomor panjang): potong keras,
+      // gaya (tebal/biasa) tiap huruf dipertahankan.
+      const chars: Seg[] = w.parts.flatMap((p) => p.text.split("").map((c) => ({ text: c, bold: p.bold })));
       if (len > 0) flush();
-      while (rest.length > width) {
-        cur.push({ text: rest.slice(0, width), bold });
+      let i = 0;
+      while (chars.length - i > width) {
+        for (const c of chars.slice(i, i + width)) appendSeg(cur, c);
         flush();
-        rest = rest.slice(width);
+        i += width;
       }
-      cur.push({ text: rest, bold });
-      len = rest.length;
+      for (const c of chars.slice(i)) appendSeg(cur, c);
+      len = chars.length - i;
       continue;
     }
     if (len > 0) {
@@ -177,7 +184,7 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
     }
     if (b.t === "title") {
       for (const l of b.lines.slice(0, 4)) {
-        for (const segs of wrapTokens(tokenize(l), LINE_WIDTH, LINE_WIDTH)) {
+        for (const segs of wrapTokens(tokenize(l), LINE_WIDTH - 2, LINE_WIDTH - 2)) {
           const text = segs.map((s) => s.text).join("");
           // Nama akta tebal; baris "Nomor : ..." huruf biasa.
           title.push({ segs: centered(text, !/^nomor\b/i.test(text.trim()), LINE_WIDTH), col: 0, border: false });
@@ -186,15 +193,25 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
       continue;
     }
     if (b.t === "center") {
-      body.push({ segs: centered(b.text, b.bold ?? false, LINE_WIDTH), col: 0, border: true });
+      // Baris tengah panjang (mis. nama PT) dipenggal; minimal 1 garis di kiri-kanan.
+      wrapTokens(tokenize(b.text), LINE_WIDTH - 2, LINE_WIDTH - 2).forEach((segs, i) => {
+        body.push({
+          segs: centered(segs.map((x) => x.text).join(""), b.bold ?? false, LINE_WIDTH),
+          col: 0,
+          border: true,
+          paraStart: i === 0,
+          keepNext: true
+        });
+      });
       continue;
     }
     if (b.t === "p") {
       const toks = tokenize(b.text);
-      if (!b.noDash && toks.length) toks[0] = { ...toks[0], text: DASH + toks[0].text };
-      for (const segs of wrapTokens(toks, LINE_WIDTH, LINE_WIDTH)) {
-        body.push({ segs: fillRight(segs, LINE_WIDTH), col: 0, border: true });
-      }
+      // Tanda "-" pembuka alinea selalu huruf biasa, menempel pada kata pertama.
+      if (!b.noDash && toks.length) toks.unshift({ text: DASH, bold: false }, { ...toks.shift()!, glue: true });
+      wrapTokens(toks, LINE_WIDTH, LINE_WIDTH).forEach((segs, i) => {
+        body.push({ segs: fillRight(segs, LINE_WIDTH), col: 0, border: true, paraStart: i === 0 });
+      });
       continue;
     }
     if (b.t === "item") {
@@ -202,9 +219,16 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
       const col = level * 3;
       const marker = b.marker.padEnd(3, " ");
       const textCol = col + 3;
+      if (!b.marker.trim()) {
+        // Lanjutan butir tanpa nomor: seluruh baris di kolom teks, garis tepi menempel.
+        wrapTokens(tokenize(b.text), LINE_WIDTH - textCol, LINE_WIDTH - textCol).forEach((segs, i) => {
+          body.push({ segs: fillRight(segs, LINE_WIDTH - textCol), col: textCol, border: true, paraStart: i === 0 });
+        });
+        continue;
+      }
       const wrapped = wrapTokens(tokenize(b.text), LINE_WIDTH - textCol, LINE_WIDTH - textCol);
       wrapped.forEach((segs, i) => {
-        if (i === 0) body.push({ segs: fillRight([{ text: marker }, ...segs], LINE_WIDTH - col), col, border: true });
+        if (i === 0) body.push({ segs: fillRight([{ text: marker }, ...segs], LINE_WIDTH - col), col, border: true, paraStart: true });
         else body.push({ segs: fillRight(segs, LINE_WIDTH - textCol), col: textCol, border: true });
       });
     }
@@ -255,6 +279,16 @@ export function paginate(
   };
 
   body.forEach((l, i) => {
+    // Judul tidak boleh menjadi baris terakhir halaman: judul-judul berurutan
+    // + minimal satu baris isi harus satu halaman.
+    if (l.keepNext && (i === 0 || !body[i - 1].keepNext)) {
+      let k = 0;
+      while (i + k < body.length && body[i + k].keepNext) k++;
+      const need = Math.min(k + 1, body.length - i);
+      if (lineOnPage < LINES_PER_PAGE && LINES_PER_PAGE - lineOnPage < need && need < LINES_PER_PAGE) {
+        while (lineOnPage < LINES_PER_PAGE) pushBody(fullDashLine());
+      }
+    }
     if (i === closingAt && closingLen > 0) {
       // Kalimat penutup + awal blok tanda tangan harus satu halaman.
       const room = LINES_PER_PAGE - lineOnPage;
@@ -266,23 +300,32 @@ export function paginate(
     pushBody(l);
   });
 
-  // Penutup terlalu panjang untuk dipindah utuh, dan blok tanda tangan tidak
-  // muat di sisa halaman: bawa beberapa baris terakhir penutup ke halaman
-  // berikutnya bersama blok (blok tidak boleh tertinggal sendirian/terpotong),
-  // lalu sisa halaman sekarang ditutup garis penuh.
-  const minSig = Math.min(minSigLines, sig.length);
-  const CARRY = 2;
-  if (LINES_PER_PAGE - lineOnPage < minSig && minSig + CARRY <= LINES_PER_PAGE && lineOnPage > CARRY + 1) {
-    const carried = out.splice(out.length - CARRY, CARRY).map((l) => ({ ...l, markTop: false, markBottom: false, pageBreakBefore: false }));
-    lineOnPage -= CARRY;
+  // Blok tanda tangan tidak muat di sisa halaman: pindahkan alinea terakhir
+  // UTUH (bukan potongan kalimat) bersama blok ke halaman berikutnya, lalu
+  // sisa halaman sekarang ditutup garis penuh. Bila seluruh blok + alinea
+  // muat dalam satu halaman, keduanya dipindah bersama.
+  const room = LINES_PER_PAGE - lineOnPage;
+  let carry = 1;
+  while (carry < lineOnPage && !out[out.length - carry].paraStart) carry++;
+  const keep = sig.length + carry <= LINES_PER_PAGE ? sig.length : Math.min(minSigLines, sig.length);
+  if (room < Math.min(sig.length, keep) && keep + carry <= LINES_PER_PAGE && lineOnPage > carry) {
+    const carried = out.splice(out.length - carry, carry).map((l) => ({ ...l, markTop: false, markBottom: false, pageBreakBefore: false }));
+    lineOnPage -= carry;
     while (lineOnPage < LINES_PER_PAGE) pushBody(fullDashLine());
     carried.forEach(pushBody);
   }
   out[out.length - 1].markBottom = true;
 
-  // Blok tanda tangan mengalir setelah badan akta.
-  for (const s of sig) {
-    if (lineOnPage === LINES_PER_PAGE) {
+  // Blok tanda tangan mengalir setelah badan akta; satu baris tanda tangan
+  // (celah meterai + nama) tidak pernah terpotong ke halaman berikutnya.
+  for (let i = 0; i < sig.length; i++) {
+    const s = sig[i];
+    if (s.rowStart) {
+      let rowLen = 1;
+      while (i + rowLen < sig.length && !sig[i + rowLen].rowStart) rowLen++;
+      if (lineOnPage + rowLen > LINES_PER_PAGE && rowLen <= LINES_PER_PAGE) lineOnPage = LINES_PER_PAGE;
+    }
+    if (lineOnPage >= LINES_PER_PAGE) {
       lineOnPage = 0;
       out.push({ ...s, pageBreakBefore: true });
     } else out.push(s);

@@ -127,8 +127,7 @@ export const pendirianPt: DeedTemplate = {
     const lembar = (n: number) => (n ? `${terbilang(n)} (${formatThousands(n)}) saham` : "[...] saham");
 
     const blocks: Block[] = [
-      judul("PENDIRIAN PERSEROAN TERBATAS", d),
-      { t: "center", text: nama, bold: true },
+      judul("PENDIRIAN PERSEROAN TERBATAS", d, nama),
       ...pembuka(d),
       ...daftarPenghadap(pendiri.map((p) => ({ p: person(p.orang), peran: "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }))),
       dikenal(pendiri.length),

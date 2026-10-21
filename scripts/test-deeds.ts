@@ -9,6 +9,7 @@
 import { mkdirSync, writeFileSync } from "fs";
 import { DEED_TEMPLATES, sectionsFor } from "../src/lib/deeds/registry";
 import { applyDefaults, renderDeed } from "../src/lib/deeds/render";
+import { resolvePenghadap } from "../src/lib/deeds/common";
 import { blocksToLines, LINE_WIDTH, LINES_PER_PAGE, paginate } from "../src/lib/deeds/layout";
 
 const out = process.argv[2];
@@ -38,17 +39,20 @@ for (const t of Object.values(DEED_TEMPLATES)) {
   for (const data of [sample, {}]) {
     const filled = applyDefaults(sectionsFor(t).flatMap((s) => s.fields), data);
     for (const variant of ["minuta", "salinan"] as const) {
-      const { title, body } = blocksToLines(t.build(filled, variant));
-      if (title.length !== 4) fail(`${t.key}: judul ${title.length} baris`);
+      const { title, body } = blocksToLines(resolvePenghadap(t.build(filled, variant), t.signers(filled).length));
+      if (title.length < 4) fail(`${t.key}: judul ${title.length} baris`);
       body.forEach((l, i) => {
         const len = l.col + l.segs.reduce((n, s) => n + s.text.length, 0);
         if (len !== LINE_WIDTH) fail(`${t.key} ${variant} baris ${i + 1}: ${len} huruf`);
       });
       // Teks yang tidak boleh muncul di akta.
       const text = body.map((l) => l.segs.map((sg) => sg.text).join("")).join("\n");
-      for (const bad of ["undefined", "null", "NaN", "**", "[object"]) {
+      for (const bad of ["undefined", "null", "NaN", "**", "[object", "{PENGHADAP}", "{Penghadap}"]) {
         if (text.includes(bad)) fail(`${t.key} ${variant}: memuat "${bad}"`);
       }
+      // Titik ganda (bukan bagian dari "[...]").
+      const dbl = text.replace(/\[\.\.\.\]/g, "").match(/[^.\n]\.\.(?!\.)/);
+      if (dbl) fail(`${t.key} ${variant}: titik ganda "${dbl[0]}"`);
       body.forEach((l, i) => {
         // Kolom nomor butir ("1. ", "a. ", "-  ") memang berspasi; abaikan.
         const raw = l.segs.map((sg) => sg.text).join("").replace(/-+$/, "").replace(/^\s*[-a-z0-9.()]{1,4} +/i, "");

@@ -49,8 +49,22 @@ export function komparisi(p: Person, akhir = ";"): string {
   return `${namaTebal(p)}, ${identitas(p)}${akhir}`;
 }
 
-export function judul(nama: string, data: DeedData): Block {
-  return { t: "title", lines: [nama.toUpperCase(), `Nomor : ${orBlank(str(data.nomorAkta))}.`] };
+/** Judul akta: nama akta, (opsional) baris kedua mis. nama PT, lalu nomor. */
+export function judul(nama: string, data: DeedData, sub?: string): Block {
+  return { t: "title", lines: [nama.toUpperCase(), ...(sub ? [sub.toUpperCase()] : []), `Nomor : ${orBlank(str(data.nomorAkta))}.`] };
+}
+
+/**
+ * Teks penutup memakai penanda {PENGHADAP}/{Penghadap}; diganti saat render
+ * sesuai jumlah penghadap ("para penghadap" atau "penghadap").
+ */
+export function resolvePenghadap<T extends { t: string; text?: string }>(blocks: T[], jumlah: number): T[] {
+  const many = jumlah !== 1;
+  return blocks.map((b) =>
+    typeof b.text === "string" && b.text.includes("{")
+      ? { ...b, text: b.text.replace(/\{PENGHADAP\}/g, many ? "para penghadap" : "penghadap").replace(/\{Penghadap\}/g, many ? "Para penghadap" : "Penghadap") }
+      : b
+  );
 }
 
 /** "-Pada hari ini ..." + "-Berhadapan dengan saya ..." */
@@ -63,7 +77,7 @@ export function pembuka(data: DeedData): Block[] {
     },
     {
       t: "p",
-      text: `Berhadapan dengan saya, **${NOTARIS.namaLengkap}**, ${NOTARIS.kedudukan}, dengan dihadiri oleh saksi-saksi yang saya, Notaris kenal dan nama-namanya akan disebutkan pada bagian akhir akta ini:`
+      text: `Berhadapan dengan saya, **${NOTARIS.namaLengkap}**, ${NOTARIS.kedudukan}, dengan dihadiri oleh saksi-saksi yang saya, Notaris, kenal dan nama-namanya akan disebutkan pada bagian akhir akta ini:`
     }
   ];
 }
@@ -107,10 +121,16 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan"): Block[] 
     },
     { t: "item", marker: "1.", text: komparisi(s1) },
     { t: "item", marker: "2.", text: komparisi(s2, ".") },
-    { t: "p", text: "Keduanya karyawan kantor Notaris, sebagai saksi-saksi." },
+    // Keterangan "karyawan kantor Notaris" hanya bila pekerjaan kedua saksi memang demikian.
     {
       t: "p",
-      text: "Segera setelah akta ini dibacakan oleh saya, Notaris kepada para penghadap dan saksi-saksi, maka akta ini ditandatangani oleh para penghadap, saksi-saksi dan saya, Notaris."
+      text: [s1, s2].every((x) => /notaris/i.test(str(x.pekerjaan)))
+        ? "Keduanya karyawan kantor Notaris, sebagai saksi-saksi."
+        : "Keduanya sebagai saksi-saksi."
+    },
+    {
+      t: "p",
+      text: "Segera setelah akta ini dibacakan oleh saya, Notaris, kepada {PENGHADAP} dan saksi-saksi, maka akta ini ditandatangani oleh {PENGHADAP}, saksi-saksi dan saya, Notaris."
     },
     { t: "p", text: "Dilangsungkan dengan tanpa perubahan." },
     { t: "p", text: "Minuta akta ini telah ditandatangani dengan sempurna." }
@@ -123,10 +143,17 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan"): Block[] 
 // Blok tanda tangan
 // ---------------------------------------------------------------------------
 
-const COL_W = 16;
+/** Lebar kolom tanda tangan minuta: Penghadap 14 | Saksi 14 | Pejabat 20 (+ spasi pemisah = 50). */
+const COL_W = 14;
+const COL_LAST = 20;
 
 function wrapPlain(text: string, width: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = text.split(/\s+/).filter(Boolean).flatMap((w) => {
+    // Kata lebih panjang dari kolom dipotong keras.
+    const parts: string[] = [];
+    for (let i = 0; i < w.length; i += width) parts.push(w.slice(i, i + width));
+    return parts;
+  });
   const out: string[] = [];
   let cur = "";
   for (const w of words) {
@@ -157,12 +184,15 @@ export function tandaTanganMinuta(penghadap: Person[], data: DeedData, pejabat =
     plain: true
   }];
   const rows = Math.max(penghadap.length, saksi.length, 1);
+  let firstRowLen = 0;
   for (let i = 0; i < rows; i++) {
-    for (let g = 0; g < 4; g++) lines.push(plain(""));
+    const rowStartAt = lines.length;
+    // Celah 4 baris untuk tanda tangan; baris pertama menandai awal satu baris tanda tangan.
+    for (let g = 0; g < 4; g++) lines.push(g === 0 ? { ...plain(""), rowStart: true } : plain(""));
     const cols = [
       penghadap[i] ? wrapPlain(str(penghadap[i].nama).toUpperCase() || "[...]", COL_W) : [""],
       saksi[i] ? wrapPlain(str(saksi[i].nama).toUpperCase() || "[...]", COL_W) : [""],
-      i === 0 ? wrapPlain(NOTARIS.namaSingkat, COL_W) : [""]
+      i === 0 ? wrapPlain(NOTARIS.namaSingkat, COL_LAST) : [""]
     ];
     const h = Math.max(...cols.map((c) => c.length));
     for (let r = 0; r < h; r++) {
@@ -173,9 +203,11 @@ export function tandaTanganMinuta(penghadap: Person[], data: DeedData, pejabat =
         plain: true
       });
     }
+    if (i === 0) firstRowLen = lines.length - rowStartAt;
   }
-  // Baris judul kolom + satu baris tanda tangan pertama wajib satu halaman dengan penutup.
-  return { lines, minLines: 8 };
+  // Judul kolom + baris tanda tangan pertama wajib satu halaman dengan penutup;
+  // bila muat, seluruh blok dipindah bersama alinea terakhir (lihat paginate).
+  return { lines, minLines: 2 + firstRowLen };
 }
 
 /** Salinan: blok bergaris tersendiri di kolom tanda tangan, celah 4 baris untuk meterai. */

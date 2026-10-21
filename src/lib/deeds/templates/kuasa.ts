@@ -7,7 +7,7 @@ import { daftarPenghadap, dikenal, domisili, judul, komparisi, list, pembuka, pe
 const lines = (v: unknown) =>
   str(v)
     .split(/\n+/)
-    .map((s) => s.trim().replace(/^[-•\d.)\s]+/, ""))
+    .map((s) => s.trim().replace(/^(?:[-•]\s*|\d{1,2}[.)]\s+|[a-z][.)]\s+)/i, ""))
     .filter(Boolean);
 
 export const kuasa: DeedTemplate = {

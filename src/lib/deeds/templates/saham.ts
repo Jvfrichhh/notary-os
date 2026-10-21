@@ -202,8 +202,13 @@ export const perubahanPt: DeedTemplate = {
     if (keputusan.length === 0) keputusan.push([{ t: "p", text: "[...]" }]);
 
     const blocks: Block[] = [
-      judul("PERNYATAAN KEPUTUSAN PEMEGANG SAHAM", d),
-      { t: "center", text: `PT ${(str(d.namaPt) || "[...]").toUpperCase()}`, bold: true },
+      judul(
+        str(d.jenisRapat).startsWith("Keputusan Sirkuler")
+          ? "PERNYATAAN KEPUTUSAN PARA PEMEGANG SAHAM"
+          : "PERNYATAAN KEPUTUSAN RAPAT UMUM PEMEGANG SAHAM LUAR BIASA",
+        d,
+        `PT ${(str(d.namaPt) || "[...]").toUpperCase()}`
+      ),
       ...pembuka(d),
       ...daftarPenghadap([{ p, peran: `menurut keterangannya dalam hal ini bertindak ${str(d.dasarKuasa) || "selaku kuasa berdasarkan keputusan rapat tersebut di bawah ini"}` }]),
       dikenal(1),

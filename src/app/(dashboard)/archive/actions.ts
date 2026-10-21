@@ -34,7 +34,7 @@ const deedSchema = z.object({
   deedNumber: z.string().min(1, "Nomor akta wajib diisi."),
   deedDate: z.string().min(1, "Tanggal akta wajib diisi."),
   deedType: z.string().min(1, "Jenis akta wajib diisi."),
-  clientId: z.string().min(1, "Client wajib dipilih."),
+  clientId: z.string().min(1, "Klien wajib dipilih."),
   jobId: z.string().optional(),
   notaryId: z.string().optional()
 });

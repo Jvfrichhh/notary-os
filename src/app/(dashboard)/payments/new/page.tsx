@@ -32,7 +32,7 @@ export default async function NewPaymentPage({ searchParams }: PageProps) {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold text-foreground">Catat Payment</h1>
+      <h1 className="text-xl font-semibold text-foreground">Buat Tagihan</h1>
       <Card>
         <PaymentForm action={createPayment} clients={clients} jobs={jobs} lockedClient={lockedClient} lockedJob={lockedJob} cancelHref="/payments" />
       </Card>

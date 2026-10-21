@@ -49,10 +49,10 @@ export function NewJobSection({
       ) : (
         <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <input type="checkbox" name="withJob" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-          Langsung buat pekerjaan (job) untuk klien ini
+          Langsung buat pekerjaan untuk klien ini
         </label>
       )}
-      {!enabled && <p className="text-xs text-muted-foreground">Klien disimpan tanpa job. Job bisa dibuat kapan saja dari halaman klien.</p>}
+      {!enabled && <p className="text-xs text-muted-foreground">Klien disimpan tanpa pekerjaan. Pekerjaan bisa dibuat kapan saja dari halaman klien.</p>}
 
       {enabled && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

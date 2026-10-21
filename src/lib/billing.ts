@@ -47,6 +47,18 @@ async function withRetry<T>(field: string, fn: () => Promise<T>): Promise<T> {
   }
 }
 
+/**
+ * Angka uang dari isian (format Indonesia): "1.500.000", "Rp 1.500.000,00",
+ * "1500000" -> 1500000. Bagian desimal setelah koma diabaikan (rupiah bulat).
+ */
+export function parseMoney(value: unknown): number {
+  const raw = String(value ?? "").trim();
+  if (!raw) return 0;
+  const intPart = raw.replace(/^rp\.?/i, "").split(",")[0];
+  const n = Number(intPart.replace(/[^\d]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function derivePaymentStatus(total: number, paid: number, refunded = false) {
   if (refunded) return "REFUNDED" as const;
   if (paid <= 0) return "UNPAID" as const;
@@ -82,7 +94,9 @@ export async function recordReceipt(input: {
         where: { id: input.paymentId },
         select: { totalAmount: true, paidAmount: true, downPayment: true, status: true }
       });
-      const receiptNumber = await nextNumber(tx, "KW", input.paidAt);
+      // Nomor kuitansi mengikuti tanggal penerbitan (hari ini), supaya urutan nomor
+      // tidak mundur bila tanggal bayar yang dicatat lebih lama.
+      const receiptNumber = await nextNumber(tx, "KW", getJakartaToday());
       const receipt = await tx.paymentReceipt.create({
         data: {
           paymentId: input.paymentId,
@@ -94,19 +108,22 @@ export async function recordReceipt(input: {
           receivedById: input.userId
         }
       });
-      const total = Number(p.totalAmount);
-      const paid = Number(p.paidAmount) + input.amount;
-      const isFirst = Number(p.paidAmount) <= 0;
+      // Tambah secara atomik (baris terkunci sampai transaksi selesai), lalu hitung sisa & status.
+      const after = await tx.payment.update({
+        where: { id: input.paymentId },
+        data: { paidAmount: { increment: input.amount }, paymentDate: input.paidAt, paymentMethod: input.method ?? undefined },
+        select: { totalAmount: true, paidAmount: true, downPayment: true, status: true }
+      });
+      const total = Number(after.totalAmount);
+      const paid = Number(after.paidAmount);
+      const isFirst = paid - input.amount <= 0;
       await tx.payment.update({
         where: { id: input.paymentId },
         data: {
-          paidAmount: paid,
           remainingAmount: Math.max(total - paid, 0),
-          status: derivePaymentStatus(total, paid, p.status === "REFUNDED"),
+          status: derivePaymentStatus(total, paid, after.status === "REFUNDED"),
           // Pembayaran pertama dicatat sebagai uang muka bila belum lunas.
-          downPayment: isFirst && Number(p.downPayment) <= 0 && paid < total ? input.amount : undefined,
-          paymentDate: input.paidAt,
-          paymentMethod: input.method ?? undefined
+          downPayment: isFirst && Number(after.downPayment) <= 0 && paid < total ? input.amount : undefined
         }
       });
       return receipt;
@@ -119,15 +136,20 @@ export async function voidReceipt(receiptId: string, reason: string) {
   return prisma.$transaction(async (tx) => {
     const r = await tx.paymentReceipt.findUniqueOrThrow({
       where: { id: receiptId },
-      select: { id: true, amount: true, voidedAt: true, paymentId: true, payment: { select: { totalAmount: true, paidAmount: true, status: true } } }
+      select: { id: true, amount: true, voidedAt: true, paymentId: true }
     });
     if (r.voidedAt) return r;
     await tx.paymentReceipt.update({ where: { id: r.id }, data: { voidedAt: new Date(), voidReason: reason } });
-    const total = Number(r.payment.totalAmount);
-    const paid = Math.max(Number(r.payment.paidAmount) - Number(r.amount), 0);
+    const after = await tx.payment.update({
+      where: { id: r.paymentId },
+      data: { paidAmount: { decrement: Number(r.amount) } },
+      select: { totalAmount: true, paidAmount: true, status: true }
+    });
+    const total = Number(after.totalAmount);
+    const paid = Math.max(Number(after.paidAmount), 0);
     await tx.payment.update({
       where: { id: r.paymentId },
-      data: { paidAmount: paid, remainingAmount: Math.max(total - paid, 0), status: derivePaymentStatus(total, paid, r.payment.status === "REFUNDED") }
+      data: { paidAmount: paid, remainingAmount: Math.max(total - paid, 0), status: derivePaymentStatus(total, paid, after.status === "REFUNDED") }
     });
     return r;
   });
@@ -164,6 +186,7 @@ export interface BillingDocData {
 
 export function buildInvoiceDocx(d: BillingDocData): Buffer {
   const valid = d.receipts.filter((r) => !r.voidedAt);
+  const legacy = Math.max(d.paidAmount - valid.reduce((n, r) => n + r.amount, 0), 0);
   const uraian = d.job ? `${d.job.service ?? "Jasa kenotariatan"}${d.job.description ? ` — ${d.job.description}` : ""}` : "Jasa kenotariatan";
   const blocks: DocBlock[] = [
     ...kop(),
@@ -178,6 +201,8 @@ export function buildInvoiceDocx(d: BillingDocData): Buffer {
       widths: [7, 3],
       rows: [
         [uraian, rp(d.totalAmount)],
+        // Pembayaran yang dicatat sebelum ada kuitansi bernomor.
+        ...(legacy > 0 ? [["Pembayaran sebelumnya (tanpa kuitansi bernomor)", `- ${rp(legacy)}`]] : []),
         ...valid.map((r) => [`Dibayar ${formatDate(r.paidAt)} (${r.receiptNumber}${r.method ? `, ${r.method}` : ""})`, `- ${rp(r.amount)}`]),
         ["**Sisa yang harus dibayar**", `**${rp(d.remainingAmount)}**`]
       ]

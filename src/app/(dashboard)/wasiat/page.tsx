@@ -63,7 +63,7 @@ export default async function WasiatPage({ searchParams }: PageProps) {
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Cari nomor akta, client, jenis wasiat..."
+              placeholder="Cari nomor akta, klien, jenis wasiat..."
               className="min-w-[200px] flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <select name="status" defaultValue={searchParams.status ?? ""} className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground">
@@ -105,7 +105,7 @@ export default async function WasiatPage({ searchParams }: PageProps) {
                   <th className="px-4 py-3 font-medium">Nomor Akta</th>
                   <th className="px-4 py-3 font-medium">Tanggal</th>
                   <th className="px-4 py-3 font-medium">Jenis</th>
-                  <th className="px-4 py-3 font-medium">Job</th>
+                  <th className="px-4 py-3 font-medium">Pekerjaan</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium"></th>
                 </tr>

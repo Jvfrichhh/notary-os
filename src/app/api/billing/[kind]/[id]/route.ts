@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
+import { getPortalPrincipal } from "@/lib/portalSession";
 import { buildInvoiceDocx, buildReceiptDocx, loadBillingDoc } from "@/lib/billing";
 
 export const runtime = "nodejs";
@@ -28,10 +29,18 @@ export async function GET(_req: NextRequest, { params }: { params: { kind: strin
   const doc = paymentId ? await loadBillingDoc(paymentId) : null;
   if (!doc) return NextResponse.json({ error: "Tidak ditemukan." }, { status: 404 });
 
-  const allowed =
-    session.user.kind === "client"
-      ? session.user.clientId === doc.clientId
-      : await userHasPermission(session.user.id, PERMISSIONS.VIEW_FINANCE);
+  let allowed: boolean;
+  if (session.user.kind === "client") {
+    // Klien: akun & data klien diperiksa ulang ke database; hanya tagihan aktif miliknya.
+    const portal = await getPortalPrincipal();
+    allowed =
+      portal.ok &&
+      !portal.principal.mustChangePassword &&
+      portal.principal.clientId === doc.clientId &&
+      !!(await prisma.payment.findFirst({ where: { id: paymentId!, clientId: doc.clientId, recordStatus: "ACTIVE" }, select: { id: true } }));
+  } else {
+    allowed = await userHasPermission(session.user.id, PERMISSIONS.VIEW_FINANCE);
+  }
   if (!allowed) return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
 
   let buffer: Buffer;

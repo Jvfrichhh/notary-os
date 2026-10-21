@@ -49,12 +49,12 @@ export default async function RepertoriumDetailPage({ params }: { params: { id: 
         </Link>
         {entry.client && (
           <Link href={`/clients/${entry.client.id}`} className="text-primary hover:underline">
-            Lihat Client
+            Lihat Klien
           </Link>
         )}
         {entry.job && (
           <Link href={`/jobs/${entry.job.id}`} className="text-primary hover:underline">
-            Lihat Job
+            Lihat Pekerjaan
           </Link>
         )}
         {entry.deed.minuta.length > 0 && (

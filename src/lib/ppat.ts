@@ -14,7 +14,7 @@ import { completeStage } from "@/lib/ppatStages";
  *        Pertanahan paling lambat 7 hari kerja (PP 24/1997 Pasal 40; UUHT Pasal 13);
  *      * SKMHT -> tindak lanjuti dengan APHT paling lambat 1 bulan (tanah
  *        terdaftar) / 3 bulan (belum terdaftar) (UUHT Pasal 15);
- *  - pekerjaan otomatis selesai.
+ *  - tahap "Penandatanganan akta" tercatat; pekerjaan selesai pada tahap terakhir.
  * Hari kerja dihitung Senin–Jumat (hari libur nasional belum diperhitungkan).
  */
 
@@ -121,8 +121,13 @@ export async function registerPpatDeed(input: PpatInput, userId: string, sequenc
       relatedEntityId: deed.jobId
     });
     await completeStage(deed.jobId, "TANDA_TANGAN", { userId, date: deed.deedDate, reference: `Akta PPAT ${deed.deedNumber}` });
-    const done = await autoSetJobStatus(deed.jobId, "COMPLETED", `akta PPAT ${deed.deedNumber} didaftarkan`, userId, { force: true });
-    if (done && job) await notifyJobPeople(deed.jobId, `Akta PPAT ${deed.deedNumber} didaftarkan; pekerjaan ${job.jobNumber} selesai.`, { pic: true });
+    // Pekerjaan PPAT belum selesai saat akta ditandatangani: masih ada penyampaian ke
+    // Kantor Pertanahan dan penerbitan sertipikat. Pekerjaan selesai pada tahap terakhir.
+    await autoSetJobStatus(deed.jobId, "IN_PROGRESS", `akta PPAT ${deed.deedNumber} didaftarkan`, userId, {
+      onlyFrom: ["INBOX", "WAITING_FOR_CLIENT", "WAITING_FOR_DOCUMENT", "REVIEW", "READY_FOR_SIGNING"],
+      force: true
+    });
+    if (job) await notifyJobPeople(deed.jobId, `Akta PPAT ${deed.deedNumber} didaftarkan pada pekerjaan ${job.jobNumber}; lanjutkan ke tahap ${duty.title.toLowerCase()}.`, { pic: true });
   }
   return deed;
 }

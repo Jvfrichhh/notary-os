@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getPortalPrincipal } from "@/lib/portalSession";
 import { prisma } from "@/lib/prisma";
 import { getDeedTemplate } from "@/lib/deeds/registry";
 import { renderDeed } from "@/lib/deeds/render";
@@ -16,12 +15,15 @@ export const dynamic = "force-dynamic";
  * isi yang masih sama dengan saat dibagikan.
  */
 export async function GET(_req: Request, { params }: { params: { reviewId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.kind !== "client" || !session.user.clientId) {
-    return NextResponse.json({ error: "Anda harus login." }, { status: 401 });
+  const portal = await getPortalPrincipal();
+  if (!portal.ok) {
+    return NextResponse.json({ error: "Akses ditolak." }, { status: portal.reason === "unauthenticated" ? 401 : 403 });
+  }
+  if (portal.principal.mustChangePassword) {
+    return NextResponse.json({ error: "Ganti password sementara Anda terlebih dahulu." }, { status: 403 });
   }
   const review = await prisma.deedDraftReview.findFirst({
-    where: { id: params.reviewId, draft: { job: { clientId: session.user.clientId, recordStatus: "ACTIVE" } } },
+    where: { id: params.reviewId, draft: { job: { clientId: portal.principal.clientId, recordStatus: "ACTIVE" } } },
     select: { id: true, dataHash: true, draftId: true, draft: { select: { templateKey: true, data: true, job: { select: { jobNumber: true } } } } }
   });
   const template = review ? getDeedTemplate(review.draft.templateKey) : null;

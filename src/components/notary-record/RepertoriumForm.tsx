@@ -106,7 +106,7 @@ export function RepertoriumForm({ action, deeds, lockedDeedId, cancelHref }: Rep
           Nama Penghadap <span className="text-status-overdue">*</span>
         </label>
         <input name="appearerName" required className={fieldClass} placeholder="cth. Budi Santoso" />
-        <p className="mt-1 text-xs text-muted-foreground">Bisa beda dari nama client kalau ada kuasa/perwakilan.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Bisa beda dari nama klien kalau ada kuasa/perwakilan.</p>
         {errors.appearerName?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.appearerName[0]}</p> : null}
       </div>
 

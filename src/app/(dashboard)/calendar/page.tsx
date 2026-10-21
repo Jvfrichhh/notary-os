@@ -113,7 +113,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Kalender</h1>
-          <p className="text-sm text-muted-foreground">Deadline job dan appointment dalam sebulan</p>
+          <p className="text-sm text-muted-foreground">Tenggat pekerjaan dan janji temu dalam sebulan</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -202,7 +202,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Deadline job: 🔴 overdue · 🟠 due today · 🟡 due soon · 🟢 on track. 🔵 Appointment. Klik untuk buka detail terkait.
+        Tenggat pekerjaan: 🔴 terlambat · 🟠 jatuh tempo hari ini · 🟡 segera jatuh tempo · 🟢 sesuai jadwal. 🔵 Janji temu. Klik untuk buka detail terkait.
       </p>
     </div>
   );

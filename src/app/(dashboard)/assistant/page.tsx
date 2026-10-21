@@ -16,7 +16,7 @@ export default async function AssistantPage() {
   const suggestions = [
     "Bagaimana kondisi kantor hari ini?",
     "Pekerjaan apa saja yang jatuh tempo minggu ini?",
-    "Job mana yang dokumennya belum lengkap?",
+    "Pekerjaan mana yang dokumennya belum lengkap?",
     "Ada unggahan klien yang belum diperiksa?",
     "Apa tugas saya yang belum selesai?",
     ...(permissions.has(PERMISSIONS.VIEW_CLIENTS) ? ["Siapa saja klien yang belum punya akses portal?"] : []),

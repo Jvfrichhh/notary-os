@@ -35,7 +35,11 @@ export class S3StorageProvider implements FileStorageService {
       region: config.region,
       endpoint: config.endpoint,
       forcePathStyle: config.forcePathStyle,
-      credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey }
+      credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+      // Penyedia S3-kompatibel (Supabase Storage / R2) tidak selalu mendukung checksum
+      // CRC32 bawaan SDK v3 terbaru; kirim checksum hanya bila memang diwajibkan.
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED"
     });
   }
 

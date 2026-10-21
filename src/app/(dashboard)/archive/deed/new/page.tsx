@@ -40,7 +40,7 @@ export default async function NewDeedPage({ searchParams }: NewDeedPageProps) {
     <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">Akta Baru</h1>
-        <p className="text-sm text-muted-foreground">Satu job boleh punya lebih dari satu akta.</p>
+        <p className="text-sm text-muted-foreground">Satu pekerjaan boleh punya lebih dari satu akta.</p>
       </div>
 
       <Card>

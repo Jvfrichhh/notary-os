@@ -59,7 +59,7 @@ export default async function WaarmerkingPage({ searchParams }: PageProps) {
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Cari nomor, client, jenis layanan..."
+              placeholder="Cari nomor, klien, jenis layanan..."
               className="min-w-[200px] flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <select name="status" defaultValue={searchParams.status ?? ""} className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground">

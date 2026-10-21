@@ -85,7 +85,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Client <span className="text-status-overdue">*</span>
+            Klien <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -95,7 +95,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
           ) : (
             <select name="clientId" required defaultValue="" className={fieldClass}>
               <option value="" disabled>
-                — Pilih client —
+                — Pilih klien —
               </option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -108,7 +108,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Job Terkait</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan Terkait</label>
           {lockedJob ? (
             <>
               <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">{lockedJob.label}</p>
@@ -116,7 +116,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
             </>
           ) : (
             <select name="jobId" defaultValue="" className={fieldClass}>
-              <option value="">— Tidak terkait job —</option>
+              <option value="">— Tidak terkait pekerjaan —</option>
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.jobNumber} {j.description ? `— ${j.description}` : ""}

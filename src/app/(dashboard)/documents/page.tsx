@@ -83,7 +83,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Document Vault</h1>
-          <p className="text-sm text-muted-foreground">Semua dokumen client dan job</p>
+          <p className="text-sm text-muted-foreground">Semua dokumen klien dan pekerjaan</p>
         </div>
         {canUpload && (
           <Link

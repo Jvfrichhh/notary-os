@@ -16,7 +16,7 @@ function toNullable(value: FormDataEntryValue | null | undefined) {
 const WASIAT_STATUSES = ["DIBUAT", "DICATAT", "DILAPORKAN", "BUKTI_TERSEDIA"] as const;
 
 const schema = z.object({
-  clientId: z.string().min(1, "Client wajib dipilih"),
+  clientId: z.string().min(1, "Klien wajib dipilih"),
   deedNumber: z.string().optional(),
   date: z.string().optional(),
   wasiatType: z.string().optional(),
@@ -35,8 +35,8 @@ export type WasiatFormState = {
 async function validateRelations(clientId: string, jobId: string | null, evidenceDocumentId: string | null) {
   if (jobId) {
     const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, clientId: true } });
-    if (!job) return "Job tidak ditemukan.";
-    if (job.clientId !== clientId) return "Job yang dipilih bukan milik client tersebut.";
+    if (!job) return "Pekerjaan tidak ditemukan.";
+    if (job.clientId !== clientId) return "Pekerjaan yang dipilih bukan milik klien tersebut.";
   }
   if (evidenceDocumentId) {
     const document = await prisma.document.findUnique({ where: { id: evidenceDocumentId } });
@@ -67,7 +67,7 @@ export async function createWasiat(_prevState: WasiatFormState, formData: FormDa
   const data = parsed.data;
 
   const client = await prisma.client.findUnique({ where: { id: data.clientId } });
-  if (!client) return { formError: "Client tidak ditemukan." };
+  if (!client) return { formError: "Klien tidak ditemukan." };
 
   const jobId = toNullable(data.jobId ?? "");
   const evidenceDocumentId = toNullable(data.evidenceDocumentId ?? "");

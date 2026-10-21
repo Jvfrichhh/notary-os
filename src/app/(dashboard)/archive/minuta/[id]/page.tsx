@@ -53,11 +53,11 @@ export default async function MinutaDetailPage({ params }: { params: { id: strin
           ← Kembali ke Akta
         </Link>
         <Link href={`/clients/${minuta.deed.client.id}`} className="text-primary hover:underline">
-          Lihat Client
+          Lihat Klien
         </Link>
         {minuta.deed.job && (
           <Link href={`/jobs/${minuta.deed.job.id}`} className="text-primary hover:underline">
-            Lihat Job
+            Lihat Pekerjaan
           </Link>
         )}
       </div>

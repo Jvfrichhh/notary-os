@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
-import { ensureInvoiceNumber, recordReceipt, voidReceipt } from "@/lib/billing";
+import { ensureInvoiceNumber, parseMoney, recordReceipt, voidReceipt } from "@/lib/billing";
 import { fromDateInput, getJakartaToday } from "@/lib/format";
 
 function toNullable(value: FormDataEntryValue | null | undefined) {
@@ -15,9 +15,8 @@ function toNullable(value: FormDataEntryValue | null | undefined) {
   return v === "" ? null : v;
 }
 
-function toDecimalInput(value: FormDataEntryValue | null) {
-  const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : 0;
+function toDecimalInput(value: FormDataEntryValue | null | undefined) {
+  return parseMoney(value);
 }
 
 /**
@@ -35,7 +34,7 @@ function derivePaymentStatus(totalAmount: number, paidAmount: number, chosenStat
 }
 
 const schema = z.object({
-  clientId: z.string().min(1, "Client wajib dipilih"),
+  clientId: z.string().min(1, "Klien wajib dipilih"),
   jobId: z.string().optional(),
   totalAmount: z.string(),
   downPayment: z.string(),
@@ -70,18 +69,19 @@ export async function createPayment(_prevState: PaymentFormState, formData: Form
   const data = parsed.data;
 
   const client = await prisma.client.findUnique({ where: { id: data.clientId } });
-  if (!client) return { formError: "Client tidak ditemukan." };
+  if (!client) return { formError: "Klien tidak ditemukan." };
 
   const jobId = toNullable(data.jobId ?? "");
   if (jobId) {
     const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, clientId: true } });
-    if (!job) return { formError: "Job tidak ditemukan." };
-    if (job.clientId !== data.clientId) return { formError: "Job yang dipilih bukan milik client tersebut." };
+    if (!job) return { formError: "Pekerjaan tidak ditemukan." };
+    if (job.clientId !== data.clientId) return { formError: "Pekerjaan yang dipilih bukan milik klien tersebut." };
   }
 
   const totalAmount = toDecimalInput(data.totalAmount);
   const paidAmount = toDecimalInput(data.paidAmount);
   const downPayment = toDecimalInput(data.downPayment);
+  if (totalAmount > 0 && paidAmount > totalAmount) return { errors: { paidAmount: ["Sudah dibayar melebihi total tagihan."] } };
   // remainingAmount SELALU dihitung server-side dari totalAmount - paidAmount,
   // tidak dipercaya dari input mentah -- supaya tidak ada data payment yang
   // tidak konsisten.
@@ -134,7 +134,7 @@ export async function updatePayment(id: string, _prevState: PaymentFormState, fo
   await assertPermission(user.id, PERMISSIONS.EDIT_FINANCE);
 
   const before = await prisma.payment.findUnique({ where: { id } });
-  if (!before) return { formError: "Payment tidak ditemukan." };
+  if (!before) return { formError: "Tagihan tidak ditemukan." };
 
   const parsed = schema.omit({ clientId: true, jobId: true }).safeParse({
     totalAmount: formData.get("totalAmount") ?? "0",
@@ -213,15 +213,18 @@ export async function restorePayment(id: string) {
 export async function recordPayment(paymentId: string, formData: FormData) {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_FINANCE);
-  const amount = Math.round(Number(String(formData.get("amount") ?? "").replace(/\D/g, "")));
+  const amount = parseMoney(formData.get("amount"));
   const paidAt = fromDateInput(String(formData.get("paidAt") ?? "")) ?? getJakartaToday();
   const method = toNullable(formData.get("method"));
   const note = toNullable(formData.get("note"));
-  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { id: true, jobId: true, remainingAmount: true, recordStatus: true } });
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { id: true, jobId: true, totalAmount: true, remainingAmount: true, recordStatus: true }
+  });
   if (!payment) redirect("/payments");
   if (!Number.isFinite(amount) || amount <= 0) redirect(`/payments/${paymentId}?err=amount`);
-  const remaining = Number(payment.remainingAmount);
-  if (remaining > 0 && amount > remaining) redirect(`/payments/${paymentId}?err=over`);
+  // Tidak boleh melebihi sisa tagihan (termasuk bila sudah lunas).
+  if (Number(payment.totalAmount) > 0 && amount > Number(payment.remainingAmount)) redirect(`/payments/${paymentId}?err=over`);
 
   await ensureInvoiceNumber(paymentId);
   const receipt = await recordReceipt({ paymentId, amount, paidAt, method, note, userId: user.id });

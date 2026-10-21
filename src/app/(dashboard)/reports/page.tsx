@@ -174,9 +174,9 @@ export default async function ReportsPage({ searchParams }: PageProps) {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Workload per PIC (job aktif)</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Beban kerja per PIC (pekerjaan aktif)</h2>
           {workloadPic.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Belum ada job aktif.</p>
+            <p className="text-sm text-muted-foreground">Belum ada pekerjaan aktif.</p>
           ) : (
             <BarList data={workloadPic} />
           )}
@@ -206,14 +206,14 @@ export default async function ReportsPage({ searchParams }: PageProps) {
                   <dd className="font-medium text-status-on-track">{formatCurrency(paymentSummary.totalPaid)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Outstanding</dt>
+                  <dt className="text-muted-foreground">Belum dibayar</dt>
                   <dd className="font-medium text-status-overdue">{formatCurrency(paymentSummary.totalOutstanding)}</dd>
                 </div>
               </dl>
             </Card>
 
             <Card>
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Outstanding Payment Tertinggi</h2>
+              <h2 className="mb-3 text-sm font-semibold text-foreground">Tagihan Belum Lunas Terbesar</h2>
               {outstandingTop.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Tidak ada payment outstanding.</p>
               ) : (

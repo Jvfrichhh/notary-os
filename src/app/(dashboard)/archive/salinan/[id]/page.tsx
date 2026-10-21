@@ -45,11 +45,11 @@ export default async function SalinanDetailPage({ params }: { params: { id: stri
           ← Kembali ke Akta
         </Link>
         <Link href={`/clients/${salinan.deed.client.id}`} className="text-primary hover:underline">
-          Lihat Client
+          Lihat Klien
         </Link>
         {salinan.deed.job && (
           <Link href={`/jobs/${salinan.deed.job.id}`} className="text-primary hover:underline">
-            Lihat Job
+            Lihat Pekerjaan
           </Link>
         )}
       </div>

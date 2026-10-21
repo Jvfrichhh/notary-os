@@ -55,17 +55,17 @@ export async function uploadDocument(_prevState: DocumentFormState, formData: Fo
   let job: { id: string; clientId: string } | null = null;
   if (jobId) {
     job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, clientId: true } });
-    if (!job) return { formError: "Job tidak ditemukan." };
+    if (!job) return { formError: "Pekerjaan tidak ditemukan." };
   }
   if (clientId) {
     const client = await prisma.client.findUnique({ where: { id: clientId } });
-    if (!client) return { formError: "Client tidak ditemukan." };
+    if (!client) return { formError: "Klien tidak ditemukan." };
   }
   // Kalau clientId dan jobId dua-duanya diisi, job tsb wajib benar-benar
   // milik client itu -- kalau tidak, upload ditolak (mencegah dokumen
   // "nyasar" ke client/job yang salah).
   if (job && clientId && job.clientId !== clientId) {
-    return { formError: "Job yang dipilih bukan milik client tersebut." };
+    return { formError: "Pekerjaan yang dipilih bukan milik klien tersebut." };
   }
 
   const resolved = await resolveUploadFromForm(formData, { principal: `staff:${user.id}`, folder: folderFor(clientId, jobId) });
@@ -235,8 +235,8 @@ export async function requestOfficeUploadTicket(
     const jobId = toNullable(scope.jobId ?? undefined);
     if (jobId) {
       const job = await prisma.job.findUnique({ where: { id: jobId }, select: { clientId: true } });
-      if (!job) return { mode: "error", error: "Job tidak ditemukan." };
-      if (clientId && job.clientId !== clientId) return { mode: "error", error: "Job yang dipilih bukan milik client tersebut." };
+      if (!job) return { mode: "error", error: "Pekerjaan tidak ditemukan." };
+      if (clientId && job.clientId !== clientId) return { mode: "error", error: "Pekerjaan yang dipilih bukan milik klien tersebut." };
     }
     folder = folderFor(clientId, jobId);
   }

@@ -88,7 +88,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
             </>
           ) : (
             <select name="clientId" defaultValue="" className={fieldClass}>
-              <option value="">— Tidak terkait client —</option>
+              <option value="">— Tidak terkait klien —</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}
@@ -99,7 +99,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Job</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan</label>
           {lockedJob ? (
             <>
               <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">{lockedJob.label}</p>
@@ -107,7 +107,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
             </>
           ) : (
             <select name="jobId" defaultValue="" className={fieldClass}>
-              <option value="">— Tidak terkait job —</option>
+              <option value="">— Tidak terkait pekerjaan —</option>
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.jobNumber} {j.description ? `— ${j.description}` : ""}

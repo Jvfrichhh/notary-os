@@ -79,7 +79,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             type="text"
             name="q"
             defaultValue={q}
-            placeholder="Cari nomor job, client, deskripsi..."
+            placeholder="Cari nomor pekerjaan, klien, deskripsi..."
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {view === "kanban" && <input type="hidden" name="view" value="kanban" />}
@@ -172,10 +172,10 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Job</th>
+                  <th className="px-4 py-3 font-medium">Pekerjaan</th>
                   <th className="px-4 py-3 font-medium">Klien</th>
                   <th className="px-4 py-3 font-medium">Layanan</th>
-                  <th className="px-4 py-3 font-medium">Deadline</th>
+                  <th className="px-4 py-3 font-medium">Tenggat</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">PIC</th>
                 </tr>

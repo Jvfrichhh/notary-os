@@ -51,12 +51,12 @@ export default async function DeadlinesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">Tenggat</h1>
-        <p className="text-sm text-muted-foreground">Semua job aktif yang punya deadline, dikelompokkan berdasarkan urgensi</p>
+        <p className="text-sm text-muted-foreground">Semua pekerjaan aktif yang punya tenggat, dikelompokkan berdasarkan urgensi</p>
       </div>
 
       {totalWithDeadline === 0 ? (
         <Card>
-          <EmptyState title="Tidak ada job dengan deadline yang belum selesai." />
+          <EmptyState title="Tidak ada pekerjaan dengan tenggat yang belum selesai." />
         </Card>
       ) : (
         <div className="space-y-6">

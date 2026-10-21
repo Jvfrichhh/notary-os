@@ -16,7 +16,7 @@ function toNullable(value: FormDataEntryValue | null | undefined) {
 const schema = z.object({
   number: z.string().min(1, "Nomor wajib diisi"),
   date: z.string().min(1, "Tanggal wajib diisi"),
-  clientId: z.string().min(1, "Client wajib dipilih"),
+  clientId: z.string().min(1, "Klien wajib dipilih"),
   serviceType: z.string().optional(),
   status: z.enum(["DRAFT", "PROCESS", "DONE"]).default("PROCESS"),
   picId: z.string().optional(),
@@ -57,7 +57,7 @@ export async function createLegalisasi(_prevState: LegalisasiFormState, formData
   const data = parsed.data;
 
   const client = await prisma.client.findUnique({ where: { id: data.clientId } });
-  if (!client) return { formError: "Client tidak ditemukan." };
+  if (!client) return { formError: "Klien tidak ditemukan." };
 
   const documentId = toNullable(data.documentId ?? "");
   const docError = await validateDocumentBelongsToClient(documentId, data.clientId);

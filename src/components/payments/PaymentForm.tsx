@@ -75,7 +75,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Client <span className="text-status-overdue">*</span>
+            Klien <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -84,7 +84,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
             </>
           ) : (
             <select name="clientId" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
-              <option value="">— Pilih client —</option>
+              <option value="">— Pilih klien —</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}
@@ -96,7 +96,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Job Terkait</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan Terkait</label>
           {lockedJob ? (
             <>
               <input type="hidden" name="jobId" value={lockedJob.id} />

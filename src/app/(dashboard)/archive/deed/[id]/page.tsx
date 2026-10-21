@@ -91,7 +91,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Job</dt>
+                <dt className="text-xs text-muted-foreground">Pekerjaan</dt>
                 <dd>
                   {deed.job ? (
                     <Link href={`/jobs/${deed.job.id}`} className="text-primary hover:underline">

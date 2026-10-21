@@ -50,7 +50,7 @@ export default async function WasiatDetailPage({ params }: { params: { id: strin
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Job Terkait</dt>
+            <dt className="text-xs text-muted-foreground">Pekerjaan Terkait</dt>
             <dd>
               {record.job ? (
                 <Link href={`/jobs/${record.job.id}`} className="text-primary hover:underline">

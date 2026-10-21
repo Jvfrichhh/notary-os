@@ -29,6 +29,10 @@ export async function middleware(req: NextRequest) {
   const isApi = pathname.startsWith("/api/");
   const isAuthApi = pathname.startsWith("/api/auth/");
 
+  // Cron Vercel: tanpa sesi login, di host mana pun (domain apa saja yang dipanggil
+  // Vercel); route-nya memeriksa CRON_SECRET sendiri.
+  if (pathname === "/api/cron/daily") return NextResponse.next();
+
   // ------------------------------------------------------------------
   // 0) Routing berdasarkan DOMAIN (hanya jika PORTAL_HOST diset)
   // ------------------------------------------------------------------
@@ -55,9 +59,6 @@ export async function middleware(req: NextRequest) {
       }
     }
   }
-
-  // Cron Vercel: tanpa sesi login; route-nya memeriksa CRON_SECRET sendiri.
-  if (pathname === "/api/cron/daily") return NextResponse.next();
 
   // Halaman login (keduanya) tidak butuh token -- lewatkan di sini, SETELAH
   // routing domain, supaya "/login" di host portal sudah menjadi /portal/login.

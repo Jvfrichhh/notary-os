@@ -87,7 +87,7 @@ export function MinutaForm({ action, deeds, documents, lockedDeed, defaultValues
           ))}
         </select>
         <p className="mt-1 text-xs text-muted-foreground">
-          Daftar ini berisi dokumen yang sudah diupload lewat Document Vault untuk job terkait. Upload dulu di sana kalau file belum ada.
+          Daftar ini berisi dokumen yang sudah diupload lewat Document Vault untuk pekerjaan terkait. Upload dulu di sana kalau file belum ada.
         </p>
       </div>
 

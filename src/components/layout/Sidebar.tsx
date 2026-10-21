@@ -31,7 +31,7 @@ import {
   Map as MapIcon
 } from "lucide-react";
 
-// Pemetaan key ikon (string, aman dikirim server -> client) ke komponen lucide.
+// Pemetaan key ikon (string, aman dikirim server -> klien) ke komponen lucide.
 const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
   bell: Bell,

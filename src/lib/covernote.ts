@@ -9,7 +9,7 @@ import { getJakartaToday } from "@/lib/format";
  * Covernote (surat keterangan Notaris/PPAT) untuk bank: menerangkan akta yang
  * sudah ditandatangani, proses yang sedang berjalan, dan perkiraan selesai.
  * Nomor "<urut>/CN/<bulan>/<tahun>" berurut per tahun (dihitung dari audit
- * log covernote_issued). File Word tersimpan di Document Vault pekerjaan.
+ * log covernote_issued, dipesan dengan kunci supaya tidak dobel). File Word tersimpan di Document Vault pekerjaan.
  */
 
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -52,12 +52,22 @@ export async function suggestCovernoteItems(jobId: string): Promise<string[]> {
   return items;
 }
 
-async function nextNumber(today: Date): Promise<string> {
+/**
+ * Pesan nomor berikutnya secara aman dari tabrakan: dalam satu transaksi dengan
+ * kunci advisory, hitung covernote tahun ini lalu langsung catat "covernote_issued"
+ * (nomor dianggap terpakai walaupun langkah berikutnya gagal).
+ */
+async function reserveNumber(today: Date, jobId: string, userId: string, bank: string): Promise<string> {
   const y = today.getUTCFullYear();
-  const issued = await prisma.auditLog.count({
-    where: { action: "covernote_issued", timestamp: { gte: new Date(Date.UTC(y, 0, 1) - 7 * 3600000) } }
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('covernote_number'))`;
+    const issued = await tx.auditLog.count({
+      where: { action: "covernote_issued", timestamp: { gte: new Date(Date.UTC(y, 0, 1) - 7 * 3600000) } }
+    });
+    const number = `${issued + 1}/CN/${ROMAWI[today.getUTCMonth()]}/${y}`;
+    await tx.auditLog.create({ data: { userId, action: "covernote_issued", entityType: "Job", entityId: jobId, newValue: { number, bank } } });
+    return number;
   });
-  return `${issued + 1}/CN/${ROMAWI[today.getUTCMonth()]}/${y}`;
 }
 
 export function buildCovernoteDocx(number: string, today: Date, input: CovernoteInput): Buffer {
@@ -98,7 +108,7 @@ export function buildCovernoteDocx(number: string, today: Date, input: Covernote
 export async function issueCovernote(jobId: string, input: CovernoteInput, userId: string) {
   const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId }, select: { id: true, clientId: true, jobNumber: true } });
   const today = getJakartaToday();
-  const number = await nextNumber(today);
+  const number = await reserveNumber(today, job.id, userId, input.bank);
   const buffer = buildCovernoteDocx(number, today, input);
   const fileName = `Covernote_${number.replace(/\//g, "-")}_${job.jobNumber}.docx`;
   const upload = await getFileStorage().upload({ buffer, fileName, contentType: DOCX_MIME, folder: `documents/job-${job.id}` });
@@ -121,6 +131,6 @@ export async function issueCovernote(jobId: string, input: CovernoteInput, userI
     });
     return d;
   });
-  await writeAuditLog({ userId, action: "covernote_issued", entityType: "Job", entityId: job.id, newValue: { number, bank: input.bank, documentId: doc.id } });
+  await writeAuditLog({ userId, action: "covernote_saved", entityType: "Job", entityId: job.id, newValue: { number, bank: input.bank, documentId: doc.id } });
   return { number, documentId: doc.id };
 }

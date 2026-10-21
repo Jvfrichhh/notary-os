@@ -69,7 +69,7 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Cari client, nomor job, metode..."
+              placeholder="Cari klien, nomor pekerjaan, metode..."
               className="min-w-[200px] flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <select name="status" defaultValue={searchParams.status ?? ""} className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground">
@@ -109,7 +109,7 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">No. Tagihan</th>
                   <th className="px-4 py-3 font-medium">Klien</th>
-                  <th className="px-4 py-3 font-medium">Job</th>
+                  <th className="px-4 py-3 font-medium">Pekerjaan</th>
                   <th className="px-4 py-3 font-medium">Total</th>
                   <th className="px-4 py-3 font-medium">Dibayar</th>
                   <th className="px-4 py-3 font-medium">Sisa</th>

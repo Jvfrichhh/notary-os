@@ -38,7 +38,13 @@ export async function runDailyChecks() {
 
   // 1. Tugas bertenggat
   const tasks = await prisma.jobTask.findMany({
-    where: { status: { not: "DONE" }, dueDate: { not: null, lte: soon }, job: { recordStatus: "ACTIVE", status: { not: "CANCELLED" } } },
+    where: {
+      status: { not: "DONE" },
+      dueDate: { not: null, lte: soon },
+      job: { recordStatus: "ACTIVE", status: { not: "CANCELLED" } },
+      // Pekerjaan yang sudah selesai: hanya kewajiban hukum setelah akta yang tetap diingatkan.
+      OR: [{ job: { status: { not: "COMPLETED" } } }, { description: { startsWith: "Kewajiban setelah akta" } }]
+    },
     select: { title: true, dueDate: true, assignedTo: true, job: { select: { id: true, jobNumber: true, picId: true } } }
   });
   for (const t of tasks) {

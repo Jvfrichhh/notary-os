@@ -122,7 +122,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
           type="text"
           name="q"
           defaultValue={q}
-          placeholder="Cari nomor akta atau nama client..."
+          placeholder="Cari nomor akta atau nama klien..."
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-xs"
         />
         <input

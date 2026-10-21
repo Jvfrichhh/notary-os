@@ -93,7 +93,7 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Client <span className="text-status-overdue">*</span>
+            Klien <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -102,7 +102,7 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
             </>
           ) : (
             <select name="clientId" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
-              <option value="">— Pilih client —</option>
+              <option value="">— Pilih klien —</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}
@@ -114,7 +114,7 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
 
         {!lockedClient && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Job Terkait</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan Terkait</label>
             <select name="jobId" className={fieldClass} disabled={!clientId}>
               <option value="">— Tidak ada —</option>
               {filteredJobs.map((j) => (

@@ -3,8 +3,8 @@
 -- RESTRICT: gagal (tanpa menghapus apa pun) bila ada tabel lain yang masih menunjuk tabel ini.
 TRUNCATE TABLE
   appointments, audit_logs, checklist_items, job_checklists, client_accounts,
-  client_notifications, clients, payment_receipts, deed_drafts, deeds, document_ai_analyses,
+  client_notifications, clients, payment_receipts, deed_draft_reviews, deed_drafts, deeds, document_ai_analyses,
   document_versions, documents, grosse, job_number_counters, job_tasks, jobs,
-  kutipan, legalisasi, minuta, notifications, payments, repertorium,
+  kutipan, legalisasi, minuta, notifications, payments, ppat_deeds, ppat_stages, repertorium,
   repertorium_counters, salinan, visits, waarmerking, wasiat
 RESTRICT;

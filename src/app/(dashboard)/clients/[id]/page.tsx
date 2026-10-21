@@ -22,7 +22,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default async function ClientDetailPage({ params, searchParams }: { params: { id: string }; searchParams?: { portal?: string } }) {
+export default async function ClientDetailPage({ params, searchParams }: { params: { id: string }; searchParams?: { portal?: string; jobFailed?: string } }) {
   const user = await requirePermission(PERMISSIONS.VIEW_CLIENTS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
   const canDelete = await userHasPermission(user.id, PERMISSIONS.DELETE_CLIENTS);
@@ -60,6 +60,11 @@ export default async function ClientDetailPage({ params, searchParams }: { param
   return (
     <div className="space-y-6">
       {searchParams?.portal && <PortalAccountBanner status={searchParams.portal} />}
+      {searchParams?.jobFailed && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Klien sudah tersimpan, tetapi pekerjaannya gagal dibuat. Klik &quot;+ Pekerjaan baru&quot; untuk membuatnya lagi.
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{client.clientNumber}</p>

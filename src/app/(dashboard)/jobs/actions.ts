@@ -16,7 +16,7 @@ import { userHasPermission } from "@/lib/permissions";
 import { formatDate, formatDateJakarta, fromDateInput } from "@/lib/format";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { issueCovernote } from "@/lib/covernote";
-import { completeStage, undoStage } from "@/lib/ppatStages";
+import { completeStage, jobStageDefs, undoStage } from "@/lib/ppatStages";
 import type { JobPriority, JobStatus } from "@prisma/client";
 
 /** Status yang hanya boleh diputuskan Notaris (pemberi perintah). */
@@ -59,6 +59,8 @@ export async function updateJobStatus(jobId: string, newStatus: JobStatus) {
   // konsisten dengan pola guard clause lain di modul ini & archive/actions.ts.
   const allowed = VALID_TRANSITIONS[job.status] ?? [];
   if (!allowed.includes(newStatus)) return;
+  // Masuk ke "Diperiksa Notaris" hanya lewat tombol Ajukan (submitJobForReview), supaya Notaris diberi tahu.
+  if (newStatus === "REVIEW") return;
   // Menyetujui untuk tanda tangan, menyelesaikan, dan membatalkan job adalah keputusan Notaris.
   if (!(await isNotaryLevel(user.id))) {
     if (NOTARY_ONLY_STATUSES.includes(newStatus)) return;
@@ -91,9 +93,6 @@ export async function updateJobStatus(jobId: string, newStatus: JobStatus) {
     relatedEntityType: "Job",
     relatedEntityId: job.id
   });
-  if (newStatus === "REVIEW") {
-    await notifyJobPeople(jobId, `${job.jobNumber} diajukan untuk diperiksa Notaris.`, { notary: true });
-  }
   revalidateJob(jobId);
 }
 
@@ -485,6 +484,8 @@ export async function createCovernote(jobId: string, formData: FormData) {
 export async function setPpatStage(jobId: string, step: string, formData: FormData) {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  // Hanya langkah yang berlaku untuk jenis akta PPAT pekerjaan ini.
+  if (!(await jobStageDefs(jobId)).some((d) => d.key === step)) return;
   if (formData.get("undo") === "1") {
     if (!(await isNotaryLevel(user.id))) return;
     await undoStage(jobId, step, user.id);

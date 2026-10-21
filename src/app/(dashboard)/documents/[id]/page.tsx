@@ -159,7 +159,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
             )}
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Job</p>
+            <p className="text-xs text-muted-foreground">Pekerjaan</p>
             {document.job ? (
               <Link href={`/jobs/${document.job.id}`} className="text-sm text-primary hover:underline">
                 {document.job.jobNumber}

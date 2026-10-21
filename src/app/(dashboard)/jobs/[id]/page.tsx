@@ -198,7 +198,7 @@ export default async function JobDetailPage({
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
           {searchParams.created === "client" ? `Klien ${job.client.clientNumber} dan pekerjaan` : "Pekerjaan"} {job.jobNumber} berhasil dibuat.
           Checklist dokumen sudah disiapkan sesuai layanan
-          {job.pic ? `; ${job.pic.name} sudah diberi tahu dan job langsung berjalan.` : ". Tentukan PIC lewat \"Ubah pekerjaan\" agar staf mulai bekerja."}
+          {job.pic ? `; ${job.pic.name} sudah diberi tahu dan pekerjaan langsung berjalan.` : ". Tentukan PIC lewat \"Ubah pekerjaan\" agar staf mulai bekerja."}
         </div>
       )}
       {/* Header */}
@@ -293,7 +293,7 @@ export default async function JobDetailPage({
               </h2>
             </div>
             {totalChecklistItems === 0 ? (
-              <p className="text-sm text-muted-foreground">Tidak ada checklist untuk job ini.</p>
+              <p className="text-sm text-muted-foreground">Tidak ada checklist untuk pekerjaan ini.</p>
             ) : (
               <div className="space-y-1.5">
                 {job.checklists.flatMap((checklist) =>
@@ -535,7 +535,7 @@ export default async function JobDetailPage({
                 )}
               </div>
               {job.documents.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada dokumen untuk job ini.</p>
+                <p className="text-sm text-muted-foreground">Belum ada dokumen untuk pekerjaan ini.</p>
               ) : (
                 <ul className="divide-y divide-border text-sm">
                   {job.documents.map((doc) => (
@@ -696,7 +696,7 @@ export default async function JobDetailPage({
                 )}
               </div>
               {job.deeds.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada akta untuk job ini.</p>
+                <p className="text-sm text-muted-foreground">Belum ada akta untuk pekerjaan ini.</p>
               ) : (
                 <ul className="divide-y divide-border text-sm">
                   {job.deeds.map((deed) => (
@@ -741,7 +741,7 @@ export default async function JobDetailPage({
               ) : job.status === "READY_FOR_SIGNING" ? (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Disetujui Notaris. {isNotary ? "Setelah ditandatangani, buka draft akta lalu klik \"Sahkan & Daftarkan\" — job otomatis selesai." : "Siapkan penandatanganan."}
+                    Disetujui Notaris. {isNotary ? "Setelah ditandatangani, buka draft akta lalu klik \"Sahkan & Daftarkan\" — pekerjaan otomatis selesai." : "Siapkan penandatanganan."}
                   </p>
                   {isNotary && (
                     <form action={requestJobRevision.bind(null, job.id)} className="space-y-2">
@@ -798,7 +798,7 @@ export default async function JobDetailPage({
             ) : canEdit ? (
               <p className="text-sm text-muted-foreground">Tidak ada perubahan status manual yang tersedia.</p>
             ) : (
-              <p className="text-sm text-muted-foreground">Anda tidak punya akses mengubah status job ini.</p>
+              <p className="text-sm text-muted-foreground">Anda tidak punya akses mengubah status pekerjaan ini.</p>
             )}
           </Card>
 
@@ -814,7 +814,7 @@ export default async function JobDetailPage({
                 )}
               </div>
               {job.payments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada data pembayaran untuk job ini.</p>
+                <p className="text-sm text-muted-foreground">Belum ada data pembayaran untuk pekerjaan ini.</p>
               ) : (
                 job.payments.map((p) => (
                   <dl key={p.id} className="space-y-1.5 text-sm">
@@ -859,6 +859,18 @@ export default async function JobDetailPage({
   );
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  CEK_SERTIFIKAT: "Cek sertipikat",
+  VALIDASI_PPH: "Validasi PPh",
+  VALIDASI_BPHTB: "Validasi BPHTB",
+  TANDA_TANGAN: "Penandatanganan akta",
+  KE_BPN: "Penyampaian ke Kantor Pertanahan",
+  SERTIFIKAT_SELESAI: "Sertipikat selesai",
+  SERTIFIKAT_HT_TERBIT: "Sertipikat Hak Tanggungan terbit",
+  APHT_DIBUAT: "Ditindaklanjuti dengan APHT"
+};
+const stageLabel = (step: unknown) => (typeof step === "string" ? STAGE_LABELS[step] ?? step : "");
+
 /** Kalimat riwayat yang mudah dibaca dari entri audit log. */
 function timelineLabel(action: string, value: unknown): string {
   const v = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
@@ -879,6 +891,28 @@ function timelineLabel(action: string, value: unknown): string {
       return "Draft akta dihapus";
     case "covernote_issued":
       return `Covernote ${typeof v.number === "string" ? v.number : ""} dibuat${typeof v.bank === "string" ? ` untuk ${v.bank}` : ""}`;
+    case "covernote_saved":
+      return `File covernote ${typeof v.number === "string" ? v.number : ""} disimpan di Dokumen`;
+    case "ppat_stage_done":
+      return `Tahap PPAT selesai: ${stageLabel(v.step)}${typeof v.reference === "string" && v.reference ? ` (${v.reference})` : ""}`;
+    case "ppat_stage_undone":
+      return `Tahap PPAT dibatalkan: ${stageLabel(v.step)}`;
+    case "ppat_submitted_bpn":
+      return "Akta PPAT disampaikan ke Kantor Pertanahan";
+    case "deed_draft_shared":
+      return "Draft akta dibagikan ke klien untuk diperiksa";
+    case "deed_draft_updated":
+      return "Draft akta diubah";
+    case "deed_created":
+      return "Akta dicatat di Lemari Arsip";
+    case "deed_status_changed":
+      return "Status akta diubah";
+    case "deed_archived":
+      return "Akta diarsipkan";
+    case "deed_restored":
+      return "Akta dipulihkan dari arsip";
+    case "ppat_deed_updated":
+      return "Data akta PPAT diubah";
     case "ppat_deed_registered":
       return `Akta PPAT ${typeof v.deedNumber === "string" ? v.deedNumber : ""} didaftarkan`;
     case "deed_draft_finalized":

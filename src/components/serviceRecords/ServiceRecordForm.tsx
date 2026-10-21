@@ -104,7 +104,7 @@ export function ServiceRecordForm({
 
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Client <span className="text-status-overdue">*</span>
+            Klien <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -113,7 +113,7 @@ export function ServiceRecordForm({
             </>
           ) : (
             <select name="clientId" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
-              <option value="">— Pilih client —</option>
+              <option value="">— Pilih klien —</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}

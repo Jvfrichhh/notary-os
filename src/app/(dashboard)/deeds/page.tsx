@@ -99,7 +99,7 @@ export default async function DeedsPage() {
         </div>
         {waiting.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="Tidak ada job yang menunggu draft." />
+            <EmptyState title="Tidak ada pekerjaan yang menunggu draft." />
           </div>
         ) : (
           <ul className="divide-y divide-border text-sm">
@@ -141,7 +141,7 @@ export default async function DeedsPage() {
 
       {canEdit && (
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Buat Draft Akta (pilih job & jenis akta)</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Buat Draft Akta (pilih pekerjaan & jenis akta)</h2>
           {jobs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Belum ada job aktif. Draft akta selalu terkait dengan satu job;
@@ -150,10 +150,10 @@ export default async function DeedsPage() {
           ) : (
             <form action={createDeedDraftFromList} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
               <label>
-                <span className="mb-1 block text-xs text-muted-foreground">Job / klien</span>
+                <span className="mb-1 block text-xs text-muted-foreground">Pekerjaan / klien</span>
                 <select name="jobId" required className={selectCls} defaultValue="">
                   <option value="" disabled>
-                    — Pilih job —
+                    — Pilih pekerjaan —
                   </option>
                   {jobs.map((j) => (
                     <option key={j.id} value={j.id}>

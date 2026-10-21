@@ -52,7 +52,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             <Plus className="h-4 w-4" />
-            Tambah Client
+            Tambah Klien
           </Link>
         )}
       </div>
@@ -65,7 +65,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Cari nama, no. client, telepon, email..."
+              placeholder="Cari nama, no. klien, telepon, email..."
               className="w-full rounded-md border border-border bg-background py-2 pl-8 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {statusFilter === "ARCHIVED" && <input type="hidden" name="status" value="ARCHIVED" />}
@@ -93,7 +93,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
         {clients.length === 0 ? (
           <div className="p-6">
-            <EmptyState title={q ? `Tidak ada client yang cocok dengan "${q}".` : "Belum ada client."} />
+            <EmptyState title={q ? `Tidak ada klien yang cocok dengan "${q}".` : "Belum ada klien."} />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -105,7 +105,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                   <th className="px-4 py-3 font-medium">Tipe</th>
                   <th className="px-4 py-3 font-medium">Kontak</th>
                   <th className="px-4 py-3 font-medium">Kota</th>
-                  <th className="px-4 py-3 font-medium">Job</th>
+                  <th className="px-4 py-3 font-medium">Pekerjaan</th>
                   <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>

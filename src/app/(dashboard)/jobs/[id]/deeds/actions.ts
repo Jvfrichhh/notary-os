@@ -224,7 +224,10 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     const pdata = { ...((draft.data ?? {}) as Record<string, unknown>), nomorAkta: `${seq}/${year}`, tanggalAkta: tanggal };
     await prisma.deedDraft.update({ where: { id: draftId }, data: { data: pdata as Prisma.InputJsonValue, updatedById: user.id } });
     const pvault = await syncDraftToVault(draftId, user.id, { final: true });
-    if (pvault.error) return { error: pvault.error };
+    if (pvault.error) {
+      await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
+      return { error: pvault.error };
+    }
     const reg = template.ppat.register(pdata);
     let ppatId: string;
     try {
@@ -254,6 +257,8 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
       );
       ppatId = deed.id;
     } catch (err) {
+      // Nomor & tanggal final dilepas lagi dari draft supaya bisa dicoba ulang.
+      await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
       return { error: err instanceof Error ? err.message : "Gagal mendaftarkan akta PPAT." };
     }
     await prisma.deedDraft.update({ where: { id: draftId }, data: { ppatDeedId: ppatId } });
@@ -274,7 +279,10 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
   const data = { ...((draft.data ?? {}) as Record<string, unknown>), nomorAkta: String(Number(nomor)), tanggalAkta: tanggal };
   await prisma.deedDraft.update({ where: { id: draftId }, data: { data: data as Prisma.InputJsonValue, updatedById: user.id } });
   const vault = await syncDraftToVault(draftId, user.id, { final: true });
-  if (vault.error || !vault.documentIds.minuta) return { error: vault.error ?? "Gagal menyimpan file akta. Coba lagi." };
+  if (vault.error || !vault.documentIds.minuta) {
+    await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
+    return { error: vault.error ?? "Gagal menyimpan file akta. Coba lagi." };
+  }
 
   const signers = template.signers(data).map((p) => (typeof p.nama === "string" ? p.nama.trim().toUpperCase() : "")).filter(Boolean);
   const deedDate = new Date(`${tanggal}T00:00:00.000Z`);
@@ -325,6 +333,7 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     });
   } catch (err) {
     console.error("[akta] gagal mengesahkan draft", err);
+    await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
     return { error: "Gagal mendaftarkan akta. Periksa apakah nomor akta sudah dipakai, lalu coba lagi." };
   }
 

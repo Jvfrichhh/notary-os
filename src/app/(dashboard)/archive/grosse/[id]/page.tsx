@@ -49,11 +49,11 @@ export default async function GrosseDetailPage({ params }: { params: { id: strin
           ← Kembali ke Akta
         </Link>
         <Link href={`/clients/${record.deed.client.id}`} className="text-primary hover:underline">
-          Lihat Client
+          Lihat Klien
         </Link>
         {record.deed.job && (
           <Link href={`/jobs/${record.deed.job.id}`} className="text-primary hover:underline">
-            Lihat Job
+            Lihat Pekerjaan
           </Link>
         )}
       </div>

@@ -200,7 +200,7 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
       if (!isUniqueClientNumberError(err)) throw err;
     }
   }
-  if (!client) return { formError: "Gagal membuat nomor client. Coba simpan lagi." };
+  if (!client) return { formError: "Gagal membuat nomor klien. Coba simpan lagi." };
 
   await writeAuditLog({
     userId: user.id,
@@ -219,7 +219,18 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
     } catch (err) {
       // Klien + job harus jadi bersama: bila job gagal, klien yang baru dibuat dibatalkan.
       console.error("[clients] gagal membuat job untuk klien baru", err);
-      await prisma.client.delete({ where: { id: client.id } }).catch(() => undefined);
+      // Job yang mungkin sudah setengah jadi ikut dihapus (tugas/checklist ikut terhapus berantai).
+      const rolledBack = await prisma
+        .$transaction([prisma.job.deleteMany({ where: { clientId: client.id } }), prisma.client.delete({ where: { id: client.id } })])
+        .then(() => true)
+        .catch((e) => {
+          console.error("[clients] gagal membatalkan klien baru", e);
+          return false;
+        });
+      if (!rolledBack) {
+        // Klien sudah tersimpan tetapi pekerjaan gagal: arahkan ke klien agar pekerjaan dibuat ulang dari sana.
+        redirect(`/clients/${client.id}?jobFailed=1`);
+      }
       return { formError: "Gagal membuat pekerjaan; klien belum disimpan. Coba simpan lagi." };
     }
     revalidatePath("/jobs");
@@ -278,7 +289,7 @@ export async function updateClient(
 
   const before = await prisma.client.findUnique({ where: { id: clientId } });
   if (!before) {
-    return { formError: "Client tidak ditemukan." };
+    return { formError: "Klien tidak ditemukan." };
   }
 
   const data = parsed.data;

@@ -16,15 +16,49 @@ const asStr = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : Stri
 /** Format ribuan saat mengetik nominal uang (disimpan sebagai digit saja). */
 const moneyDisplay = (v: string) => (v ? v.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "");
 
+/**
+ * Tata letak identitas (12 kolom di layar lebar), urut seperti KTP:
+ *   Sapaan | Nama lengkap | NIK
+ *   Tempat lahir | Tanggal lahir | Pekerjaan | Kewarganegaraan
+ *   Alamat | RT | RW
+ *   Kelurahan/Desa | Kecamatan | Kota/Kabupaten
+ * Di layar kecil menjadi 2 kolom.
+ */
+const PERSON_LAYOUT: { key: keyof Person; span: string }[][] = [
+  [
+    { key: "sapaan", span: "col-span-2 sm:col-span-2" },
+    { key: "nama", span: "col-span-2 sm:col-span-6" },
+    { key: "nik", span: "col-span-2 sm:col-span-4" }
+  ],
+  [
+    { key: "tempatLahir", span: "col-span-1 sm:col-span-3" },
+    { key: "tanggalLahir", span: "col-span-1 sm:col-span-3" },
+    { key: "pekerjaan", span: "col-span-1 sm:col-span-3" },
+    { key: "kewarganegaraan", span: "col-span-1 sm:col-span-3" }
+  ],
+  [
+    { key: "alamat", span: "col-span-2 sm:col-span-8" },
+    { key: "rt", span: "col-span-1 sm:col-span-2" },
+    { key: "rw", span: "col-span-1 sm:col-span-2" }
+  ],
+  [
+    { key: "kelurahan", span: "col-span-2 sm:col-span-4" },
+    { key: "kecamatan", span: "col-span-1 sm:col-span-4" },
+    { key: "kota", span: "col-span-1 sm:col-span-4" }
+  ]
+];
+
 function PersonFields({ value, onChange }: { value: Person; onChange: (p: Person) => void }) {
+  const defs = new Map(PERSON_FIELDS.map((f) => [f.key, f]));
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {PERSON_FIELDS.map((f) => {
+    <div className="grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-12">
+      {PERSON_LAYOUT.flat().map(({ key, span }) => {
+        const f = defs.get(key);
+        if (!f) return null;
         const v = asStr(value[f.key]);
-        const wide = f.key === "nama" || f.key === "alamat";
         return (
-          <label key={f.key} className={wide ? "col-span-2" : ""}>
-            <span className="mb-0.5 block text-[11px] text-muted-foreground">{f.label}</span>
+          <label key={f.key} className={`${span} min-w-0`}>
+            <span className="mb-1 block truncate text-xs text-muted-foreground">{f.label}</span>
             {f.kind === "select" ? (
               <select value={v} onChange={(e) => onChange({ ...value, [f.key]: e.target.value })} className={inputCls}>
                 <option value="">—</option>
@@ -35,6 +69,7 @@ function PersonFields({ value, onChange }: { value: Person; onChange: (p: Person
             ) : (
               <input
                 type={f.kind === "date" ? "date" : "text"}
+                inputMode={f.key === "nik" || f.key === "rt" || f.key === "rw" ? "numeric" : undefined}
                 value={v}
                 placeholder={f.placeholder}
                 onChange={(e) => onChange({ ...value, [f.key]: e.target.value })}
@@ -52,7 +87,7 @@ function Field({ def, value, onChange }: { def: FieldDef; value: unknown; onChan
   if (def.kind === "person") {
     return (
       <div className="sm:col-span-2">
-        <p className="mb-1 text-sm font-medium text-foreground">{def.label}</p>
+        <p className="mb-2 text-sm font-medium text-foreground">{def.label}</p>
         <PersonFields value={asObj(value) as Person} onChange={onChange} />
       </div>
     );

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/format";
 import { deedTemplateOptions } from "@/lib/deeds/registry";
+import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraftFromList } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,23 @@ export default async function DeedsPage() {
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
 
-  const [drafts, jobs] = await Promise.all([
+  const [waiting, drafts, jobs] = await Promise.all([
+    // Perintah notaris yang belum dibuatkan draft: job aktif tanpa draft akta, terbaru dulu.
+    prisma.job.findMany({
+      where: { recordStatus: "ACTIVE", status: { notIn: ["COMPLETED", "CANCELLED"] }, deedDrafts: { none: {} } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        jobNumber: true,
+        description: true,
+        deadline: true,
+        createdAt: true,
+        client: { select: { fullName: true } },
+        serviceType: { select: { name: true } },
+        pic: { select: { id: true, name: true } }
+      }
+    }),
     prisma.deedDraft.findMany({
       orderBy: { updatedAt: "desc" },
       take: 100,
@@ -49,16 +66,60 @@ export default async function DeedsPage() {
         </p>
       </div>
 
+      <Card className="p-0">
+        <div className="border-b border-border px-5 py-3">
+          <h2 className="text-sm font-semibold text-foreground">Job Baru Menunggu Draft Akta ({waiting.length})</h2>
+          <p className="text-xs text-muted-foreground">Perintah dari Notaris yang belum dibuatkan draft. Tugas Anda ditandai.</p>
+        </div>
+        {waiting.length === 0 ? (
+          <div className="p-5">
+            <EmptyState title="Tidak ada job yang menunggu draft." />
+          </div>
+        ) : (
+          <ul className="divide-y divide-border text-sm">
+            {waiting.map((j) => {
+              const suggested = SERVICE_CATALOG.find((c) => c.name === j.serviceType?.name)?.deedKey;
+              const hasTemplate = suggested && templates.some((t) => t.key === suggested);
+              const mine = j.pic?.id === user.id;
+              return (
+                <li key={j.id} className={`flex flex-wrap items-center justify-between gap-2 px-5 py-3 ${mine ? "bg-primary/5" : ""}`}>
+                  <div className="min-w-0">
+                    <Link href={`/jobs/${j.id}`} className="font-medium text-primary hover:underline">
+                      {j.jobNumber} — {j.client.fullName}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {j.serviceType?.name ?? "Layanan belum dipilih"}
+                      {j.description ? ` · ${j.description}` : ""} · PIC: {j.pic?.name ?? "belum ditentukan"}
+                      {mine ? " (Anda)" : ""} · masuk {formatDateTime(j.createdAt)}
+                      {j.deadline ? ` · target ${formatDateTime(j.deadline)}` : ""}
+                    </p>
+                  </div>
+                  {canEdit &&
+                    (hasTemplate ? (
+                      <form action={createDeedDraftFromList}>
+                        <input type="hidden" name="jobId" value={j.id} />
+                        <input type="hidden" name="templateKey" value={suggested} />
+                        <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
+                          Buat Draft
+                        </button>
+                      </form>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Pilih jenis akta di bawah</span>
+                    ))}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
       {canEdit && (
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Buat Draft Akta Baru</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Buat Draft Akta (pilih job & jenis akta)</h2>
           {jobs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Belum ada job aktif. Draft akta selalu terkait dengan satu job;{" "}
-              <Link href="/clients/new" className="text-primary hover:underline">
-                tambah klien sekaligus job
-              </Link>{" "}
-              terlebih dahulu.
+              Belum ada job aktif. Draft akta selalu terkait dengan satu job;
+              job dibuat oleh Notaris melalui Tambah Klien.
             </p>
           ) : (
             <form action={createDeedDraftFromList} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
@@ -95,6 +156,9 @@ export default async function DeedsPage() {
       )}
 
       <Card className="p-0">
+        <div className="border-b border-border px-5 py-3">
+          <h2 className="text-sm font-semibold text-foreground">Semua Draft Akta</h2>
+        </div>
         {drafts.length === 0 ? (
           <div className="p-5">
             <EmptyState title="Belum ada draft akta." />

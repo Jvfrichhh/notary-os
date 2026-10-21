@@ -19,7 +19,12 @@ export default async function NewClientPage() {
         orderBy: [{ category: "asc" }, { name: "asc" }],
         select: { id: true, name: true, category: true }
       }),
-      prisma.user.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } })
+      prisma.user.findMany({
+        // PIC = staf pelaksana; notaris sendiri tidak dipilih sebagai PIC.
+        where: { isActive: true, role: { name: { in: ["STAFF", "ADMIN"] } } },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true }
+      })
     ]);
   }
 
@@ -36,7 +41,7 @@ export default async function NewClientPage() {
         <ClientForm
           action={createClient}
           cancelHref="/clients"
-          newJob={canCreateJobs ? { services, staff, defaultPicId: user.id } : undefined}
+          newJob={canCreateJobs ? { services, staff } : undefined}
         />
       </Card>
     </div>

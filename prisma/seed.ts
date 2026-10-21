@@ -23,24 +23,24 @@ const PERMISSIONS = [
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  NOTARY: PERMISSIONS, // full access
+  // Alur kantor (Okt 2026): hanya NOTARY yang menerima klien & memberi job
+  // (create_clients, create_jobs); fitur Visits tidak dipakai lagi oleh siapa pun.
+  NOTARY: PERMISSIONS.filter((p) => p !== "view_visits" && p !== "create_visits"),
   ADMIN: [
-    "view_clients", "create_clients", "edit_clients",
-    "view_visits", "create_visits",
-    "view_jobs", "create_jobs", "edit_jobs",
+    "view_clients", "edit_clients",
+    "view_jobs", "edit_jobs",
     "view_documents", "upload_documents",
     "view_finance", "edit_finance",
     "view_minuta", "view_repertorium",
     "view_legalisasi", "view_waarmerking", "view_wasiat"
   ],
   STAFF: [
-    "view_clients", "create_clients",
-    "view_visits", "create_visits",
-    "view_jobs", "create_jobs", "edit_jobs",
+    "view_clients",
+    "view_jobs", "edit_jobs",
     "view_documents", "upload_documents"
   ],
   VIEWER: [
-    "view_clients", "view_visits", "view_jobs", "view_documents", "view_finance", "view_minuta", "view_repertorium",
+    "view_clients", "view_jobs", "view_documents", "view_finance", "view_minuta", "view_repertorium",
     "view_legalisasi", "view_waarmerking", "view_wasiat"
   ]
 };

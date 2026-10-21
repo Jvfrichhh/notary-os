@@ -12,34 +12,32 @@ import { PERMISSIONS } from "../src/lib/permissionKeys";
 // langsung karena butuh koneksi Prisma). Kalau seed berubah, perbarui di sini.
 const ALL = Object.values(PERMISSIONS) as string[];
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  NOTARY: ALL,
+  NOTARY: ALL.filter((p) => p !== "view_visits" && p !== "create_visits"),
   ADMIN: [
-    "view_clients", "create_clients", "edit_clients",
-    "view_visits", "create_visits",
-    "view_jobs", "create_jobs", "edit_jobs",
+    "view_clients", "edit_clients",
+    "view_jobs", "edit_jobs",
     "view_documents", "upload_documents",
     "view_finance", "edit_finance",
     "view_minuta", "view_repertorium",
     "view_legalisasi", "view_waarmerking", "view_wasiat"
   ],
   STAFF: [
-    "view_clients", "create_clients",
-    "view_visits", "create_visits",
-    "view_jobs", "create_jobs", "edit_jobs",
+    "view_clients",
+    "view_jobs", "edit_jobs",
     "view_documents", "upload_documents"
   ],
   VIEWER: [
-    "view_clients", "view_visits", "view_jobs", "view_documents", "view_finance", "view_minuta", "view_repertorium",
+    "view_clients", "view_jobs", "view_documents", "view_finance", "view_minuta", "view_repertorium",
     "view_legalisasi", "view_waarmerking", "view_wasiat"
   ]
 };
 
 // Ekspektasi menu yang TIDAK boleh muncul per role.
 const MUST_BE_HIDDEN: Record<string, string[]> = {
-  NOTARY: [],
-  ADMIN: ["/admin"],
-  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin"],
-  VIEWER: ["/admin"]
+  NOTARY: ["/visits"],
+  ADMIN: ["/admin", "/visits"],
+  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin", "/visits"],
+  VIEWER: ["/admin", "/visits"]
 };
 
 let failures = 0;

@@ -93,16 +93,17 @@ export function NewJobSection({
           </div>
           <div>
             <label htmlFor="jobPicId" className="mb-1 block text-sm font-medium text-foreground">
-              PIC (penanggung jawab)
+              Staf penanggung jawab (PIC)
             </label>
             <select id="jobPicId" name="jobPicId" defaultValue={defaultPicId ?? ""} className={fieldClass}>
-              <option value="">— Belum ditentukan —</option>
+              <option value="">— Pilih staf —</option>
               {staff.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>
               ))}
             </select>
+            <p className="mt-1 text-xs text-muted-foreground">Staf terpilih langsung mendapat notifikasi tugas baru.</p>
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="jobDescription" className="mb-1 block text-sm font-medium text-foreground">

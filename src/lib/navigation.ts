@@ -69,8 +69,8 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
   {
     title: "CRM",
     items: [
-      { label: "Clients", href: "/clients", icon: "users", permissions: [PERMISSIONS.VIEW_CLIENTS] },
-      { label: "Visits", href: "/visits", icon: "door", permissions: [PERMISSIONS.VIEW_VISITS] }
+      // Visits dihapus dari menu (Okt 2026): klien dicatat langsung lewat Tambah Klien oleh Notaris.
+      { label: "Clients", href: "/clients", icon: "users", permissions: [PERMISSIONS.VIEW_CLIENTS] }
     ]
   },
   {

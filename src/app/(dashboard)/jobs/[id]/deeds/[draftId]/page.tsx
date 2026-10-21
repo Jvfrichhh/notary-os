@@ -10,10 +10,19 @@ import { deleteDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { FinalizeDeedForm } from "@/components/deeds/FinalizeDeedForm";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { nextDeedNumber } from "@/lib/deeds/numbering";
+import { draftHash, reviewState } from "@/lib/deeds/review";
+import { shareDraftWithClient } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
+import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default async function DeedDraftPage({ params }: { params: { id: string; draftId: string } }) {
+export default async function DeedDraftPage({
+  params,
+  searchParams
+}: {
+  params: { id: string; draftId: string };
+  searchParams?: { shared?: string };
+}) {
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEditJobs = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
   const isNotary = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
@@ -23,7 +32,16 @@ export default async function DeedDraftPage({ params }: { params: { id: string; 
   const draft = await prisma.deedDraft.findFirst({
     where: { id: params.draftId, jobId: params.id },
     include: {
-      job: { select: { id: true, jobNumber: true, status: true, notes: true, client: { select: { fullName: true } } } },
+      job: {
+        select: {
+          id: true,
+          jobNumber: true,
+          status: true,
+          notes: true,
+          client: { select: { fullName: true, _count: { select: { accounts: { where: { isActive: true } } } } } }
+        }
+      },
+      reviews: { orderBy: { sharedAt: "desc" }, take: 1 },
       deed: { select: { id: true, deedNumber: true, repertorium: { select: { id: true, year: true, sequenceNumber: true } } } }
     }
   });
@@ -39,6 +57,9 @@ export default async function DeedDraftPage({ params }: { params: { id: string; 
     draft.job.status === "IN_PROGRESS"
       ? (draft.job.notes ?? "").split("\n").filter((l) => l.includes("Revisi dari Notaris")).pop()
       : undefined;
+  const latestReview = draft.reviews[0];
+  const review = reviewState(latestReview, draftHash(draft.data));
+  const hasPortal = draft.job.client._count.accounts > 0;
   const todayJakarta = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
   const suggestedNomor = canFinalize && !finalized ? await nextDeedNumber(todayJakarta) : "";
 
@@ -97,6 +118,37 @@ export default async function DeedDraftPage({ params }: { params: { id: string; 
         Template ini draft otomatis. Rumusan hukumnya wajib diperiksa Notaris sebelum dipakai untuk klien; minuta memuat
         halaman catatan penyusunan yang harus dihapus sebelum dicetak.
       </div>
+      )}
+
+      {!finalized && (
+        <div className="rounded-lg border border-border bg-background p-4 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-foreground">Pemeriksaan oleh klien</h2>
+              <p className="text-sm text-foreground">
+                {review === "none" && "Belum dibagikan ke klien."}
+                {review === "waiting" && `Menunggu klien membaca (dibagikan ${formatDateTime(latestReview!.sharedAt)}).`}
+                {review === "approved" && (
+                  <span className="text-status-on-track">Klien MENYETUJUI draft ini ({formatDateTime(latestReview!.decidedAt)}).</span>
+                )}
+                {review === "changes" && <span className="text-status-overdue">Klien minta koreksi: {latestReview!.note}</span>}
+                {review === "outdated" && "Draft diubah setelah dibagikan; bagikan ulang agar klien membaca versi terbaru."}
+              </p>
+              {!hasPortal && (
+                <p className="text-xs text-muted-foreground">Klien belum punya akses portal; buatkan di halaman klien agar bisa membaca draft.</p>
+              )}
+              {searchParams?.shared && <p className="text-xs text-status-on-track">Draft dibagikan; klien sudah diberi tahu.</p>}
+            </div>
+            {canEditJobs && hasPortal && review !== "waiting" && review !== "approved" && (
+              <form action={shareDraftWithClient.bind(null, draft.id)}>
+                <button type="submit" className="rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+                  {review === "none" ? "Bagikan ke klien untuk dibaca" : "Bagikan ulang versi terbaru"}
+                </button>
+              </form>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">Simpan perubahan dulu sebelum membagikan. Klien hanya melihat draft tanpa halaman catatan kantor.</p>
+        </div>
       )}
 
       <DeedForm

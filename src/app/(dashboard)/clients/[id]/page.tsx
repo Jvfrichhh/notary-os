@@ -7,8 +7,8 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatDate, formatStatusLabel } from "@/lib/format";
-import { archiveClient, createJobForClient, restoreClient } from "@/app/(dashboard)/clients/actions";
+import { classifyDeadline, formatDate, formatDateTime, formatStatusLabel } from "@/lib/format";
+import { archiveClient, createJobForClient, recordDataConsent, restoreClient } from "@/app/(dashboard)/clients/actions";
 import { ClientNewJobForm } from "@/components/clients/ClientNewJobForm";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { ClientPortalAccess } from "@/components/clients/ClientPortalAccess";
@@ -43,6 +43,9 @@ export default async function ClientDetailPage({ params, searchParams }: { param
   if (!client) notFound();
 
   const showNewJob = canCreateJobs && client.status === "ACTIVE";
+  const consentBy = client.dataConsentById
+    ? (await prisma.user.findUnique({ where: { id: client.dataConsentById }, select: { name: true } }))?.name ?? null
+    : null;
   const [services, staff] = showNewJob
     ? await Promise.all([
         prisma.serviceType.findMany({
@@ -121,6 +124,25 @@ export default async function ClientDetailPage({ params, searchParams }: { param
             <InfoRow label="Catatan" value={client.notes} />
           </div>
         )}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm">
+          <span className={client.dataConsentAt ? "text-foreground" : "text-status-overdue"}>
+            {client.dataConsentAt
+              ? `Persetujuan data pribadi (UU PDP) dicatat ${formatDateTime(client.dataConsentAt)}${consentBy ? ` oleh ${consentBy}` : ""}.`
+              : "Persetujuan data pribadi (UU PDP) belum dicatat."}
+          </span>
+          <span className="flex items-center gap-3">
+            <a href={`/api/clients/${client.id}/consent-form`} className="text-xs font-medium text-primary hover:underline">
+              Unduh formulir persetujuan (Word)
+            </a>
+            {canEdit && !client.dataConsentAt && (
+              <form action={recordDataConsent.bind(null, client.id)}>
+                <button type="submit" className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">
+                  Catat persetujuan
+                </button>
+              </form>
+            )}
+          </span>
+        </div>
       </Card>
 
       <div className={showNewJob ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "grid grid-cols-1 gap-4"}>

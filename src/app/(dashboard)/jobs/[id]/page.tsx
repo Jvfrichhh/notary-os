@@ -29,6 +29,7 @@ import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { formatDateTime as fmtDeedTime } from "@/lib/format";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
+import { draftHash, reviewState } from "@/lib/deeds/review";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,15 @@ export default async function JobDetailPage({
       tasks: { orderBy: { createdAt: "asc" } },
       deedDrafts: {
         orderBy: { updatedAt: "desc" },
-        select: { id: true, templateKey: true, title: true, updatedAt: true, deed: { select: { deedNumber: true } } }
+        select: {
+          id: true,
+          templateKey: true,
+          title: true,
+          updatedAt: true,
+          data: true,
+          deed: { select: { deedNumber: true } },
+          reviews: { orderBy: { sharedAt: "desc" }, take: 1, select: { dataHash: true, decision: true } }
+        }
       },
       checklists: {
         include: {
@@ -73,7 +82,8 @@ export default async function JobDetailPage({
       },
       payments: true,
       documents: true,
-      deeds: { orderBy: { createdAt: "desc" } }
+      deeds: { orderBy: { createdAt: "desc" } },
+      ppatDeeds: { orderBy: { createdAt: "desc" }, select: { id: true, deedNumber: true, deedType: true, deedDate: true, submittedToBpnAt: true } }
     }
   });
 
@@ -108,6 +118,7 @@ export default async function JobDetailPage({
     : [];
   const dateInput = toDateInput;
   const openDrafts = job.deedDrafts.filter((d) => !d.deed).length;
+  const isPpatService = !!SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.ppatType;
 
   // Riwayat pekerjaan dari audit log (status, draft akta, pengesahan).
   const timeline = await prisma.auditLog.findMany({
@@ -357,6 +368,19 @@ export default async function JobDetailPage({
                     <Link href={`/jobs/${job.id}/deeds/${d.id}`} className="font-medium text-primary hover:underline">
                       {d.title ?? d.templateKey}
                       {d.deed ? <span className="ml-2 text-xs font-normal text-status-on-track">Disahkan · No. {d.deed.deedNumber}</span> : null}
+                      {!d.deed &&
+                        (() => {
+                          const st = reviewState(d.reviews[0], draftHash(d.data));
+                          const map: Record<string, [string, string] | null> = {
+                            none: null,
+                            waiting: ["menunggu klien", "text-muted-foreground"],
+                            approved: ["klien setuju", "text-status-on-track"],
+                            changes: ["klien minta koreksi", "text-status-overdue"],
+                            outdated: ["perlu dibagikan ulang ke klien", "text-status-due-soon"]
+                          };
+                          const v = map[st];
+                          return v ? <span className={`ml-2 text-xs font-normal ${v[1]}`}>· {v[0]}</span> : null;
+                        })()}
                     </Link>
                     <span className="flex items-center gap-3 text-xs text-muted-foreground">
                       diperbarui {fmtDeedTime(d.updatedAt)}
@@ -496,6 +520,38 @@ export default async function JobDetailPage({
                         {doc.fileName}
                       </Link>
                       <span className="text-xs text-muted-foreground">{formatStatusLabel(doc.category)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          )}
+
+          {/* Akta PPAT (layanan selaku PPAT) */}
+          {canViewArchive && (isPpatService || job.ppatDeeds.length > 0) && (
+            <Card>
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">Akta PPAT ({job.ppatDeeds.length})</h2>
+                {canEditArchive && !isFinal && (
+                  <Link href={`/ppat/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
+                    + Daftarkan akta PPAT
+                  </Link>
+                )}
+              </div>
+              {job.ppatDeeds.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Setelah akta ditandatangani, daftarkan di sini: nomor PPAT otomatis, tugas ke Kantor Pertanahan (7 hari kerja) dibuat, dan pekerjaan selesai.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border text-sm">
+                  {job.ppatDeeds.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between py-2">
+                      <Link href={`/ppat/${p.id}`} className="text-foreground hover:underline">
+                        {p.deedNumber} — {p.deedType}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(p.deedDate)} · {p.submittedToBpnAt ? "sudah ke BPN" : "belum ke BPN"}
+                      </span>
                     </li>
                   ))}
                 </ul>

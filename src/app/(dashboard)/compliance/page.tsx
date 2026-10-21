@@ -10,6 +10,7 @@ import {
   isYm,
   monthLabel,
   previousYm,
+  REPORT_KINDS,
   REPORT_LABEL,
   reportDueDate,
   reportSentInfo,
@@ -29,7 +30,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
   const ym = isYm(searchParams.month) ? searchParams.month : previousYm(today);
   const data = await gatherMonth(ym);
 
-  const kinds: ReportKind[] = ["mpd", "wasiat"];
+  const kinds: ReportKind[] = REPORT_KINDS;
   const status = await Promise.all(kinds.map((k) => reportSentInfo(k, ym)));
 
   // Riwayat 6 bulan terakhir (status kirim laporan MPD).
@@ -56,7 +57,8 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
 
   const counts: Record<ReportKind, string> = {
     mpd: `${data.akta.length} akta · ${data.legalisasi.length} legalisasi · ${data.waarmerking.length} waarmerking · ${data.wasiat.length} wasiat`,
-    wasiat: data.wasiat.length ? `${data.wasiat.length} akta wasiat` : "Tidak ada akta wasiat (laporan NIHIL)"
+    wasiat: data.wasiat.length ? `${data.wasiat.length} akta wasiat` : "Tidak ada akta wasiat (laporan NIHIL)",
+    ppat: data.ppat.length ? `${data.ppat.length} akta PPAT` : "Tidak ada akta PPAT (laporan NIHIL)"
   };
 
   return (
@@ -65,7 +67,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
         <div>
           <h1 className="text-xl font-semibold text-foreground">Laporan Bulanan</h1>
           <p className="text-sm text-muted-foreground">
-            Laporan wajib dibuat otomatis dari Repertorium, Legalisasi, Waarmerking, dan Wasiat. Unduh, tanda tangani, kirim, lalu tandai terkirim.
+            Laporan wajib dibuat otomatis dari Repertorium, Legalisasi, Waarmerking, Wasiat, dan Buku Akta PPAT. Unduh, tanda tangani, kirim, lalu tandai terkirim.
           </p>
         </div>
         <form className="flex items-end gap-2">
@@ -85,7 +87,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {kinds.map((kind, i) => {
           const due = reportDueDate(kind, ym);
           const sent = status[i];

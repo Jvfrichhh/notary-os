@@ -37,7 +37,8 @@ export type NavIconKey =
   | "sparkles"
   | "file-pen"
   | "calendar-check"
-  | "database";
+  | "database"
+  | "map";
 
 export interface NavItemConfig {
   label: string;
@@ -112,6 +113,12 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
         label: "Repertorium / Klapper",
         href: "/notary-record",
         icon: "book-open",
+        permissions: [PERMISSIONS.VIEW_REPERTORIUM]
+      },
+      {
+        label: "Buku Akta PPAT",
+        href: "/ppat",
+        icon: "map",
         permissions: [PERMISSIONS.VIEW_REPERTORIUM]
       },
       {

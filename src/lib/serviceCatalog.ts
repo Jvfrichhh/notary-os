@@ -18,7 +18,33 @@ export interface CatalogItem {
   tasks: string[];
   /** Kunci template draft akta (lib/deeds) bila tersedia. */
   deedKey?: string;
+  /** Jenis perbuatan hukum di Buku Daftar Akta PPAT (layanan selaku PPAT). */
+  ppatType?: string;
 }
+
+/** Jenis akta PPAT (bentuk perbuatan hukum) untuk Buku Daftar Akta PPAT. */
+export const PPAT_DEED_TYPES = [
+  "Jual Beli",
+  "Hibah",
+  "Tukar Menukar",
+  "Pemasukan ke Dalam Perusahaan (Inbreng)",
+  "Pembagian Hak Bersama",
+  "Pemberian Hak Tanggungan (APHT)",
+  "Surat Kuasa Membebankan Hak Tanggungan (SKMHT)",
+  "Pemberian HGB/Hak Pakai atas Tanah Hak Milik"
+] as const;
+
+const PPAT_PAJAK = [
+  { label: "SSP PPh Final Penjual/Pemberi (tervalidasi)", isRequired: false },
+  { label: "SSPD BPHTB Pembeli/Penerima (tervalidasi)", isRequired: false }
+];
+const PPAT_TASKS = [
+  "Cek sertifikat ke Kantor Pertanahan",
+  "Validasi pajak (PPh & BPHTB)",
+  "Siapkan akta PPAT",
+  "Jadwalkan penandatanganan",
+  "Sampaikan akta & warkah ke Kantor Pertanahan (7 hari kerja)"
+];
 
 const BASE_TASKS = ["Verifikasi kelengkapan dokumen", "Siapkan draft akta", "Review draft oleh Notaris", "Jadwalkan penandatanganan"];
 
@@ -36,7 +62,8 @@ export const PT_CHANGE_OPTIONS = [
 export const SERVICE_CATALOG: CatalogItem[] = [
   {
     name: "Akta Jual Beli",
-    category: "Pertanahan",
+    category: "PPAT",
+    ppatType: "Jual Beli",
     description: "Jual beli hak atas tanah/bangunan (dibuat selaku PPAT).",
     checklist: [
       { label: "KTP Penjual" },
@@ -44,9 +71,85 @@ export const SERVICE_CATALOG: CatalogItem[] = [
       { label: "Kartu Keluarga" },
       { label: "Sertifikat" },
       { label: "SPPT/PBB" },
-      { label: "Bukti BPHTB", isRequired: false }
+      { label: "Bukti BPHTB", isRequired: false },
+      { label: "SSP PPh Final Penjual (tervalidasi)", isRequired: false }
     ],
-    tasks: ["Verifikasi dokumen penjual", "Verifikasi dokumen pembeli", "Siapkan draft akta", "Jadwalkan penandatanganan"]
+    tasks: PPAT_TASKS
+  },
+  {
+    name: "Akta Hibah (PPAT)",
+    category: "PPAT",
+    ppatType: "Hibah",
+    description: "Hibah hak atas tanah/bangunan (dibuat selaku PPAT).",
+    checklist: [
+      { label: "KTP Pemberi & Penerima Hibah" },
+      { label: "Kartu Keluarga (hubungan keluarga)" },
+      { label: "Persetujuan Pasangan Pemberi", isRequired: false },
+      { label: "Sertifikat Asli" },
+      { label: "SPPT PBB Tahun Berjalan + Bukti Lunas" },
+      ...PPAT_PAJAK
+    ],
+    tasks: PPAT_TASKS
+  },
+  {
+    name: "Akta Tukar Menukar",
+    category: "PPAT",
+    ppatType: "Tukar Menukar",
+    description: "Tukar menukar hak atas tanah (dibuat selaku PPAT).",
+    checklist: [{ label: "KTP Para Pihak" }, { label: "Sertifikat Asli Kedua Bidang" }, { label: "SPPT PBB Kedua Bidang" }, ...PPAT_PAJAK],
+    tasks: PPAT_TASKS
+  },
+  {
+    name: "Akta Pemasukan ke Dalam Perusahaan (Inbreng)",
+    category: "PPAT",
+    ppatType: "Pemasukan ke Dalam Perusahaan (Inbreng)",
+    description: "Penyetoran tanah sebagai modal perseroan (dibuat selaku PPAT).",
+    checklist: [
+      { label: "KTP Pemilik Tanah" },
+      { label: "Akta Pendirian/Perubahan & SK Perseroan" },
+      { label: "Sertifikat Asli" },
+      { label: "SPPT PBB" },
+      ...PPAT_PAJAK
+    ],
+    tasks: PPAT_TASKS
+  },
+  {
+    name: "Akta Pembagian Hak Bersama",
+    category: "PPAT",
+    ppatType: "Pembagian Hak Bersama",
+    description: "Pembagian hak bersama atas tanah (mis. setelah waris) (dibuat selaku PPAT).",
+    checklist: [{ label: "KTP Seluruh Pemegang Hak" }, { label: "Sertifikat Asli" }, { label: "Surat Keterangan Waris / Dasar Hak Bersama" }, { label: "SPPT PBB" }, ...PPAT_PAJAK],
+    tasks: PPAT_TASKS
+  },
+  {
+    name: "Akta Pemberian Hak Tanggungan (APHT)",
+    category: "PPAT",
+    ppatType: "Pemberian Hak Tanggungan (APHT)",
+    description: "Pembebanan hak tanggungan untuk kredit bank (dibuat selaku PPAT).",
+    checklist: [
+      { label: "KTP Debitur/Pemberi HT & Pasangan" },
+      { label: "Perjanjian Kredit / Akta Pengakuan Utang" },
+      { label: "Sertifikat Asli" },
+      { label: "SPPT PBB" },
+      { label: "SKMHT (bila ada)", isRequired: false }
+    ],
+    tasks: ["Cek sertifikat ke Kantor Pertanahan", "Siapkan APHT", "Jadwalkan penandatanganan", "Daftarkan Hak Tanggungan (HT-el) (7 hari kerja)"]
+  },
+  {
+    name: "Surat Kuasa Membebankan Hak Tanggungan (SKMHT)",
+    category: "PPAT",
+    ppatType: "Surat Kuasa Membebankan Hak Tanggungan (SKMHT)",
+    description: "Kuasa membebankan hak tanggungan; wajib diikuti APHT dalam 1 bulan (tanah terdaftar) / 3 bulan (belum terdaftar).",
+    checklist: [{ label: "KTP Pemberi Kuasa & Pasangan" }, { label: "Perjanjian Kredit" }, { label: "Sertifikat / Bukti Hak" }],
+    tasks: ["Siapkan SKMHT", "Jadwalkan penandatanganan", "Tindak lanjuti dengan APHT"]
+  },
+  {
+    name: "Akta Pemberian HGB/Hak Pakai atas Tanah Hak Milik",
+    category: "PPAT",
+    ppatType: "Pemberian HGB/Hak Pakai atas Tanah Hak Milik",
+    description: "Pemberian HGB/Hak Pakai di atas tanah Hak Milik (dibuat selaku PPAT).",
+    checklist: [{ label: "KTP Para Pihak" }, { label: "Sertifikat Hak Milik Asli" }, { label: "SPPT PBB" }, ...PPAT_PAJAK],
+    tasks: PPAT_TASKS
   },
   {
     name: "Akta Perjanjian Pengikatan Jual Beli",

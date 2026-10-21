@@ -13,9 +13,10 @@ import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, reportSentInfo } f
 async function getComplianceAlerts() {
   const today = getJakartaToday();
   const ym = previousYm(today);
-  const [mpd, wasiatSent, data, lateTasks] = await Promise.all([
+  const [mpd, wasiatSent, ppatSent, data, lateTasks] = await Promise.all([
     reportSentInfo("mpd", ym),
     reportSentInfo("wasiat", ym),
+    reportSentInfo("ppat", ym),
     gatherMonth(ym),
     prisma.jobTask.count({ where: { status: { not: "DONE" }, dueDate: { lt: today }, job: { recordStatus: "ACTIVE", status: { not: "CANCELLED" } } } })
   ]);
@@ -23,6 +24,7 @@ async function getComplianceAlerts() {
   if (!mpd) alerts.push(`Laporan bulanan MPD ${monthLabel(ym)} belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.mpd}).`);
   if (!wasiatSent && data.wasiat.length > 0)
     alerts.push(`Laporan ${data.wasiat.length} akta wasiat ${monthLabel(ym)} ke Daftar Pusat Wasiat belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.wasiat}).`);
+  if (!ppatSent) alerts.push(`Laporan bulanan PPAT ${monthLabel(ym)} belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.ppat}).`);
   if (lateTasks > 0) alerts.push(`${lateTasks} tugas bertenggat (termasuk kewajiban hukum setelah akta) sudah lewat tenggat.`);
   return alerts;
 }

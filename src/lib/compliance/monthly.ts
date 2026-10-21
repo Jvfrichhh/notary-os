@@ -15,11 +15,13 @@ import { formatDate, getJakartaToday } from "@/lib/format";
  * entityType MonthlyReport, entityId "<kind>:<YYYY-MM>") -- tanpa tabel baru.
  */
 
-export type ReportKind = "mpd" | "wasiat";
-export const REPORT_DUE_DAY: Record<ReportKind, number> = { mpd: 15, wasiat: 5 };
+export type ReportKind = "mpd" | "wasiat" | "ppat";
+export const REPORT_KINDS: ReportKind[] = ["mpd", "wasiat", "ppat"];
+export const REPORT_DUE_DAY: Record<ReportKind, number> = { mpd: 15, wasiat: 5, ppat: 10 };
 export const REPORT_LABEL: Record<ReportKind, string> = {
   mpd: "Laporan bulanan ke Majelis Pengawas Daerah",
-  wasiat: "Laporan akta wasiat ke Daftar Pusat Wasiat"
+  wasiat: "Laporan akta wasiat ke Daftar Pusat Wasiat",
+  ppat: "Laporan bulanan PPAT (Kantor Pertanahan, Kanwil BPN, KPP, Bapenda)"
 };
 
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -54,7 +56,7 @@ export function reportDueDate(kind: ReportKind, ym: string): Date {
 export async function gatherMonth(ym: string) {
   const { start, end } = monthRange(ym);
   const range = { gte: start, lt: end };
-  const [akta, legalisasi, waarmerking, wasiat] = await Promise.all([
+  const [akta, legalisasi, waarmerking, wasiat, ppat] = await Promise.all([
     prisma.repertorium.findMany({
       where: { deedDate: range, recordStatus: "ACTIVE" },
       orderBy: [{ year: "asc" }, { sequenceNumber: "asc" }],
@@ -74,9 +76,31 @@ export async function gatherMonth(ym: string) {
       where: { date: range, recordStatus: "ACTIVE" },
       orderBy: { date: "asc" },
       select: { id: true, deedNumber: true, date: true, wasiatType: true, status: true, client: { select: { fullName: true } } }
+    }),
+    prisma.ppatDeed.findMany({
+      where: { deedDate: range, recordStatus: "ACTIVE" },
+      orderBy: [{ year: "asc" }, { sequence: "asc" }],
+      select: {
+        deedNumber: true,
+        deedDate: true,
+        deedType: true,
+        partyFrom: true,
+        partyTo: true,
+        rightType: true,
+        location: true,
+        landArea: true,
+        buildingArea: true,
+        transactionValue: true,
+        njopValue: true,
+        nop: true,
+        sspDate: true,
+        sspAmount: true,
+        sspdDate: true,
+        sspdAmount: true
+      }
     })
   ]);
-  return { akta, legalisasi, waarmerking, wasiat };
+  return { akta, legalisasi, waarmerking, wasiat, ppat };
 }
 
 export type MonthData = Awaited<ReturnType<typeof gatherMonth>>;
@@ -98,10 +122,10 @@ function tanggalPanjang(d: Date): string {
   return `${d.getUTCDate()} ${BULAN[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
-function signature(): DocBlock[] {
+function signature(role = "Notaris"): DocBlock[] {
   return [
     { t: "p", text: `${NOTARIS.kota.replace(/^Kota |^Kabupaten /, "")}, ${tanggalPanjang(getJakartaToday())}`, align: "right", spaceAfter: 0 },
-    { t: "p", text: "Notaris,", align: "right", spaceAfter: 1200 },
+    { t: "p", text: `${role},`, align: "right", spaceAfter: 1200 },
     { t: "p", text: NOTARIS.namaSingkat, bold: true, align: "right" }
   ];
 }
@@ -199,4 +223,49 @@ export function buildWasiatReport(ym: string, d: MonthData): Buffer {
     ...signature()
   ];
   return buildSimpleDocx(blocks, { title: `Laporan Wasiat ${bulan}` });
+}
+
+const rpOrDash = (v: { toString(): string } | null) => (v == null ? "-" : `Rp ${Number(v.toString()).toLocaleString("id-ID")}`);
+
+/** Laporan bulanan PPAT: daftar akta bulan itu (NIHIL bila kosong) + tembusan. */
+export function buildPpatReport(ym: string, d: MonthData): Buffer {
+  const bulan = monthLabel(ym);
+  const blocks: DocBlock[] = [
+    { t: "p", text: "Kepada Yth.", spaceAfter: 0 },
+    { t: "p", text: `**Kepala Kantor Pertanahan ${NOTARIS.kota}**`, spaceAfter: 0 },
+    { t: "p", text: "di Tempat", spaceAfter: 240 },
+    { t: "p", text: `Perihal: Laporan Bulanan Akta PPAT Bulan ${bulan}${d.ppat.length ? "" : " (NIHIL)"}`, bold: true, spaceAfter: 240 },
+    {
+      t: "p",
+      align: "both",
+      text: `Yang bertanda tangan di bawah ini, ${NOTARIS.namaLengkap}, Pejabat Pembuat Akta Tanah dengan daerah kerja ${NOTARIS.kota}, dengan ini menyampaikan laporan akta yang dibuat pada bulan ${bulan} sebanyak ${d.ppat.length ? `${d.ppat.length} akta` : "NIHIL"}, dengan rincian terlampir.`
+    },
+    { t: "p", text: "Tembusan:", spaceAfter: 0 },
+    { t: "p", text: "1. Kepala Kantor Wilayah Badan Pertanahan Nasional Provinsi;", spaceAfter: 0 },
+    { t: "p", text: "2. Kepala Kantor Pelayanan Pajak Pratama setempat;", spaceAfter: 0 },
+    { t: "p", text: "3. Kepala Badan Pendapatan Daerah (BPHTB) setempat.", spaceAfter: 360 },
+    ...signature("Pejabat Pembuat Akta Tanah"),
+    { t: "pageBreak" },
+    { t: "p", text: `LAMPIRAN — DAFTAR AKTA PPAT BULAN ${bulan.toUpperCase()}`, bold: true, align: "center" },
+    {
+      t: "table",
+      header: ["No. & Tgl Akta", "Perbuatan Hukum", "Pihak yang Mengalihkan / Memberikan", "Pihak yang Menerima", "Hak, Letak & Luas", "Nilai Transaksi / NJOP", "SSP PPh / SSPD BPHTB"],
+      widths: [1.4, 1.5, 1.8, 1.8, 2.2, 1.6, 1.8],
+      rows: d.ppat.length
+        ? d.ppat.map((r) => [
+            `${r.deedNumber}\n${formatDate(r.deedDate)}`,
+            r.deedType,
+            r.partyFrom,
+            r.partyTo,
+            [r.rightType, r.location, r.landArea ? `LT ${r.landArea}` : "", r.buildingArea ? `LB ${r.buildingArea}` : "", r.nop ? `NOP ${r.nop}` : ""]
+              .filter(Boolean)
+              .join("\n"),
+            `${rpOrDash(r.transactionValue)}\nNJOP ${rpOrDash(r.njopValue)}`,
+            `${r.sspDate ? `${formatDate(r.sspDate)} ${rpOrDash(r.sspAmount)}` : "-"}\n${r.sspdDate ? `${formatDate(r.sspdDate)} ${rpOrDash(r.sspdAmount)}` : "-"}`
+          ])
+        : [["-", "NIHIL", "", "", "", "", ""]]
+    },
+    ...signature("Pejabat Pembuat Akta Tanah")
+  ];
+  return buildSimpleDocx(blocks, { title: `Laporan Bulanan PPAT ${bulan}`, landscape: true });
 }

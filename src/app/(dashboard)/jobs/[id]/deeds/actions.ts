@@ -13,6 +13,8 @@ import { syncDraftToVault } from "@/lib/deeds/vault";
 import { autoSetJobStatus, notifyJobPeople } from "@/lib/jobAutomation";
 import { nextDeedNumber } from "@/lib/deeds/numbering";
 import { createStatutoryTasks } from "@/lib/compliance/statutory";
+import { draftHash } from "@/lib/deeds/review";
+import { createClientNotification } from "@/lib/clientNotifications";
 import { PT_CHANGE_OPTIONS } from "@/lib/serviceCatalog";
 import type { Person } from "@/lib/deeds/schema";
 import type { ExtractedFields } from "@/lib/ai/documentFields";
@@ -328,4 +330,27 @@ export async function suggestDeedNumber(ymd: string): Promise<string> {
   await assertPermission(user.id, PERMISSIONS.EDIT_MINUTA);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
   return nextDeedNumber(ymd);
+}
+
+/** Bagikan draft ke portal klien untuk dibaca & disetujui (versi isian saat ini). */
+export async function shareDraftWithClient(draftId: string) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  const draft = await prisma.deedDraft.findUnique({
+    where: { id: draftId },
+    select: { id: true, data: true, deedId: true, title: true, job: { select: { id: true, jobNumber: true, clientId: true } } }
+  });
+  if (!draft || draft.deedId) return;
+  const review = await prisma.deedDraftReview.create({ data: { draftId, sharedById: user.id, dataHash: draftHash(draft.data) } });
+  await createClientNotification({
+    clientId: draft.job.clientId,
+    type: "info",
+    message: `Draft ${draft.title ?? "akta"} untuk ${draft.job.jobNumber} siap Anda baca. Mohon periksa nama, identitas, dan angka, lalu setujui atau kirim koreksi.`,
+    relatedEntityType: "Job",
+    relatedEntityId: draft.job.id
+  });
+  await writeAuditLog({ userId: user.id, action: "deed_draft_shared", entityType: "DeedDraft", entityId: draftId, newValue: { reviewId: review.id } });
+  revalidatePath(`/jobs/${draft.job.id}/deeds/${draftId}`);
+  revalidatePath(`/portal/jobs/${draft.job.id}`);
+  redirect(`/jobs/${draft.job.id}/deeds/${draftId}?shared=1`);
 }

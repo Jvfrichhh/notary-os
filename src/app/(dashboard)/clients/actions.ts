@@ -146,6 +146,10 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
     service = checked.service;
   }
 
+  if (formData.get("dataConsent") !== "on") {
+    return { formError: "Centang persetujuan pemrosesan data pribadi klien (UU PDP) sebelum menyimpan." };
+  }
+
   // Klien lama datang lagi: jangan buat data ganda, arahkan ke halaman kliennya.
   const nikInput = toNullable(parsed.data.nik ?? "");
   if (nikInput && formData.get("allowDuplicateNik") !== "on") {
@@ -186,7 +190,10 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
           companyName: toNullable(data.companyName),
           npwp: toNullable(data.npwp),
           notes: toNullable(data.notes),
-          createdBy: user.id
+          createdBy: user.id,
+          // Persetujuan pemrosesan data pribadi (UU PDP) dicatat saat pendaftaran.
+          dataConsentAt: new Date(),
+          dataConsentById: user.id
         }
       });
     } catch (err) {
@@ -352,5 +359,16 @@ export async function restoreClient(clientId: string) {
   });
 
   revalidatePath("/clients");
+  revalidatePath(`/clients/${clientId}`);
+}
+
+/** Catat persetujuan data pribadi untuk klien lama (sebelum fitur ini ada). */
+export async function recordDataConsent(clientId: string) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
+  const c = await prisma.client.findUnique({ where: { id: clientId }, select: { dataConsentAt: true } });
+  if (!c || c.dataConsentAt) return;
+  await prisma.client.update({ where: { id: clientId }, data: { dataConsentAt: new Date(), dataConsentById: user.id } });
+  await writeAuditLog({ userId: user.id, action: "client_data_consent", entityType: "Client", entityId: clientId });
   revalidatePath(`/clients/${clientId}`);
 }

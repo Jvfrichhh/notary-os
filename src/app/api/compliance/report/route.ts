@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
-import { buildMpdReport, buildWasiatReport, gatherMonth, isYm } from "@/lib/compliance/monthly";
+import { buildMpdReport, buildPpatReport, buildWasiatReport, gatherMonth, isYm } from "@/lib/compliance/monthly";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,12 +18,13 @@ export async function GET(req: NextRequest) {
   }
   const kind = req.nextUrl.searchParams.get("kind");
   const month = req.nextUrl.searchParams.get("month");
-  if ((kind !== "mpd" && kind !== "wasiat") || !isYm(month)) {
+  if ((kind !== "mpd" && kind !== "wasiat" && kind !== "ppat") || !isYm(month)) {
     return NextResponse.json({ error: "Parameter tidak valid." }, { status: 400 });
   }
   const data = await gatherMonth(month);
-  const buffer = kind === "mpd" ? buildMpdReport(month, data) : buildWasiatReport(month, data);
-  const name = kind === "mpd" ? `Laporan_Bulanan_MPD_${month}.docx` : `Laporan_Wasiat_${month}.docx`;
+  const buffer = kind === "mpd" ? buildMpdReport(month, data) : kind === "ppat" ? buildPpatReport(month, data) : buildWasiatReport(month, data);
+  const name =
+    kind === "mpd" ? `Laporan_Bulanan_MPD_${month}.docx` : kind === "ppat" ? `Laporan_Bulanan_PPAT_${month}.docx` : `Laporan_Wasiat_${month}.docx`;
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

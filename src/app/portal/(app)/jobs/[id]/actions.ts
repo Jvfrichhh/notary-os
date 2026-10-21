@@ -6,6 +6,7 @@ import { requireClientAccount } from "@/lib/portalSession";
 import { issueUploadTicket, resolveUploadFromForm, type TicketResult } from "@/lib/upload/directUpload";
 import { writeAuditLog } from "@/lib/audit";
 import { notifyJobPeople } from "@/lib/jobAutomation";
+import { draftHash } from "@/lib/deeds/review";
 
 export interface PortalUploadState {
   error?: string;
@@ -150,4 +151,50 @@ export async function uploadChecklistDocument(
   revalidatePath("/portal");
   revalidatePath(`/jobs/${job.id}`);
   return { success: `"${upload.fileName}" berhasil dikirim dan menunggu pemeriksaan kantor.` };
+}
+
+/**
+ * Klien menyetujui draft akta atau mengirim koreksi. Hanya untuk draft pada
+ * pekerjaan miliknya, review terakhir yang belum diputuskan, dan isi draft
+ * yang masih sama dengan saat dibagikan.
+ */
+export async function respondDraftReview(reviewId: string, decision: "APPROVED" | "CHANGES", formData: FormData) {
+  const principal = await requireClientAccount();
+  const note = String(formData.get("note") ?? "").trim().slice(0, 2000);
+  const review = await prisma.deedDraftReview.findFirst({
+    where: { id: reviewId, draft: { job: { clientId: principal.clientId, recordStatus: "ACTIVE" } } },
+    select: {
+      id: true,
+      decision: true,
+      dataHash: true,
+      draftId: true,
+      draft: { select: { data: true, title: true, deedId: true, job: { select: { id: true, jobNumber: true } } } }
+    }
+  });
+  if (!review || review.decision || review.draft.deedId) return;
+  if (decision === "CHANGES" && note.length < 3) return;
+  const latest = await prisma.deedDraftReview.findFirst({ where: { draftId: review.draftId }, orderBy: { sharedAt: "desc" }, select: { id: true } });
+  if (latest?.id !== review.id || draftHash(review.draft.data) !== review.dataHash) return; // versi lama
+
+  await prisma.deedDraftReview.update({
+    where: { id: review.id },
+    data: { decision, note: decision === "CHANGES" ? note : note || null, decidedAt: new Date(), decidedByAccountId: principal.accountId }
+  });
+  await writeAuditLog({
+    userId: null,
+    action: decision === "APPROVED" ? "deed_draft_client_approved" : "deed_draft_client_changes",
+    entityType: "DeedDraft",
+    entityId: review.draftId,
+    newValue: { reviewId: review.id, clientAccountId: principal.accountId, note: note || undefined }
+  });
+  const job = review.draft.job;
+  await notifyJobPeople(
+    job.id,
+    decision === "APPROVED"
+      ? `Klien ${principal.client.fullName} MENYETUJUI draft ${review.draft.title ?? "akta"} (${job.jobNumber}).`
+      : `Klien ${principal.client.fullName} minta koreksi draft ${review.draft.title ?? "akta"} (${job.jobNumber}): ${note}`,
+    { pic: true, notary: true }
+  );
+  revalidatePath(`/portal/jobs/${job.id}`);
+  revalidatePath(`/jobs/${job.id}/deeds/${review.draftId}`);
 }

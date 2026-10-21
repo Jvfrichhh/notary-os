@@ -12,7 +12,7 @@ import { isYm, monthRange, type ReportKind } from "@/lib/compliance/monthly";
 export async function markReportSent(kind: ReportKind, ym: string, formData: FormData) {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
-  if ((kind !== "mpd" && kind !== "wasiat") || !isYm(ym)) return;
+  if ((kind !== "mpd" && kind !== "wasiat" && kind !== "ppat") || !isYm(ym)) return;
   const note = String(formData.get("note") ?? "").trim().slice(0, 300);
   await writeAuditLog({
     userId: user.id,

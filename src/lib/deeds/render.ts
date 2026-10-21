@@ -26,7 +26,12 @@ export function applyDefaults(fields: FieldDef[], data: DeedData): DeedData {
 }
 
 /** Hasilkan .docx minuta atau salinan dari template + data. */
-export function renderDeed(template: DeedTemplate, rawData: DeedData, variant: Variant): { buffer: Buffer; pages: number; placeholders: number } {
+export function renderDeed(
+  template: DeedTemplate,
+  rawData: DeedData,
+  variant: Variant,
+  opts: { notes?: boolean } = {}
+): { buffer: Buffer; pages: number; placeholders: number } {
   const data = applyDefaults(sectionsFor(template).flatMap((s) => s.fields), rawData);
   const blocks = template.build(data, variant);
   const { title, body, closingIndex } = blocksToLines(blocks);
@@ -36,7 +41,8 @@ export function renderDeed(template: DeedTemplate, rawData: DeedData, variant: V
   const placeholders = body.reduce((n, l) => n + l.segs.reduce((m, s) => m + (s.text.match(/\[\.\.\.\]/g)?.length ?? 0), 0), 0);
   const pages = 1 + lines.filter((l) => l.pageBreakBefore).length;
   const notes =
-    variant === "minuta"
+    // Halaman catatan penyusunan hanya untuk kantor (tidak untuk draft yang dibaca klien).
+    variant === "minuta" && opts.notes !== false
       ? [
           `Draft otomatis Notary OS — ${template.title}. Isi dan rumusan hukum WAJIB diperiksa Notaris sebelum dipakai.`,
           placeholders > 0

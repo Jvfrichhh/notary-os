@@ -27,7 +27,8 @@ import {
   Menu,
   X,
   CalendarCheck,
-  Database
+  Database,
+  Map as MapIcon
 } from "lucide-react";
 
 // Pemetaan key ikon (string, aman dikirim server -> client) ke komponen lucide.
@@ -51,7 +52,8 @@ const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
   sparkles: Sparkles,
   "file-pen": PenLine,
   "calendar-check": CalendarCheck,
-  database: Database
+  database: Database,
+  map: MapIcon
 };
 
 interface SidebarProps {

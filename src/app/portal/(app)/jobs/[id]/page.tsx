@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { PORTAL_JOB_STATUS, portalStatusLabel } from "@/lib/portalLabels";
+import { draftHash, reviewState } from "@/lib/deeds/review";
+import { respondDraftReview } from "./actions";
 import type { JobStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +35,15 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
       createdAt: true,
       serviceType: { select: { name: true, category: true } },
       pic: { select: { name: true } },
+      deedDrafts: {
+        where: { deedId: null, reviews: { some: {} } },
+        select: {
+          id: true,
+          title: true,
+          data: true,
+          reviews: { orderBy: { sharedAt: "desc" }, take: 1, select: { id: true, dataHash: true, decision: true, note: true, sharedAt: true, decidedAt: true } }
+        }
+      },
       payments: {
         where: { recordStatus: "ACTIVE" },
         select: {
@@ -126,6 +137,59 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
             <Row label="Penanggung jawab" value={job.pic?.name ?? "—"} />
           </dl>
         </Card>
+
+        {job.deedDrafts.map((d) => {
+          const r = d.reviews[0];
+          const state = reviewState(r, draftHash(d.data));
+          return (
+            <Card key={d.id}>
+              <h2 className="mb-1 text-sm font-semibold text-foreground">Draft {d.title ?? "akta"} untuk Anda periksa</h2>
+              {state === "outdated" ? (
+                <p className="text-sm text-muted-foreground">Kantor sedang memperbarui draft ini. Anda akan diberi tahu bila versi baru siap.</p>
+              ) : (
+                <>
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    Periksa nama, NIK, alamat, objek, dan angka. Draft belum berlaku sampai ditandatangani di hadapan Notaris.
+                  </p>
+                  <a
+                    href={`/api/portal/deeds/${r.id}`}
+                    className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                  >
+                    <Download className="h-4 w-4" /> Unduh draft (Word)
+                  </a>
+                  {state === "approved" && <p className="text-sm text-status-on-track">Anda sudah menyetujui draft ini ({formatDateTime(r.decidedAt)}).</p>}
+                  {state === "changes" && (
+                    <p className="text-sm text-foreground">
+                      Koreksi Anda sudah dikirim: <span className="text-muted-foreground">{r.note}</span>. Kantor akan membagikan versi perbaikan.
+                    </p>
+                  )}
+                  {state === "waiting" && (
+                    <div className="space-y-2">
+                      <form action={respondDraftReview.bind(null, r.id, "APPROVED")}>
+                        <button type="submit" className="w-full rounded-md bg-status-on-track py-2 text-sm font-medium text-white hover:opacity-90">
+                          Saya sudah membaca dan setuju
+                        </button>
+                      </form>
+                      <form action={respondDraftReview.bind(null, r.id, "CHANGES")} className="space-y-2">
+                        <textarea
+                          name="note"
+                          required
+                          minLength={3}
+                          rows={3}
+                          placeholder="Tulis yang perlu dikoreksi (mis. ejaan nama, alamat, luas tanah)"
+                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                        />
+                        <button type="submit" className="w-full rounded-md border border-border py-2 text-sm font-medium hover:bg-muted">
+                          Kirim koreksi
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+          );
+        })}
 
         {job.payments.map((p) => (
           <Card key={p.id}>

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { formatDate, getJakartaToday } from "@/lib/format";
-import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, REPORT_LABEL, reportSentInfo, type ReportKind } from "@/lib/compliance/monthly";
+import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, REPORT_KINDS, REPORT_LABEL, reportSentInfo } from "@/lib/compliance/monthly";
 import { createDatabaseBackup, lastBackupAt } from "@/lib/compliance/backup";
 
 /**
@@ -51,7 +51,7 @@ export async function runDailyChecks() {
   const ym = previousYm(today);
   const day = today.getUTCDate();
   const data = await gatherMonth(ym);
-  for (const kind of ["mpd", "wasiat"] as ReportKind[]) {
+  for (const kind of REPORT_KINDS) {
     const due = REPORT_DUE_DAY[kind];
     if (kind === "wasiat" && data.wasiat.length === 0) continue;
     // Pengingat mulai 5 hari sebelum tenggat, berlanjut setelah tenggat terlewat.

@@ -36,8 +36,7 @@ function para(b: Extract<DocBlock, { t: "p" }>): string {
   return `<w:p><w:pPr><w:jc w:val="${b.align ?? "left"}"/><w:spacing w:after="${b.spaceAfter ?? 120}"/></w:pPr>${runs(b.text, b.bold, b.size)}</w:p>`;
 }
 
-function table(b: Extract<DocBlock, { t: "table" }>): string {
-  const total = 9638; // lebar isi A4 dengan margin 2 cm (twip)
+function table(b: Extract<DocBlock, { t: "table" }>, total: number): string {
   const widths = b.widths ?? b.header.map(() => 1);
   const sum = widths.reduce((a, c) => a + c, 0);
   const tw = widths.map((w) => Math.round((w / sum) * total));
@@ -54,10 +53,11 @@ function table(b: Extract<DocBlock, { t: "table" }>): string {
 }
 
 export function buildSimpleDocx(blocks: DocBlock[], opts: { title: string; landscape?: boolean } = { title: "Dokumen" }): Buffer {
-  const body = blocks
-    .map((b) => (b.t === "p" ? para(b) : b.t === "table" ? table(b) : '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'))
-    .join("");
   const [w, h] = opts.landscape ? [16838, 11906] : [11906, 16838];
+  const contentWidth = w - 2 * 1134; // lebar isi dengan margin 2 cm (twip)
+  const body = blocks
+    .map((b) => (b.t === "p" ? para(b) : b.t === "table" ? table(b, contentWidth) : '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'))
+    .join("");
   const sect = `<w:sectPr><w:pgSz w:w="${w}" w:h="${h}"${opts.landscape ? ' w:orient="landscape"' : ""}/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>`;
   const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}${sect}</w:body></w:document>`;

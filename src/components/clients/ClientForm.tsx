@@ -153,6 +153,17 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
         />
       )}
 
+      {!client && (
+        <label className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
+          <input type="checkbox" name="dataConsent" required className="mt-1" />
+          <span>
+            Klien sudah diberi penjelasan dan <strong>menyetujui pemrosesan data pribadinya</strong> (KTP, KK, dan dokumen lain) untuk keperluan
+            pembuatan akta dan layanan kantor ini, sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.
+            <span className="mt-0.5 block text-xs text-muted-foreground">Formulir persetujuan untuk ditandatangani klien bisa diunduh di halaman klien.</span>
+          </span>
+        </label>
+      )}
+
       <div className="flex items-center gap-3">
         <SubmitButton label={client ? "Simpan Perubahan" : newJob ? "Simpan Klien & Pekerjaan" : "Simpan Klien"} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">

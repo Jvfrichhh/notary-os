@@ -173,6 +173,9 @@ model Client {
   npwp         String?
   notes        String?
   status       RecordStatus @default(ACTIVE)
+  /// Persetujuan pemrosesan data pribadi (UU PDP): kapan & dicatat oleh siapa.
+  dataConsentAt   DateTime?
+  dataConsentById String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   createdBy    String?
@@ -189,6 +192,8 @@ model Client {
   appointments Appointment[]
   accounts      ClientAccount[]
   notifications ClientNotification[]
+
+  ppatDeeds PpatDeed[]
 
   @@index([fullName])
   @@map("clients")
@@ -336,6 +341,7 @@ model Job {
   wasiat       Wasiat[]
   payments     Payment[]
   appointments Appointment[]
+  ppatDeeds  PpatDeed[]
   deedDrafts   DeedDraft[]
 
   @@index([status])
@@ -800,6 +806,63 @@ model DeedDraft {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  reviews DeedDraftReview[]
+
   @@index([jobId])
   @@map("deed_drafts")
+}
+
+/// Buku Daftar Akta PPAT (terpisah dari repertorium notaris). Nomor akta PPAT
+/// berurut per tahun: "<urut>/<tahun>".
+model PpatDeed {
+  id               String       @id @default(cuid())
+  year             Int
+  sequence         Int
+  deedNumber       String       @unique
+  deedDate         DateTime
+  deedType         String
+  jobId            String?
+  job              Job?         @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  clientId         String?
+  client           Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  partyFrom        String
+  partyTo          String
+  rightType        String?
+  location         String?
+  landArea         String?
+  buildingArea     String?
+  transactionValue Decimal?     @db.Decimal(16, 2)
+  njopValue        Decimal?     @db.Decimal(16, 2)
+  nop              String?
+  sspDate          DateTime?
+  sspAmount        Decimal?     @db.Decimal(16, 2)
+  sspdDate         DateTime?
+  sspdAmount       Decimal?     @db.Decimal(16, 2)
+  submittedToBpnAt DateTime?
+  notes            String?
+  recordStatus     RecordStatus @default(ACTIVE)
+  createdById      String?
+  createdAt        DateTime     @default(now())
+
+  @@unique([year, sequence])
+  @@index([deedDate])
+  @@map("ppat_deeds")
+}
+
+/// Draft akta yang dibagikan ke portal klien untuk dibaca & disetujui.
+model DeedDraftReview {
+  id                 String    @id @default(cuid())
+  draftId            String
+  draft              DeedDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  sharedById         String?
+  sharedAt           DateTime  @default(now())
+  /// Sidik isi draft saat dibagikan; berubah -> klien membaca versi lama.
+  dataHash           String
+  decision           String?
+  note               String?
+  decidedAt          DateTime?
+  decidedByAccountId String?
+
+  @@index([draftId])
+  @@map("deed_draft_reviews")
 }

@@ -29,6 +29,7 @@ import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { formatDateTime as fmtDeedTime } from "@/lib/format";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
+import { createInvoiceFromJob } from "@/app/(dashboard)/payments/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -626,28 +627,52 @@ export default async function JobDetailPage({
             <Card>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-foreground">Pembayaran</h2>
-                {canEditFinance && job.payments.length === 0 && (
-                  <Link href={`/payments/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
-                    + Buat tagihan
-                  </Link>
-                )}
               </div>
               {job.payments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada data pembayaran untuk job ini.</p>
+                canEditFinance ? (
+                  // Belum ada tagihan: buat langsung dari sini (biaya jasa + DP bila sudah diterima).
+                  <form action={createInvoiceFromJob.bind(null, job.id)} className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Belum ada tagihan. Isi biaya jasa untuk membuat tagihan bernomor.</p>
+                    <label className="block text-sm">
+                      <span className="mb-1 block text-xs text-muted-foreground">Biaya jasa (Rp)</span>
+                      <input name="fee" inputMode="numeric" required placeholder="mis. 7500000" className={fieldCls} />
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="block text-sm">
+                        <span className="mb-1 block text-xs text-muted-foreground">DP diterima (Rp)</span>
+                        <input name="dp" inputMode="numeric" placeholder="0" className={fieldCls} />
+                      </label>
+                      <label className="block text-sm">
+                        <span className="mb-1 block text-xs text-muted-foreground">Cara bayar</span>
+                        <select name="method" defaultValue="Transfer bank" className={fieldCls}>
+                          {["Tunai", "Transfer bank", "QRIS", "Cek / Giro", "Lainnya"].map((m) => (
+                            <option key={m}>{m}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                      Buat tagihan
+                    </button>
+                  </form>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Belum ada tagihan untuk pekerjaan ini.</p>
+                )
               ) : (
                 job.payments.map((p) => (
                   <dl key={p.id} className="space-y-1.5 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">{p.invoiceNumber ?? "Tagihan"}</span>
-                      <Link href={`/payments/${p.id}`} className="text-xs font-medium text-primary hover:underline">
-                        {canEditFinance ? "Catat bayar / kuitansi" : "Detail"}
-                      </Link>
-                    </div>
+                    <p className="text-xs text-muted-foreground">{p.invoiceNumber ?? "Tagihan"}</p>
                     <Row label="Total" value={formatCurrency(p.totalAmount)} />
                     <Row label="DP" value={formatCurrency(p.downPayment)} />
                     <Row label="Dibayar" value={formatCurrency(p.paidAmount)} />
                     <Row label="Sisa" value={formatCurrency(p.remainingAmount)} />
                     <Row label="Status" value={formatStatusLabel(p.status)} />
+                    <Link
+                      href={`/payments/${p.id}`}
+                      className="mt-2 block rounded-md border border-primary py-1.5 text-center text-sm font-medium text-primary hover:bg-primary/10"
+                    >
+                      {canEditFinance ? "Catat pembayaran / kuitansi" : "Lihat tagihan & kuitansi"}
+                    </Link>
                   </dl>
                 ))
               )}

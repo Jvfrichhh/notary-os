@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
-import { ensureInvoiceNumber, recordReceipt, voidReceipt } from "@/lib/billing";
+import { createInvoiceForJob, ensureInvoiceNumber, recordReceipt, voidReceipt } from "@/lib/billing";
 import { fromDateInput, getJakartaToday } from "@/lib/format";
 
 function toNullable(value: FormDataEntryValue | null | undefined) {
@@ -250,4 +250,29 @@ export async function cancelReceipt(receiptId: string, formData: FormData) {
   revalidatePath("/payments");
   if (r.payment.jobId) revalidatePath(`/jobs/${r.payment.jobId}`);
   redirect(`/payments/${r.paymentId}?ok=voided`);
+}
+
+/** Buat tagihan langsung dari kartu Pembayaran di halaman job. */
+export async function createInvoiceFromJob(jobId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_FINANCE);
+  const num = (k: string) => Math.round(Number(String(formData.get(k) ?? "").replace(/\D/g, "")) || 0);
+  const fee = num("fee");
+  const dp = num("dp");
+  const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, clientId: true, payments: { select: { id: true } } } });
+  if (!job || fee <= 0) redirect(`/jobs/${jobId}`);
+  // Sudah ada tagihan (mis. klik dua kali) -> buka tagihan yang ada.
+  if (job.payments.length > 0) redirect(`/payments/${job.payments[0].id}`);
+  const p = await createInvoiceForJob({
+    clientId: job.clientId,
+    jobId,
+    total: fee,
+    downPayment: dp,
+    method: toNullable(formData.get("method")),
+    userId: user.id
+  });
+  await writeAuditLog({ userId: user.id, action: "payment_created", entityType: "Payment", entityId: p.id, newValue: { jobId, total: fee, dp } });
+  revalidatePath("/payments");
+  revalidatePath(`/jobs/${jobId}`);
+  redirect(`/payments/${p.id}?ok=created`);
 }

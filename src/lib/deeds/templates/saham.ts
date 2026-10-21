@@ -5,8 +5,13 @@ import type { Person } from "../schema";
 import { ayat, daftarPenghadap, denganPasangan, dikenal, domisili, judul, komparisi, list, namaTebal, pasal, pembuka, penutup, person, str } from "../common";
 import type { FieldDef, SectionDef } from "../schema";
 import { nomorPenghadap, parties, partyList, peranDari } from "../parties";
-import { formatThousands, rupiah, tanggalHuruf, terbilang } from "../words";
+import { angka, formatThousands, rupiah, tanggalHuruf, terbilang } from "../words";
 import { PT_CHANGE_OPTIONS } from "../../serviceCatalog";
+
+type Pengurus = { jabatan?: string; orang?: Person };
+type Alih = { dari?: string; kepada?: string; jumlah?: string };
+type Kbli = { kode?: string; judul?: string };
+type Pemegang = { nama?: string; jumlah?: string };
 
 const num = (v: unknown) => Number(str(v).replace(/[^\d]/g, "")) || 0;
 const lembar = (n: number) => (n ? `${terbilang(n)} (${formatThousands(n)}) saham` : "[...] saham");
@@ -39,7 +44,20 @@ export const peralihanSaham: DeedTemplate = {
     {
       title: "Saham & Harga",
       fields: [
-        { kind: "number", key: "jumlah", label: "Jumlah saham yang dijual" },
+        { kind: "number", key: "jumlah", label: "Jumlah saham yang dijual (seluruhnya)" },
+        {
+          kind: "list",
+          key: "rincian",
+          label: "Rincian per penjual/pembeli (isi bila penjual atau pembeli lebih dari satu)",
+          itemLabel: "Rincian",
+          min: 0,
+          max: 9,
+          fields: [
+            { kind: "text", key: "dari", label: "Dari (nama penjual)" },
+            { kind: "text", key: "kepada", label: "Kepada (nama pembeli)" },
+            { kind: "number", key: "jumlah", label: "Jumlah saham" }
+          ]
+        },
         { kind: "money", key: "harga", label: "Harga seluruhnya (Rp)" },
         { kind: "textarea", key: "persetujuan", label: "Dasar persetujuan pemegang saham", wide: true, placeholder: "Keputusan Sirkuler Pemegang Saham tanggal 15 Oktober 2026" }
       ]
@@ -60,7 +78,9 @@ export const peralihanSaham: DeedTemplate = {
     const pembeli = parties(d.pembeli);
     const pasangan = person(d.pasangan);
     const ada = !!str(pasangan.nama);
-    const jumlah = num(d.jumlah);
+    const rincian = list<Alih>(d.rincian).filter((r) => str(r.dari) || str(r.kepada) || num(r.jumlah));
+    const jumlah = rincian.length ? rincian.reduce((t, r) => t + num(r.jumlah), 0) : num(d.jumlah);
+    const nominal = num(d.nominal);
     const pen = [
       ...denganPasangan(penjual.map((x) => x.p), pasangan, "").map((x, i) => (i < penjual.length ? { ...x, peran: peranDari(penjual[i]) } : x)),
       ...pembeli.map((x) => ({ p: x.p, peran: peranDari(x) }))
@@ -72,15 +92,27 @@ export const peralihanSaham: DeedTemplate = {
       ...daftarPenghadap(pen),
       {
         t: "p",
-        text: `Penghadap ${nomorPenghadap(1, penjual.length)}${ada ? " (dengan persetujuan pasangannya)" : ""} untuk selanjutnya disebut **PENJUAL**; dan penghadap ${nomorPenghadap(n1 + 1, pembeli.length)} untuk selanjutnya disebut **PEMBELI**.`
+        text: `Penghadap ${nomorPenghadap(1, penjual.length)}${ada ? `, dengan persetujuan penghadap ${nomorPenghadap(penjual.length + 1, 1)},` : ""} untuk selanjutnya disebut **PENJUAL**; dan penghadap ${nomorPenghadap(n1 + 1, pembeli.length)} untuk selanjutnya disebut **PEMBELI**.`
       },
       dikenal(pen.length),
       { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
       { t: "item", marker: "a.", text: `bahwa Penjual adalah pemilik sah atas ${lembar(jumlah)} dalam ${premisPt(d)};` },
-      { t: "item", marker: "b.", text: `bahwa penjualan saham tersebut telah memperoleh persetujuan sebagaimana ternyata dari ${str(d.persetujuan) || "[...]"}, serta telah memenuhi ketentuan anggaran dasar Perseroan tentang penawaran saham;` },
+      { t: "item", marker: "b.", text: `bahwa penjualan saham tersebut telah ditawarkan terlebih dahulu kepada pemegang saham lain sesuai ketentuan anggaran dasar Perseroan, dan telah memperoleh persetujuan pemegang saham Perseroan sebagaimana ternyata dari ${str(d.persetujuan).replace(/[\s.;,]+$/, "") || "[...]"};` },
       { t: "p", text: "Selanjutnya para penghadap menerangkan telah sepakat mengadakan jual beli saham dengan syarat-syarat sebagai berikut:" },
       ...pasal(1, "Jual Beli"),
-      { t: "p", text: `Penjual menjual dan menyerahkan kepada Pembeli, dan Pembeli membeli dan menerima penyerahan dari Penjual, ${lembar(jumlah)} dalam Perseroan dengan nilai nominal seluruhnya sebesar ${rupiah(jumlah * num(d.nominal))}, untuk selanjutnya disebut **SAHAM**.` },
+      ...(rincian.length
+        ? ([
+            { t: "p", text: `Penjual menjual dan menyerahkan kepada Pembeli, dan Pembeli membeli dan menerima penyerahan dari Penjual, ${lembar(jumlah)} dalam Perseroan dengan nilai nominal seluruhnya sebesar ${rupiah(jumlah * nominal)}, dengan rincian sebagai berikut:` },
+            ...rincian.map((r, i) => ({
+              t: "item" as const,
+              marker: `${i + 1}.`,
+              text: `dari **${(str(r.dari) || "[...]").toUpperCase()}** kepada **${(str(r.kepada) || "[...]").toUpperCase()}** sebanyak ${lembar(num(r.jumlah))} dengan nilai nominal seluruhnya sebesar ${rupiah(num(r.jumlah) * nominal)}${i === rincian.length - 1 ? "." : ";"}`
+            })),
+            { t: "p", text: "Saham-saham tersebut untuk selanjutnya disebut **SAHAM**." }
+          ] as Block[])
+        : ([
+            { t: "p", text: `Penjual menjual dan menyerahkan kepada Pembeli, dan Pembeli membeli dan menerima penyerahan dari Penjual, ${lembar(jumlah)} dalam Perseroan dengan nilai nominal seluruhnya sebesar ${rupiah(jumlah * nominal)}, untuk selanjutnya disebut **SAHAM**.` }
+          ] as Block[])),
       ...pasal(2, "Harga"),
       { t: "p", text: `Jual beli Saham dilakukan dengan harga sebesar ${rupiah(str(d.harga))}, yang telah dibayar lunas oleh Pembeli kepada Penjual sebelum penandatanganan akta ini, dan untuk penerimaan jumlah uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kuitansi).` },
       ...pasal(3, "Jaminan Penjual"),
@@ -100,9 +132,6 @@ export const peralihanSaham: DeedTemplate = {
   }
 };
 
-type Pengurus = { jabatan?: string; orang?: Person };
-type Alih = { dari?: string; kepada?: string; jumlah?: string };
-type Kbli = { kode?: string; judul?: string };
 
 const PERUBAHAN_SECTIONS: SectionDef[] = [
   { title: "Data Perseroan", fields: PT_FIELDS },
@@ -119,6 +148,7 @@ const PERUBAHAN_SECTIONS: SectionDef[] = [
       { kind: "select", key: "jenisRapat", label: "Bentuk keputusan", options: ["Rapat Umum Pemegang Saham Luar Biasa", "Keputusan Sirkuler Para Pemegang Saham"], default: "Rapat Umum Pemegang Saham Luar Biasa" },
       { kind: "date", key: "tanggalRapat", label: "Tanggal rapat/keputusan" },
       { kind: "text", key: "tempatRapat", label: "Tempat rapat", wide: true },
+      { kind: "text", key: "pimpinanRapat", label: "Rapat dipimpin oleh (nama & jabatan)", wide: true, placeholder: "Tuan BUDI SANTOSO, selaku Direktur Utama Perseroan" },
       { kind: "number", key: "sahamHadir", label: "Saham hadir/menyetujui" },
       { kind: "number", key: "sahamTotal", label: "Seluruh saham dengan hak suara" }
     ]
@@ -144,6 +174,16 @@ const PERUBAHAN_SECTIONS: SectionDef[] = [
         ]
       },
       { showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[3]] }, kind: "list", key: "peralihan", label: "Peralihan saham yang disetujui", itemLabel: "Peralihan", min: 0, max: 10, fields: [{ kind: "text", key: "dari", label: "Dari" }, { kind: "text", key: "kepada", label: "Kepada" }, { kind: "number", key: "jumlah", label: "Jumlah saham" }] },
+      {
+        showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[3]] },
+        kind: "list",
+        key: "pemegangSaham",
+        label: "Susunan pemegang saham setelah peralihan",
+        itemLabel: "Pemegang saham",
+        min: 0,
+        max: 15,
+        fields: [{ kind: "text", key: "nama", label: "Nama" }, { kind: "number", key: "jumlah", label: "Jumlah saham" }]
+      },
       { kind: "textarea", key: "perubahanModal", label: "Perubahan modal (rumusan Pasal 4 baru)", wide: true, showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[4]] } },
       { kind: "text", key: "kedudukanBaru", label: "Tempat kedudukan baru", wide: true, showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[5]] } },
       { kind: "text", key: "namaBaru", label: "Nama perseroan baru (tanpa 'PT')", wide: true, showIf: { key: "ptChanges", anyOf: [PT_CHANGE_OPTIONS[6]] } }
@@ -177,40 +217,84 @@ export const perubahanPt: DeedTemplate = {
     const hadir = num(d.sahamHadir);
     const total = num(d.sahamTotal);
     const sirkuler = str(d.jenisRapat).startsWith("Keputusan Sirkuler");
+    const pemegang = list<Pemegang>(d.pemegangSaham).filter((x) => str(x.nama) || num(x.jumlah));
+    const nominal = num(d.nominal);
     const keputusan: Block[][] = [];
-    const urut = ["PERTAMA", "KEDUA", "KETIGA", "KEEMPAT", "KELIMA", "KEENAM", "KETUJUH", "KEDELAPAN"];
+    const urut = ["PERTAMA", "KEDUA", "KETIGA", "KEEMPAT", "KELIMA", "KEENAM", "KETUJUH", "KEDELAPAN", "KESEMBILAN", "KESEPULUH"];
+    // Perubahan anggaran dasar (Pasal 88 UUPT) vs keputusan lain (Pasal 86 UUPT).
+    const ubahAd = !!(str(d.bidangBaru) || kbli.length || str(d.perubahanModal) || str(d.kedudukanBaru) || str(d.namaBaru));
 
     if (str(d.bidangBaru) || kbli.length)
       keputusan.push([
-        { t: "p", text: `Mengubah maksud dan tujuan serta kegiatan usaha Perseroan sehingga Pasal 3 anggaran dasar Perseroan menjadi berbunyi: maksud dan tujuan Perseroan ialah berusaha dalam bidang ${str(d.bidangBaru) || "[...]"}, dengan kegiatan usaha:` },
-        ...kbli.map((k, i) => ({ t: "item" as const, marker: `${String.fromCharCode(97 + (i % 26))}.`, text: `${str(k.judul) || "[...]"} (KBLI ${str(k.kode) || "[...]"})${i === kbli.length - 1 ? "." : ";"}` }))
+        { t: "p", text: "Mengubah maksud dan tujuan serta kegiatan usaha Perseroan, sehingga Pasal 3 anggaran dasar Perseroan menjadi berbunyi sebagai berikut:" },
+        { t: "center", text: "MAKSUD DAN TUJUAN SERTA KEGIATAN USAHA", bold: true },
+        ...pasal(3),
+        { t: "item", marker: "1.", text: `Maksud dan tujuan Perseroan ialah berusaha dalam bidang ${str(d.bidangBaru).replace(/[\s.;,]+$/, "") || "[...]"}.` },
+        { t: "item", marker: "2.", text: "Untuk mencapai maksud dan tujuan tersebut di atas, Perseroan dapat melaksanakan kegiatan usaha sebagai berikut:" },
+        ...(kbli.length
+          ? kbli.map((k, i) => ({ t: "item" as const, marker: `${String.fromCharCode(97 + (i % 26))}.`, level: 1, text: `${str(k.judul) || "[...]"} (KBLI ${str(k.kode) || "[...]"})${i === kbli.length - 1 ? "." : ";"}` }))
+          : [{ t: "item" as const, marker: "a.", level: 1, text: "[...]." }])
       ]);
     if (alih.length)
       keputusan.push([
         { t: "p", text: "Menyetujui pengalihan saham-saham dalam Perseroan sebagai berikut:" },
-        ...alih.map((a, i) => ({ t: "item" as const, marker: `${i + 1}.`, text: `dari ${str(a.dari) || "[...]"} kepada ${str(a.kepada) || "[...]"} sebanyak ${lembar(num(a.jumlah))}${i === alih.length - 1 ? "." : ";"}` }))
+        ...alih.map((a, i) => ({
+          t: "item" as const,
+          marker: `${i + 1}.`,
+          text: `dari **${(str(a.dari) || "[...]").toUpperCase()}** kepada **${(str(a.kepada) || "[...]").toUpperCase()}** sebanyak ${lembar(num(a.jumlah))}${i === alih.length - 1 ? "." : ";"}`
+        })),
+        ...(pemegang.length
+          ? ([
+              { t: "p", text: "Dengan demikian susunan pemegang saham Perseroan menjadi sebagai berikut:" },
+              ...pemegang.map((x, i) => ({
+                t: "item" as const,
+                marker: `${i + 1}.`,
+                text: `**${(str(x.nama) || "[...]").toUpperCase()}**, sebanyak ${lembar(num(x.jumlah))}${nominal ? ` dengan nilai nominal seluruhnya sebesar ${rupiah(num(x.jumlah) * nominal)}` : ""}${i === pemegang.length - 1 ? "." : ";"}`
+              }))
+            ] as Block[])
+          : [])
       ]);
-    if (str(d.perubahanModal)) keputusan.push([{ t: "p", text: `Mengubah ketentuan Pasal 4 anggaran dasar Perseroan tentang modal menjadi: ${str(d.perubahanModal)}` }]);
-    if (str(d.kedudukanBaru)) keputusan.push([{ t: "p", text: `Mengubah tempat kedudukan Perseroan menjadi di ${str(d.kedudukanBaru)}, sehingga Pasal 1 ayat (1) anggaran dasar Perseroan diubah sesuai dengan itu.` }]);
-    if (str(d.namaBaru)) keputusan.push([{ t: "p", text: `Mengubah nama Perseroan menjadi **PT ${str(d.namaBaru).toUpperCase()}**, sehingga Pasal 1 ayat (1) anggaran dasar Perseroan diubah sesuai dengan itu.` }]);
-    if (pengurus.length)
+    if (str(d.perubahanModal))
       keputusan.push([
-        { t: "p", text: "Memberhentikan dengan hormat seluruh anggota Direksi dan Dewan Komisaris lama dengan ucapan terima kasih atas jasa-jasanya, dan mengangkat susunan Direksi dan Dewan Komisaris Perseroan yang baru sebagai berikut:" },
-        ...pengurus.map((x, i) => ({ t: "item" as const, marker: `${i + 1}.`, text: `${str(x.jabatan) || "[...]"}: ${komparisi(person(x.orang), i === pengurus.length - 1 ? "." : ";")}` })),
-        { t: "p", text: "Masa jabatan anggota Direksi dan Dewan Komisaris tersebut sesuai ketentuan anggaran dasar Perseroan, terhitung sejak tanggal keputusan ini." }
+        { t: "p", text: "Mengubah ketentuan mengenai modal Perseroan, sehingga Pasal 4 anggaran dasar Perseroan menjadi berbunyi sebagai berikut:" },
+        { t: "center", text: "MODAL", bold: true },
+        ...pasal(4),
+        { t: "p", text: `${str(d.perubahanModal).replace(/[\s.;,]+$/, "")}.` }
       ]);
+    if (str(d.kedudukanBaru) || str(d.namaBaru)) {
+      const namaAkhir = `PT ${(str(d.namaBaru) || str(d.namaPt) || "[...]").toUpperCase()}`;
+      const kedudukanAkhir = str(d.kedudukanBaru) || str(d.kedudukan) || "[...]";
+      const apa = [str(d.namaBaru) ? "nama" : "", str(d.kedudukanBaru) ? "tempat kedudukan" : ""].filter(Boolean).join(" dan ");
+      keputusan.push([
+        { t: "p", text: `Mengubah ${apa} Perseroan, sehingga Pasal 1 ayat (1) anggaran dasar Perseroan menjadi berbunyi sebagai berikut:` },
+        { t: "item", marker: "1.", text: `Perseroan terbatas ini bernama **${namaAkhir}** (selanjutnya dalam anggaran dasar ini cukup disingkat dengan "Perseroan"), berkedudukan di ${kedudukanAkhir}.` }
+      ]);
+    }
+    if (pengurus.length) {
+      const direksi = pengurus.some((x) => /direktur/i.test(str(x.jabatan)));
+      const komisaris = pengurus.some((x) => /komisaris/i.test(str(x.jabatan)));
+      const organ = direksi && komisaris ? "Direksi dan Dewan Komisaris" : komisaris ? "Dewan Komisaris" : "Direksi";
+      keputusan.push([
+        { t: "p", text: `Memberhentikan dengan hormat seluruh anggota ${organ} Perseroan yang lama, dengan ucapan terima kasih atas jasa-jasanya, dan mengangkat anggota ${organ} Perseroan yang baru, sehingga susunan ${organ} Perseroan menjadi sebagai berikut:` },
+        ...pengurus.map((x, i) => ({ t: "item" as const, marker: `${i + 1}.`, text: `${str(x.jabatan) || "[...]"}: ${komparisi(person(x.orang), i === pengurus.length - 1 ? "." : ";")}` })),
+        { t: "p", text: `Masa jabatan anggota ${organ} tersebut sesuai ketentuan anggaran dasar Perseroan, terhitung sejak tanggal keputusan ini.` }
+      ]);
+    }
     if (keputusan.length === 0) keputusan.push([{ t: "p", text: "[...]" }]);
 
+    const persen = hadir && total ? `${angka(Math.round((hadir / total) * 10000) / 100)} persen` : "[...] persen";
+    const dasarKuasaDefault = "selaku kuasa berdasarkan keputusan rapat tersebut di bawah ini";
+    const dasarKuasa =
+      !str(d.dasarKuasa) || str(d.dasarKuasa) === dasarKuasaDefault
+        ? sirkuler
+          ? "selaku kuasa berdasarkan keputusan para pemegang saham tersebut di bawah ini"
+          : dasarKuasaDefault
+        : str(d.dasarKuasa);
+
     const blocks: Block[] = [
-      judul(
-        str(d.jenisRapat).startsWith("Keputusan Sirkuler")
-          ? "PERNYATAAN KEPUTUSAN PARA PEMEGANG SAHAM"
-          : "PERNYATAAN KEPUTUSAN RAPAT UMUM PEMEGANG SAHAM LUAR BIASA",
-        d,
-        `PT ${(str(d.namaPt) || "[...]").toUpperCase()}`
-      ),
+      judul(sirkuler ? "PERNYATAAN KEPUTUSAN PARA PEMEGANG SAHAM" : "PERNYATAAN KEPUTUSAN RAPAT UMUM PEMEGANG SAHAM LUAR BIASA", d, `PT ${(str(d.namaPt) || "[...]").toUpperCase()}`),
       ...pembuka(d),
-      ...daftarPenghadap([{ p, peran: `menurut keterangannya dalam hal ini bertindak ${str(d.dasarKuasa) || "selaku kuasa berdasarkan keputusan rapat tersebut di bawah ini"}` }]),
+      ...daftarPenghadap([{ p, peran: `menurut keterangannya dalam hal ini bertindak ${dasarKuasa}` }]),
       dikenal(1),
       { t: "p", text: "Penghadap dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
       { t: "item", marker: "a.", text: `bahwa penghadap bertindak untuk dan atas nama ${premisPt(d)};` },
@@ -218,17 +302,25 @@ export const perubahanPt: DeedTemplate = {
         t: "item",
         marker: "b.",
         text: sirkuler
-          ? `bahwa pada tanggal ${tanggalHuruf(str(d.tanggalRapat))} seluruh pemegang saham Perseroan telah mengambil keputusan di luar rapat secara sirkuler yang ditandatangani oleh seluruh pemegang saham yang mewakili ${lembar(hadir)} dari ${lembar(total)}, sebagaimana dimaksud dalam Pasal 91 Undang-Undang Nomor 40 Tahun 2007 tentang Perseroan Terbatas;`
-          : `bahwa pada tanggal ${tanggalHuruf(str(d.tanggalRapat))} bertempat di ${str(d.tempatRapat) || "[...]"} telah diadakan ${str(d.jenisRapat)} Perseroan yang dihadiri oleh pemegang saham yang mewakili ${lembar(hadir)} dari ${lembar(total)} yang telah dikeluarkan Perseroan, sehingga kuorum sebagaimana ditentukan anggaran dasar dan undang-undang telah terpenuhi;`
+          ? `bahwa pada tanggal ${tanggalHuruf(str(d.tanggalRapat))} seluruh pemegang saham Perseroan yang mewakili ${lembar(hadir)} dari ${lembar(total)} dengan hak suara yang sah telah mengambil keputusan di luar rapat secara tertulis yang ditandatangani oleh seluruh pemegang saham, sebagaimana dimaksud dalam Pasal 91 Undang-Undang Nomor 40 Tahun 2007 tentang Perseroan Terbatas;`
+          : `bahwa pada tanggal ${tanggalHuruf(str(d.tanggalRapat))} bertempat di ${str(d.tempatRapat) || "[...]"} telah diadakan Rapat Umum Pemegang Saham Luar Biasa Perseroan, yang dipimpin oleh ${str(d.pimpinanRapat) || "[...]"}, dan dihadiri oleh pemegang saham yang mewakili ${lembar(hadir)} atau ${persen} dari ${lembar(total)} dengan hak suara yang sah yang telah dikeluarkan Perseroan, sebagaimana ternyata dari daftar hadir rapat, sehingga kuorum sebagaimana dimaksud dalam Pasal ${ubahAd ? "88" : "86"} Undang-Undang Nomor 40 Tahun 2007 tentang Perseroan Terbatas dan anggaran dasar Perseroan telah terpenuhi;`
       },
-      { t: "item", marker: "c.", text: "bahwa penghadap diberi kuasa untuk menyatakan keputusan tersebut dalam akta notaris; maka penghadap dengan bertindak sebagaimana tersebut di atas menyatakan keputusan-keputusan sebagai berikut:" }
+      {
+        t: "item",
+        marker: "c.",
+        text: sirkuler
+          ? "bahwa keputusan para pemegang saham tersebut dibuat di bawah tangan dan dilekatkan pada minuta akta ini;"
+          : "bahwa risalah rapat tersebut dibuat di bawah tangan dan bersama daftar hadir rapat dilekatkan pada minuta akta ini;"
+      },
+      { t: "item", marker: "d.", text: `bahwa penghadap diberi kuasa untuk menyatakan keputusan ${sirkuler ? "para pemegang saham" : "rapat"} tersebut dalam akta notaris.` },
+      { t: "p", text: "Selanjutnya penghadap dengan bertindak sebagaimana tersebut di atas menyatakan keputusan-keputusan sebagai berikut:" }
     ];
     keputusan.forEach((k, i) => {
       blocks.push({ t: "center", text: `KEPUTUSAN ${urut[i] ?? i + 1}`, bold: true }, ...k);
     });
     blocks.push(
       { t: "center", text: `KEPUTUSAN ${urut[keputusan.length] ?? keputusan.length + 1}`, bold: true },
-      { t: "p", text: `Memberi kuasa kepada penghadap, ${namaTebal(p)}, dengan hak substitusi, untuk menyatakan keputusan-keputusan tersebut dalam akta notaris, memohon persetujuan dan/atau menyampaikan pemberitahuan perubahan anggaran dasar dan/atau perubahan data Perseroan kepada Menteri Hukum Republik Indonesia melalui Sistem Administrasi Badan Hukum, serta melakukan segala tindakan yang diperlukan.` },
+      { t: "p", text: `Memberi kuasa kepada penghadap, ${namaTebal(p)}, dan/atau Direksi Perseroan, dengan hak substitusi, untuk menyatakan keputusan-keputusan tersebut dalam akta notaris, memohon persetujuan dan/atau menyampaikan pemberitahuan perubahan anggaran dasar dan/atau perubahan data Perseroan kepada Menteri Hukum Republik Indonesia melalui Sistem Administrasi Badan Hukum, serta melakukan segala tindakan yang diperlukan untuk maksud tersebut.` },
       domisili(d, "penghadap"),
       ...penutup(d, variant)
     );

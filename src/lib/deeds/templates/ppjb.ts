@@ -4,10 +4,11 @@ import type { Block } from "../layout";
 import type { Person } from "../schema";
 import { ayat, daftarPenghadap, denganPasangan, dikenal, domisili, judul, list, pasal, pembuka, penutup, person, str } from "../common";
 import { LAND_FIELDS, uraianTanah } from "../land";
-import { rupiah, tanggalHuruf } from "../words";
+import { nomorPenghadap } from "../parties";
+import { angka, rupiah, tanggalHuruf } from "../words";
 
 const orang = (v: unknown) => list<{ orang?: Person }>(v).map((x) => person(x.orang));
-const LUNAS = "Lunas pada saat penandatanganan akta ini";
+const LUNAS = "Lunas sebelum penandatanganan akta ini";
 
 export const ppjb: DeedTemplate = {
   key: "ppjb",
@@ -33,6 +34,7 @@ export const ppjb: DeedTemplate = {
         { kind: "select", key: "caraBayar", label: "Cara pembayaran", options: [LUNAS, "Bertahap"], default: LUNAS },
         { kind: "money", key: "uangMuka", label: "Uang muka yang sudah dibayar (bila bertahap)" },
         { kind: "date", key: "tanggalPelunasan", label: "Batas pelunasan sisa harga (bila bertahap)" },
+        { kind: "number", key: "potonganBatal", label: "Potongan bila batal karena pembeli lalai (% dari harga, bila bertahap)", default: "10" },
         { kind: "date", key: "batasAjb", label: "Batas penandatanganan AJB" },
         {
           kind: "text",
@@ -69,7 +71,7 @@ export const ppjb: DeedTemplate = {
       "Pastikan pengecekan sertipikat ke Kantor Pertanahan sudah dilakukan sebelum penandatanganan.",
       "Kuasa dalam Pasal 9 hanya dimuat bila harga lunas (kuasa mutlak di luar PPJB lunas dilarang, Instruksi Mendagri No. 14 Tahun 1982)."
     ];
-    if (str(d.caraBayar) !== LUNAS && !str(d.tanggalPelunasan)) n.push("Cara bayar bertahap tetapi batas pelunasan belum diisi.");
+    if (str(d.caraBayar) === "Bertahap" && !str(d.tanggalPelunasan)) n.push("Cara bayar bertahap tetapi batas pelunasan belum diisi.");
     return n;
   },
   build(d, variant) {
@@ -83,7 +85,8 @@ export const ppjb: DeedTemplate = {
       ...denganPasangan(penjual, person(d.pasanganPenjual), "menurut keterangannya dalam hal ini bertindak untuk diri sendiri"),
       ...pembeli.map((p) => ({ p, peran: "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }))
     ];
-    const pp = penjual.length > 1 ? "Para penghadap" : "Penghadap";
+    const adaPasangan = !!str(person(d.pasanganPenjual).nama);
+    const potongan = Number(str(d.potonganBatal).replace(",", ".")) || 0;
 
     const blocks: Block[] = [
       judul("PERJANJIAN PENGIKATAN JUAL BELI", d),
@@ -91,9 +94,7 @@ export const ppjb: DeedTemplate = {
       ...daftarPenghadap(penghadap),
       {
         t: "p",
-        text: `${pp} ${penjual.map((_, i) => `angka ${i + 1}`).join(", ")} tersebut di atas${str(person(d.pasanganPenjual).nama) ? " (dengan persetujuan pasangannya)" : ""} untuk selanjutnya disebut **PIHAK PERTAMA**; dan penghadap ${pembeli
-          .map((_, i) => `angka ${penjual.length + (str(person(d.pasanganPenjual).nama) ? 1 : 0) + i + 1}`)
-          .join(", ")} tersebut di atas untuk selanjutnya disebut **PIHAK KEDUA**.`
+        text: `Penghadap ${nomorPenghadap(1, penjual.length)} tersebut di atas${adaPasangan ? `, dengan persetujuan penghadap ${nomorPenghadap(penjual.length + 1, 1)},` : ""} untuk selanjutnya disebut **PIHAK PERTAMA**; dan penghadap ${nomorPenghadap(penjual.length + (adaPasangan ? 1 : 0) + 1, pembeli.length)} tersebut di atas untuk selanjutnya disebut **PIHAK KEDUA**.`
       },
       dikenal(penghadap.length),
       { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
@@ -135,12 +136,16 @@ export const ppjb: DeedTemplate = {
       { t: "p", text: `Para pihak berjanji dan mengikatkan diri untuk menandatangani Akta Jual Beli atas Objek Jual Beli di hadapan Pejabat Pembuat Akta Tanah yang berwenang segera setelah persyaratannya terpenuhi, selambat-lambatnya pada tanggal ${tanggalHuruf(str(d.batasAjb))}.` },
 
       ...pasal(7, "Wanprestasi"),
-      ...ayat([
+      ...ayat(
         lunas
-          ? "Apabila Pihak Pertama tidak memenuhi kewajibannya menurut akta ini, Pihak Kedua berhak menuntut pemenuhan perjanjian ini disertai penggantian biaya, kerugian dan bunga."
-          : "Apabila Pihak Kedua tidak melunasi sisa harga pada waktu yang ditentukan dan setelah ditegur secara tertulis tetap lalai, Pihak Pertama berhak membatalkan perjanjian ini dan mengembalikan pembayaran yang telah diterima setelah dikurangi biaya-biaya yang telah dikeluarkan sebagaimana disepakati para pihak.",
-        "Para pihak melepaskan ketentuan Pasal 1266 dan Pasal 1267 Kitab Undang-Undang Hukum Perdata sepanjang mengenai diperlukannya putusan pengadilan untuk pembatalan perjanjian."
-      ]),
+          ? ["Apabila Pihak Pertama tidak memenuhi kewajibannya menurut akta ini, Pihak Kedua berhak menuntut pemenuhan perjanjian ini disertai penggantian biaya, kerugian dan bunga."]
+          : [
+              "Apabila Pihak Kedua tidak melunasi sisa harga pada waktu yang ditentukan, Pihak Pertama memberikan teguran tertulis kepada Pihak Kedua untuk melunasinya dalam jangka waktu paling lambat empat belas (14) hari sejak tanggal teguran.",
+              `Apabila setelah lewatnya jangka waktu teguran tersebut Pihak Kedua tetap lalai, Pihak Pertama berhak membatalkan perjanjian ini dengan pemberitahuan tertulis, dengan kewajiban mengembalikan seluruh pembayaran yang telah diterima${potongan > 0 ? ` setelah dikurangi ${angka(potongan)} persen dari harga sebagai ganti kerugian` : ""}, tanpa bunga, paling lambat tiga puluh (30) hari sejak pembatalan.`,
+              "Apabila Pihak Pertama tidak memenuhi kewajibannya menurut akta ini, Pihak Kedua berhak menuntut pemenuhan perjanjian ini atau pembatalannya, disertai penggantian biaya, kerugian dan bunga.",
+              "Untuk pembatalan sebagaimana dimaksud dalam ayat (2), para pihak sepakat mengesampingkan ketentuan Pasal 1266 dan Pasal 1267 Kitab Undang-Undang Hukum Perdata sepanjang mengenai diperlukannya putusan pengadilan."
+            ]
+      ),
 
       ...pasal(8, "Tidak Berakhir karena Meninggal Dunia"),
       { t: "p", text: "Perjanjian ini tidak berakhir karena meninggalnya salah satu pihak, melainkan turun-temurun dan wajib ditaati oleh para ahli waris atau penerima hak masing-masing pihak." }

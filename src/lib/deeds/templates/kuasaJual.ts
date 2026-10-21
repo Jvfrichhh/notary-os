@@ -4,6 +4,7 @@ import type { Block } from "../layout";
 import type { Person } from "../schema";
 import { daftarPenghadap, denganPasangan, dikenal, domisili, judul, komparisi, list, pembuka, penutup, person, str } from "../common";
 import { LAND_FIELDS, uraianTanah } from "../land";
+import { nomorPenghadap } from "../parties";
 
 const orang = (v: unknown) => list<{ orang?: Person }>(v).map((x) => person(x.orang));
 
@@ -27,7 +28,6 @@ export const kuasaJual: DeedTemplate = {
     {
       title: "Ketentuan Kuasa",
       fields: [
-        { kind: "select", key: "kepadaDiriSendiri", label: "Boleh dijual kepada penerima kuasa sendiri?", options: ["Ya", "Tidak"], default: "Tidak" },
         { kind: "select", key: "substitusi", label: "Hak substitusi", options: ["dengan hak substitusi", "tanpa hak substitusi"], default: "dengan hak substitusi" }
       ]
     }
@@ -45,7 +45,7 @@ export const kuasaJual: DeedTemplate = {
     const pemberi = orang(d.pemberi);
     const penerima = orang(d.penerima);
     const penghadap = denganPasangan(pemberi, person(d.pasangan), "menurut keterangannya dalam hal ini bertindak untuk diri sendiri");
-    const sendiri = str(d.kepadaDiriSendiri) === "Ya";
+    const ada = !!str(person(d.pasangan).nama);
     const blocks: Block[] = [
       judul("KUASA UNTUK MENJUAL", d),
       ...pembuka(d),
@@ -53,7 +53,9 @@ export const kuasaJual: DeedTemplate = {
       dikenal(penghadap.length),
       {
         t: "p",
-        text: `${pemberi.length > 1 ? "Para penghadap pemilik" : "Penghadap pemilik"} tersebut di atas, untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
+        text: ada
+          ? `Penghadap ${nomorPenghadap(1, pemberi.length)}${pemberi.length > 1 ? " selaku para pemilik" : " selaku pemilik"}, dengan persetujuan penghadap ${nomorPenghadap(pemberi.length + 1, 1)}, untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
+          : `{Penghadap}${pemberi.length > 1 ? " selaku para pemilik" : " selaku pemilik"}, untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
       },
       ...penerima.map((p, i) => ({ t: "item" as const, marker: `${i + 1}.`, text: komparisi(p, i === penerima.length - 1 ? "." : ";") })),
       { t: "p", text: `${penerima.length > 1 ? "Baik bersama-sama maupun sendiri-sendiri, untuk" : "Untuk"} selanjutnya disebut **PENERIMA KUASA**.` },
@@ -63,7 +65,7 @@ export const kuasaJual: DeedTemplate = {
       {
         t: "item",
         marker: "a.",
-        text: `menjual Objek kepada siapa pun juga${sendiri ? " termasuk kepada Penerima Kuasa sendiri" : ""}, dengan harga dan syarat-syarat yang dianggap baik oleh Penerima Kuasa;`
+        text: "menjual Objek kepada pihak lain, dengan harga dan syarat-syarat yang dianggap baik oleh Penerima Kuasa;"
       },
       { t: "item", marker: "b.", text: "menghadap Pejabat Pembuat Akta Tanah yang berwenang, menandatangani Akta Jual Beli serta surat-surat lain yang diperlukan;" },
       { t: "item", marker: "c.", text: "menerima uang harga penjualan dan memberikan tanda penerimaannya (kuitansi);" },
@@ -73,7 +75,7 @@ export const kuasaJual: DeedTemplate = {
         t: "p",
         text: "Selanjutnya Penerima Kuasa dikuasakan untuk melakukan segala tindakan yang dianggap baik dan perlu untuk tercapainya maksud pemberian kuasa ini, tidak ada satu tindakan pun yang dikecualikan."
       },
-      { t: "p", text: `Kuasa ini diberikan ${str(d.substitusi) || "dengan hak substitusi"}.` },
+      { t: "p", text: `Kuasa ini diberikan ${str(d.substitusi) || "dengan hak substitusi"}, dan tidak termasuk kewenangan untuk menjual Objek kepada Penerima Kuasa sendiri.` },
       domisili(d, "Pemberi Kuasa"),
       ...penutup(d, variant)
     ];

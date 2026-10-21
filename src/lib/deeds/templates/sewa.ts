@@ -50,8 +50,12 @@ export const sewa: DeedTemplate = {
     ].map((x, i) => (i < p1.length ? { ...x, peran: peranDari(p1[i]) } : x));
     const n1 = p1.length + (ada ? 1 : 0);
     const jaminan = Number(str(d.jaminan).replace(/\D/g, ""));
+    const harga = Number(str(d.harga).replace(/\D/g, ""));
+    const tahun = Number(str(d.lamaTahun).replace(",", "."));
+    const tahunan = str(d.caraBayar) === "dibayar setiap tahun di muka";
+    const perTahun = harga > 0 && Number.isInteger(tahun) && tahun > 0 && harga % tahun === 0 ? harga / tahun : 0;
     const blocks: Block[] = [
-      judul("PERJANJIAN SEWA MENYEWA", d),
+      judul("PERJANJIAN SEWA-MENYEWA", d),
       ...pembuka(d),
       ...daftarPenghadap(pen),
       {
@@ -61,15 +65,17 @@ export const sewa: DeedTemplate = {
       dikenal(pen.length),
       { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan bahwa Pihak Pertama menyewakan kepada Pihak Kedua, dan Pihak Kedua menyewa dari Pihak Pertama, dengan syarat-syarat dan ketentuan-ketentuan sebagai berikut:" },
       ...pasal(1, "Objek Sewa"),
-      { t: "p", text: `Objek yang disewakan adalah ${str(d.objek) || "[...]"}; untuk selanjutnya disebut **OBJEK SEWA**, yang akan dipergunakan oleh Pihak Kedua sebagai ${str(d.peruntukan) || "[...]"}.` },
+      { t: "p", text: `Yang disewakan dalam perjanjian ini adalah ${str(d.objek).replace(/[\s.;,]+$/, "") || "[...]"}, untuk selanjutnya disebut **OBJEK SEWA**. Objek Sewa akan dipergunakan oleh Pihak Kedua sebagai ${str(d.peruntukan).replace(/[\s.;,]+$/, "") || "[...]"}.` },
       ...pasal(2, "Jangka Waktu"),
-      { t: "p", text: `Sewa menyewa ini berlangsung untuk jangka waktu ${str(d.lamaTahun) ? angka(str(d.lamaTahun)) : "[...]"} tahun, terhitung mulai tanggal ${tanggalHuruf(str(d.mulai))} dan berakhir pada tanggal ${tanggalHuruf(str(d.berakhir))}.` },
+      { t: "p", text: `Sewa-menyewa ini berlangsung untuk jangka waktu ${str(d.lamaTahun) ? angka(str(d.lamaTahun)) : "[...]"} tahun, terhitung mulai tanggal ${tanggalHuruf(str(d.mulai))} dan berakhir pada tanggal ${tanggalHuruf(str(d.berakhir))}.` },
       ...pasal(3, "Harga Sewa"),
       ...ayat([
-        `Harga sewa untuk seluruh jangka waktu sewa disepakati sebesar ${rupiah(str(d.harga))}, yang ${str(d.caraBayar)}.`,
-        ...(str(d.caraBayar).startsWith("dibayar lunas")
-          ? ["Untuk penerimaan jumlah uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kuitansi)."]
-          : []),
+        `Harga sewa untuk seluruh jangka waktu sewa disepakati sebesar ${rupiah(harga)}, yang ${tahunan ? "dibayar setiap tahun di muka" : "dibayar lunas pada saat penandatanganan akta ini"}.`,
+        ...(tahunan
+          ? [
+              `Harga sewa untuk setiap tahun sebesar ${perTahun ? rupiah(perTahun) : "Rp[...] ([...] Rupiah)"}, dibayar oleh Pihak Kedua kepada Pihak Pertama selambat-lambatnya pada tanggal dimulainya setiap tahun masa sewa; pembayaran tahun pertama dilakukan pada saat penandatanganan akta ini, dan untuk penerimaan jumlah uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kuitansi).`
+            ]
+          : ["Untuk penerimaan jumlah uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kuitansi)."]),
         ...(jaminan ? [`Pihak Kedua menyerahkan uang jaminan sebesar ${rupiah(jaminan)} yang akan dikembalikan pada saat sewa berakhir setelah diperhitungkan dengan kewajiban Pihak Kedua yang belum dipenuhi.`] : [])
       ]),
       ...pasal(4, "Penyerahan"),
@@ -86,9 +92,15 @@ export const sewa: DeedTemplate = {
       ...ayat([
         "Pada saat sewa berakhir, Pihak Kedua wajib menyerahkan kembali Objek Sewa kepada Pihak Pertama dalam keadaan kosong dan baik, selambat-lambatnya tujuh (7) hari setelah tanggal berakhirnya sewa.",
         "Apabila Pihak Kedua hendak memperpanjang sewa, Pihak Kedua wajib memberitahukan secara tertulis kepada Pihak Pertama paling lambat tiga (3) bulan sebelum sewa berakhir, dan perpanjangan dilakukan dengan syarat yang disepakati kemudian.",
-        "Sewa menyewa ini tidak berakhir karena dijualnya Objek Sewa (Pasal 1576 Kitab Undang-Undang Hukum Perdata) maupun karena meninggalnya salah satu pihak; para ahli waris atau penerima hak wajib melanjutkannya."
+        "Sewa-menyewa ini tidak berakhir karena dijualnya Objek Sewa (Pasal 1576 Kitab Undang-Undang Hukum Perdata) maupun karena meninggalnya salah satu pihak; para ahli waris atau penerima hak wajib melanjutkannya."
       ]),
-      ...pasal(8, "Domisili"),
+      ...pasal(8, "Wanprestasi"),
+      ...ayat([
+        "Apabila Pihak Kedua lalai membayar harga sewa pada waktunya atau melanggar ketentuan Pasal 6 akta ini, Pihak Pertama memberikan teguran tertulis kepada Pihak Kedua untuk memenuhi kewajibannya dalam jangka waktu paling lambat empat belas (14) hari sejak tanggal teguran.",
+        "Apabila setelah lewatnya jangka waktu teguran tersebut Pihak Kedua tetap lalai, Pihak Pertama berhak mengakhiri sewa-menyewa ini dengan pemberitahuan tertulis, dan Pihak Kedua wajib menyerahkan kembali Objek Sewa sesuai ketentuan Pasal 7 ayat (1) akta ini, tanpa mengurangi hak Pihak Pertama atas harga sewa yang telah jatuh tempo.",
+        "Untuk pengakhiran sebagaimana dimaksud dalam ayat (2), para pihak sepakat mengesampingkan ketentuan Pasal 1266 dan Pasal 1267 Kitab Undang-Undang Hukum Perdata sepanjang mengenai diperlukannya putusan pengadilan."
+      ]),
+      ...pasal(9, "Domisili"),
       domisili(d),
       ...penutup(d, variant)
     ];

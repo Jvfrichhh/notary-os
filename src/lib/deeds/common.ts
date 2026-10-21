@@ -32,14 +32,23 @@ export function namaTebal(p: Person): string {
   return `${str(p.sapaan) || "Tuan/Nyonya"} **${nama}**`;
 }
 
+/** "almarhum" (Tuan) / "almarhumah" (Nyonya, Nona) untuk orang yang telah meninggal. */
+export function almarhum(p: Person): string {
+  const s = str(p.sapaan).toLowerCase();
+  if (s === "tuan") return "almarhum";
+  if (s === "nyonya" || s === "nona") return "almarhumah";
+  return "almarhum/almarhumah";
+}
+
 /** Identitas lengkap (komparisi) tanpa nama di depan. */
-export function identitas(p: Person): string {
+export function identitas(p: Person, opts: { almarhum?: boolean } = {}): string {
   const wn = str(p.kewarganegaraan) || "Indonesia";
+  const tinggal = opts.almarhum ? "semasa hidupnya terakhir bertempat tinggal di" : "bertempat tinggal di";
   return [
     `lahir di ${orBlank(p.tempatLahir)}, pada tanggal ${tanggalHuruf(p.tanggalLahir)}`,
     `Warga Negara ${wn}`,
     orBlank(p.pekerjaan),
-    `bertempat tinggal di ${orBlank(p.alamat)}, Rukun Tetangga ${orBlank(p.rt)}, Rukun Warga ${orBlank(p.rw)}, ${orBlank(p.kelurahan)}, Kecamatan ${orBlank(p.kecamatan)}, ${orBlank(p.kota)}`,
+    `${tinggal} ${orBlank(p.alamat)}, Rukun Tetangga ${orBlank(p.rt)}, Rukun Warga ${orBlank(p.rw)}, ${orBlank(p.kelurahan)}, Kecamatan ${orBlank(p.kecamatan)}, ${orBlank(p.kota)}`,
     `pemegang Kartu Tanda Penduduk dengan Nomor Induk Kependudukan ${orBlank(p.nik)}`
   ].join(", ");
 }
@@ -109,7 +118,7 @@ export function domisili(data: DeedData, pihak = "para pihak"): Block {
 }
 
 /** Akhir akta (Pasal 38 ayat 4 UUJN). */
-export function penutup(data: DeedData, variant: "minuta" | "salinan"): Block[] {
+export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { wasiat?: boolean } = {}): Block[] {
   const s1 = person(data.saksi1);
   const s2 = person(data.saksi2);
   const blocks: Block[] = [
@@ -128,10 +137,28 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan"): Block[] 
         ? "Keduanya karyawan kantor Notaris, sebagai saksi-saksi."
         : "Keduanya sebagai saksi-saksi."
     },
-    {
-      t: "p",
-      text: "Segera setelah akta ini dibacakan oleh saya, Notaris, kepada {PENGHADAP} dan saksi-saksi, maka akta ini ditandatangani oleh {PENGHADAP}, saksi-saksi dan saya, Notaris."
-    },
+    ...(opts.wasiat
+      ? ([
+          {
+            t: "p",
+            text: "Kedua saksi tersebut bukan ahli waris atau penerima hibah wasiat dalam akta ini, dan tidak mempunyai hubungan keluarga sedarah atau semenda sampai derajat keempat dengan mereka, maupun dengan saya, Notaris."
+          },
+          {
+            t: "p",
+            text: "Pewasiat telah menerangkan kehendaknya kepada saya, Notaris, di hadapan saksi-saksi, dan saya, Notaris, telah menuliskan kehendak tersebut dalam akta ini dengan kata-kata yang jelas."
+          },
+          {
+            t: "p",
+            text: "Segera setelah itu akta ini dibacakan oleh saya, Notaris, kepada Pewasiat di hadapan saksi-saksi, dan atas pertanyaan saya, Notaris, Pewasiat menerangkan bahwa apa yang dibacakan itu benar memuat kehendak terakhirnya; maka akta ini ditandatangani oleh Pewasiat, saksi-saksi dan saya, Notaris."
+          },
+          { t: "p", text: "Segala ketentuan Pasal 938 sampai dengan Pasal 940 Kitab Undang-Undang Hukum Perdata telah dipenuhi dalam pembuatan akta wasiat ini." }
+        ] as Block[])
+      : ([
+          {
+            t: "p",
+            text: "Segera setelah akta ini dibacakan oleh saya, Notaris, kepada {PENGHADAP} dan saksi-saksi, maka akta ini ditandatangani oleh {PENGHADAP}, saksi-saksi dan saya, Notaris."
+          }
+        ] as Block[])),
     { t: "p", text: "Dilangsungkan dengan tanpa perubahan." },
     { t: "p", text: "Minuta akta ini telah ditandatangani dengan sempurna." }
   ];
@@ -242,7 +269,12 @@ export function denganPasangan(
 ): { p: Person; peran?: string }[] {
   const out: { p: Person; peran?: string }[] = pihak.map((p) => ({ p, peran: peranPihak }));
   if (str(pasangan.nama)) {
-    const utama = pihak[0];
+    // Pasangan dicocokkan ke pihak berlawanan jenis (Tuan <-> Nyonya), utamakan yang
+    // alamatnya sama; bila tidak dapat ditentukan, pihak pertama.
+    const lawan = str(pasangan.sapaan) === "Tuan" ? ["Nyonya", "Nona"] : str(pasangan.sapaan) ? ["Tuan"] : [];
+    const kandidat = pihak.filter((p) => lawan.includes(str(p.sapaan)));
+    const utama =
+      kandidat.find((p) => str(p.alamat) && str(p.alamat).toLowerCase() === str(pasangan.alamat).toLowerCase()) ?? kandidat[0] ?? pihak[0];
     const hubungan = str(pasangan.sapaan) === "Tuan" ? "istrinya" : "suaminya";
     out.push({
       p: pasangan,

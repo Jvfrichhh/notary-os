@@ -47,6 +47,20 @@ export function angka(n: number | string | null | undefined): string {
   return `${terbilang(Number(int))} koma ${fracWords} (${formatThousands(Number(int))},${frac})`;
 }
 
+/**
+ * Bagian waris: "1/4" -> "satu per empat (1/4)"; "1/4 (satu per empat)" juga
+ * dibalik menjadi huruf dahulu. Teks lain dibiarkan apa adanya.
+ */
+export function pecahan(v: string | null | undefined): string {
+  const s = (v ?? "").trim();
+  const m = s.match(/^(\d+)\s*\/\s*(\d+)(?:\s*\(.*\))?$/);
+  if (!m) return s;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  if (!b) return s;
+  return `${terbilang(a)} per ${terbilang(b)} (${a}/${b})`;
+}
+
 export const BULAN = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
   "Juli", "Agustus", "September", "Oktober", "November", "Desember"

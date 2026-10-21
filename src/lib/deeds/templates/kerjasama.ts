@@ -31,13 +31,13 @@ function penutupPerjanjian(d: Record<string, unknown>, start: number): Block[] {
     ...pasal(start + 1, "Penyelesaian Perselisihan"),
     { t: "p", text: "Setiap perselisihan yang timbul dari perjanjian ini akan diselesaikan terlebih dahulu secara musyawarah untuk mufakat; apabila dalam waktu tiga puluh (30) hari tidak tercapai mufakat, perselisihan diselesaikan melalui Pengadilan Negeri sebagaimana tersebut di bawah ini." },
     ...pasal(start + 2, "Domisili"),
-    domisili(d)
+    domisili(d, "Para Pihak")
   ];
 }
 
 export const kerjasamaUsaha: DeedTemplate = {
   key: "kerjasama_usaha",
-  title: "Akta Perjanjian Kerjasama Usaha",
+  title: "Akta Perjanjian Kerja Sama Usaha",
   description: "Kerja sama usaha dua pihak: kontribusi, pengelolaan, bagi hasil, jangka waktu.",
   sections: [
     { title: "Pihak Pertama", fields: [partyList("pihak1", "Pihak Pertama", "Pihak Pertama")] },
@@ -67,7 +67,7 @@ export const kerjasamaUsaha: DeedTemplate = {
   },
   build(d, variant) {
     return [
-      judul("PERJANJIAN KERJASAMA USAHA", d),
+      judul("PERJANJIAN KERJA SAMA USAHA", d),
       ...pembukaDuaPihak(d, "PIHAK PERTAMA", "PIHAK KEDUA"),
       { t: "p", text: "Para Pihak dengan bertindak sebagaimana tersebut di atas menerangkan telah sepakat untuk mengadakan kerja sama usaha dengan syarat-syarat dan ketentuan-ketentuan sebagai berikut:" },
       ...pasal(1, "Maksud dan Ruang Lingkup"),
@@ -76,14 +76,14 @@ export const kerjasamaUsaha: DeedTemplate = {
       ...ayat([`Pihak Pertama memberikan kontribusi berupa ${str(d.kontribusi1) || "[...]"}.`, `Pihak Kedua memberikan kontribusi berupa ${str(d.kontribusi2) || "[...]"}.`]),
       ...pasal(3, "Pengelolaan"),
       ...ayat([
-        `Pengelolaan Usaha sehari-hari dilakukan oleh ${str(d.pengelola) || "[...]"}, dengan kewajiban mengelola secara jujur, hati-hati dan bertanggung jawab.`,
+        `Pengelolaan Usaha sehari-hari dilakukan oleh ${str(d.pengelola) || "[...]"}, untuk selanjutnya disebut **PENGELOLA**, dengan kewajiban mengelola secara jujur, hati-hati dan bertanggung jawab.`,
         "Pengelola wajib menyelenggarakan pembukuan yang tertib dan memberikan laporan keuangan kepada pihak lainnya setiap bulan, serta memberikan kesempatan kepada pihak lainnya untuk memeriksa pembukuan sewaktu-waktu.",
         "Keputusan mengenai penambahan modal, pinjaman, pengalihan aset Usaha, dan perubahan bidang usaha harus mendapat persetujuan tertulis Para Pihak."
       ]),
       ...pasal(4, "Pembagian Keuntungan dan Kerugian"),
       ...ayat([
         `Keuntungan bersih Usaha dibagi ${str(d.periode) || "setiap bulan"} dengan perbandingan Pihak Pertama sebesar ${pct(d.bagian1)} dan Pihak Kedua sebesar ${pct(d.bagian2)}.`,
-        "Kerugian Usaha yang bukan disebabkan oleh kesalahan atau kelalaian salah satu pihak ditanggung Para Pihak dengan perbandingan yang sama; kerugian akibat kesalahan atau kelalaian salah satu pihak menjadi tanggungan pihak tersebut."
+        "Kerugian Usaha yang bukan disebabkan oleh kesalahan atau kelalaian salah satu pihak ditanggung Para Pihak sesuai perbandingan pembagian keuntungan sebagaimana dimaksud dalam ayat (1); kerugian akibat kesalahan atau kelalaian salah satu pihak menjadi tanggungan pihak tersebut."
       ]),
       ...pasal(5, "Jangka Waktu"),
       { t: "p", text: `Perjanjian ini berlaku untuk jangka waktu ${str(d.lamaTahun) ? angka(str(d.lamaTahun)) : "[...]"} tahun terhitung sejak tanggal ${tanggalHuruf(str(d.mulai))}, dan dapat diperpanjang atas kesepakatan tertulis Para Pihak.` },
@@ -103,7 +103,7 @@ export const kerjasamaUsaha: DeedTemplate = {
 
 export const kerjasamaInvestasi: DeedTemplate = {
   key: "kerjasama_investasi",
-  title: "Akta Perjanjian Kerjasama Investasi",
+  title: "Akta Perjanjian Kerja Sama Investasi",
   description: "Penanaman dana investor kepada pengelola dengan bagi hasil dan pengembalian modal.",
   sections: [
     { title: "Pihak Pertama (Investor)", fields: [partyList("pihak1", "Investor", "Investor")] },
@@ -114,7 +114,7 @@ export const kerjasamaInvestasi: DeedTemplate = {
         { kind: "text", key: "usaha", label: "Usaha/proyek yang dibiayai", wide: true },
         { kind: "money", key: "nilai", label: "Nilai investasi (Rp)" },
         { kind: "select", key: "penyerahanDana", label: "Penyerahan dana", options: ["telah diterima Pihak Kedua sebelum penandatanganan akta ini", "akan ditransfer ke rekening Pihak Kedua paling lambat tujuh (7) hari setelah akta ini ditandatangani"], default: "akan ditransfer ke rekening Pihak Kedua paling lambat tujuh (7) hari setelah akta ini ditandatangani" },
-        { kind: "text", key: "rekening", label: "Rekening Pihak Kedua (bank, nomor, atas nama)", wide: true },
+        { kind: "text", key: "rekening", label: "Rekening Pengelola (bank, nomor, atas nama)", wide: true },
         { kind: "number", key: "bagianInvestor", label: "Bagi hasil untuk Investor (% dari keuntungan bersih)" },
         { kind: "select", key: "periode", label: "Pembayaran bagi hasil", options: ["setiap bulan", "setiap tiga (3) bulan", "setiap tahun"], default: "setiap bulan" },
         { kind: "date", key: "mulai", label: "Berlaku mulai" },
@@ -127,14 +127,16 @@ export const kerjasamaInvestasi: DeedTemplate = {
   prefill: (ctx) => ({ pihak1: [{ orang: personFromClient(ctx.client), kapasitas: "untuk diri sendiri" }] }),
   notes: () => ["Bila investasi ditawarkan kepada publik atau banyak investor, periksa ketentuan OJK; akta ini untuk kerja sama privat."],
   build(d, variant) {
+    const inv = Number(str(d.bagianInvestor).replace(",", "."));
+    const bagianPengelola = Number.isFinite(inv) && inv > 0 && inv < 100 ? pct(Math.round((100 - inv) * 100) / 100) : "[...] persen";
     const blocks: Block[] = [
-      judul("PERJANJIAN KERJASAMA INVESTASI", d),
+      judul("PERJANJIAN KERJA SAMA INVESTASI", d),
       ...pembukaDuaPihak(d, "INVESTOR", "PENGELOLA"),
       { t: "p", text: "Para Pihak dengan bertindak sebagaimana tersebut di atas menerangkan telah sepakat untuk mengadakan perjanjian kerja sama investasi dengan syarat-syarat dan ketentuan-ketentuan sebagai berikut:" },
       ...pasal(1, "Objek Investasi"),
       { t: "p", text: `Investor menempatkan dana investasi sebesar ${rupiah(str(d.nilai))} kepada Pengelola untuk dipergunakan semata-mata bagi ${str(d.usaha) || "[...]"}; untuk selanjutnya disebut **USAHA**.` },
       ...pasal(2, "Penyerahan Dana"),
-      { t: "p", text: `Dana investasi ${str(d.penyerahanDana)}${str(d.rekening) ? `, yaitu rekening ${str(d.rekening)}` : ""}${str(d.penyerahanDana).startsWith("telah diterima") ? ", dan untuk penerimaan jumlah uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kuitansi)" : ""}.` },
+      { t: "p", text: `Dana investasi ${str(d.penyerahanDana).replace(/Pihak Kedua/g, "Pengelola")}${str(d.rekening) ? `, yaitu rekening ${str(d.rekening)}` : ""}${str(d.penyerahanDana).startsWith("telah diterima") ? ", dan untuk penerimaan jumlah uang tersebut akta ini berlaku pula sebagai tanda penerimaan yang sah (kuitansi)" : ""}.` },
       ...pasal(3, "Kewajiban Pengelola"),
       ...ayat([
         "Pengelola wajib mempergunakan dana investasi hanya untuk Usaha, mengelolanya secara jujur, hati-hati dan bertanggung jawab.",
@@ -142,14 +144,14 @@ export const kerjasamaInvestasi: DeedTemplate = {
         "Investor berhak memeriksa pembukuan dan lokasi Usaha sewaktu-waktu dengan pemberitahuan terlebih dahulu."
       ]),
       ...pasal(4, "Bagi Hasil"),
-      { t: "p", text: `Investor berhak atas bagian keuntungan bersih Usaha sebesar ${pct(d.bagianInvestor)}, yang dibayarkan oleh Pengelola ${str(d.periode) || "setiap bulan"} paling lambat tanggal sepuluh (10) bulan berikutnya.` },
+      { t: "p", text: `Keuntungan bersih Usaha dibagi dengan perbandingan Investor sebesar ${pct(d.bagianInvestor)} dan Pengelola sebesar ${bagianPengelola}; bagian Investor dibayarkan oleh Pengelola ${str(d.periode) || "setiap bulan"} paling lambat tanggal sepuluh (10) bulan berikutnya.` },
       ...pasal(5, "Jangka Waktu dan Pengembalian Modal"),
       ...ayat([
         `Perjanjian ini berlaku untuk jangka waktu ${str(d.lamaBulan) ? angka(str(d.lamaBulan)) : "[...]"} bulan terhitung sejak tanggal ${tanggalHuruf(str(d.mulai))}.`,
         "Pada saat perjanjian berakhir, Pengelola wajib mengembalikan dana investasi kepada Investor setelah diperhitungkan dengan keuntungan dan kerugian Usaha sesuai laporan keuangan akhir, kecuali Para Pihak sepakat memperpanjangnya."
       ]),
       ...pasal(6, "Risiko"),
-      { t: "p", text: "Kerugian Usaha yang terjadi bukan karena kesalahan, kelalaian atau penyalahgunaan dana oleh Pengelola ditanggung Para Pihak secara proporsional; kerugian akibat kesalahan, kelalaian atau penyalahgunaan dana oleh Pengelola menjadi tanggungan Pengelola sepenuhnya." }
+      { t: "p", text: "Kerugian Usaha yang terjadi bukan karena kesalahan, kelalaian atau penyalahgunaan dana oleh Pengelola ditanggung Para Pihak sesuai perbandingan bagi hasil sebagaimana dimaksud dalam Pasal 4, dengan ketentuan tanggungan Investor tidak melebihi jumlah dana investasinya; kerugian akibat kesalahan, kelalaian atau penyalahgunaan dana oleh Pengelola menjadi tanggungan Pengelola sepenuhnya." }
     ];
     let n = 7;
     if (str(d.jaminan)) blocks.push(...pasal(n++, "Jaminan"), { t: "p", text: `Untuk menjamin pelaksanaan kewajibannya, Pengelola memberikan jaminan berupa ${str(d.jaminan)}.` });

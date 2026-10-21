@@ -22,8 +22,8 @@ export const fidusia: DeedTemplate = {
     {
       title: "Penerima Fidusia",
       fields: [
-        partyList("penerima", "Penerima fidusia (kreditur) / wakilnya", "Penerima fidusia", 1, 2),
-        { kind: "text", key: "namaKreditur", label: "Nama kreditur (bila badan hukum)", wide: true, placeholder: "PT Bank ABC Tbk., berkedudukan di Jakarta" }
+        partyList("penerima", "Penerima fidusia (kreditor) / wakilnya", "Penerima fidusia", 1, 2),
+        { kind: "text", key: "namaKreditur", label: "Nama kreditor (bila badan hukum)", wide: true, placeholder: "PT Bank ABC Tbk., berkedudukan di Jakarta" }
       ]
     },
     {
@@ -75,21 +75,21 @@ export const fidusia: DeedTemplate = {
       ...penerima.map((x) => ({ p: x.p, peran: peranDari(x) }))
     ];
     const n1 = pemberi.length + (ada ? 1 : 0);
-    const kreditur = str(d.namaKreditur);
+    const kreditor = str(d.namaKreditur);
     const blocks: Block[] = [
       judul("JAMINAN FIDUSIA", d),
       ...pembuka(d),
       ...daftarPenghadap(pen),
       {
         t: "p",
-        text: `Penghadap ${nomorPenghadap(1, pemberi.length)}${ada ? " (dengan persetujuan pasangannya)" : ""} untuk selanjutnya disebut **PEMBERI FIDUSIA**; dan penghadap ${nomorPenghadap(n1 + 1, penerima.length)}${kreditur ? `, dalam hal ini bertindak untuk dan atas nama ${kreditur},` : ""} untuk selanjutnya disebut **PENERIMA FIDUSIA**.`
+        text: `Penghadap ${nomorPenghadap(1, pemberi.length)}${ada ? " (dengan persetujuan pasangannya)" : ""} untuk selanjutnya disebut **PEMBERI FIDUSIA**; dan penghadap ${nomorPenghadap(n1 + 1, penerima.length)}${kreditor ? `, dalam hal ini bertindak untuk dan atas nama **${kreditor}**,` : ""} untuk selanjutnya disebut **PENERIMA FIDUSIA**.`
       },
       dikenal(pen.length),
       { t: "p", text: "Para penghadap dengan bertindak sebagaimana tersebut di atas menerangkan terlebih dahulu:" },
       {
         t: "item",
         marker: "a.",
-        text: `bahwa antara Penerima Fidusia sebagai kreditur dan Pemberi Fidusia sebagai debitur telah dibuat dan ditandatangani ${str(d.perjanjianPokok) || "[...]"} tertanggal ${tanggalHuruf(str(d.tanggalPerjanjian))}, berikut segala perubahan, perpanjangan dan pembaruannya; untuk selanjutnya disebut **PERJANJIAN POKOK**, dengan nilai utang sebesar ${rupiah(str(d.nilaiUtang))};`
+        text: `bahwa antara Penerima Fidusia sebagai kreditor dan Pemberi Fidusia sebagai debitor telah dibuat dan ditandatangani ${str(d.perjanjianPokok) || "[...]"} tertanggal ${tanggalHuruf(str(d.tanggalPerjanjian))}, dengan nilai utang sebesar ${rupiah(str(d.nilaiUtang))}, berikut segala perubahan, perpanjangan, dan pembaruannya, untuk selanjutnya disebut **PERJANJIAN POKOK**;`
       },
       { t: "item", marker: "b.", text: "bahwa untuk menjamin pelunasan utang berdasarkan Perjanjian Pokok, Pemberi Fidusia bersedia memberikan jaminan fidusia atas benda-benda miliknya kepada Penerima Fidusia;" },
       { t: "p", text: "Sehubungan dengan hal-hal tersebut di atas, para penghadap menerangkan dengan ini telah sepakat membuat perjanjian dengan syarat-syarat sebagai berikut:" },
@@ -106,11 +106,16 @@ export const fidusia: DeedTemplate = {
       ...pasal(3, "Kewajiban Pemberi Fidusia"),
       ...ayat([
         "Pemberi Fidusia menjamin bahwa Objek Jaminan Fidusia benar miliknya, tidak dibebani jaminan apa pun kepada pihak lain, dan tidak dalam sengketa.",
-        "Pemberi Fidusia dilarang mengalihkan, menggadaikan, menyewakan, atau memfidusiakan ulang Objek Jaminan Fidusia tanpa persetujuan tertulis Penerima Fidusia.",
+        "Pemberi Fidusia dilarang mengalihkan, menggadaikan, menyewakan, atau memfidusiakan ulang Objek Jaminan Fidusia tanpa persetujuan tertulis Penerima Fidusia, kecuali pengalihan benda persediaan dalam kegiatan usaha perdagangan sebagaimana dimaksud dalam Pasal 21 Undang-Undang Nomor 42 Tahun 1999 tentang Jaminan Fidusia, dengan kewajiban menggantinya dengan objek yang setara.",
         "Pemberi Fidusia wajib mengasuransikan Objek Jaminan Fidusia bila diminta Penerima Fidusia, dengan Penerima Fidusia ditunjuk sebagai pihak yang berhak menerima klaim."
       ]),
-      ...pasal(4, "Eksekusi"),
-      { t: "p", text: "Apabila Pemberi Fidusia cidera janji berdasarkan Perjanjian Pokok, Penerima Fidusia berhak menjual Objek Jaminan Fidusia atas kekuasaan sendiri melalui pelelangan umum maupun penjualan di bawah tangan sesuai ketentuan Undang-Undang Nomor 42 Tahun 1999 tentang Jaminan Fidusia dan peraturan pelaksanaannya, serta mengambil pelunasan piutangnya dari hasil penjualan tersebut, dengan kewajiban mengembalikan kelebihannya kepada Pemberi Fidusia." },
+      ...pasal(4, "Cidera Janji dan Eksekusi"),
+      ...ayat([
+        "Pemberi Fidusia dianggap cidera janji apabila tidak memenuhi kewajiban pembayaran atau kewajiban lain berdasarkan Perjanjian Pokok dan akta ini, setelah ditegur secara tertulis oleh Penerima Fidusia dan kewajiban tersebut tetap tidak dipenuhi dalam jangka waktu yang ditentukan dalam teguran itu.",
+        "Dalam hal Pemberi Fidusia mengakui telah cidera janji dan secara sukarela menyerahkan Objek Jaminan Fidusia, Penerima Fidusia berhak menjual Objek Jaminan Fidusia atas kekuasaan sendiri melalui pelelangan umum, atau melalui penjualan di bawah tangan berdasarkan kesepakatan Pemberi Fidusia dan Penerima Fidusia, sesuai ketentuan Pasal 29 Undang-Undang Nomor 42 Tahun 1999 tentang Jaminan Fidusia.",
+        "Dalam hal Pemberi Fidusia tidak mengakui adanya cidera janji atau tidak menyerahkan Objek Jaminan Fidusia secara sukarela, eksekusi dilakukan melalui permohonan pelaksanaan eksekusi kepada Pengadilan Negeri, sesuai Putusan Mahkamah Konstitusi Nomor 18/PUU-XVII/2019.",
+        "Penerima Fidusia mengambil pelunasan piutangnya dari hasil penjualan Objek Jaminan Fidusia dan wajib mengembalikan kelebihannya kepada Pemberi Fidusia; dalam hal hasil penjualan tidak mencukupi, Pemberi Fidusia tetap bertanggung jawab atas sisa utangnya."
+      ]),
       ...pasal(5, "Pendaftaran"),
       { t: "p", text: "Pemberi Fidusia dengan ini memberi kuasa kepada Penerima Fidusia, dengan hak substitusi, untuk mendaftarkan jaminan fidusia ini pada Kantor Pendaftaran Fidusia, melakukan perubahan pendaftaran, dan menandatangani segala dokumen yang diperlukan; kuasa ini merupakan bagian yang tidak terpisahkan dari akta ini dan tidak dapat ditarik kembali." },
       ...pasal(6, "Hapusnya Jaminan Fidusia"),

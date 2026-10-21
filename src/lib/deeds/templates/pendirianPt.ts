@@ -2,8 +2,8 @@ import type { DeedTemplate } from "../types";
 import { personFromClient } from "../types";
 import type { Block } from "../layout";
 import type { Person } from "../schema";
-import { ayat, daftarPenghadap, dikenal, judul, komparisi, list, namaTebal, pasal, pembuka, penutup, person, str } from "../common";
-import { formatThousands, rupiah, terbilang } from "../words";
+import { ayat, daftarPenghadap, dikenal, domisili, judul, komparisi, list, namaTebal, pasal, pembuka, penutup, person, str } from "../common";
+import { angka, formatThousands, rupiah, terbilang } from "../words";
 
 type Pendiri = { orang?: Person; saham?: string };
 type Pengurus = { orang?: Person; jabatan?: string };
@@ -124,6 +124,7 @@ export const pendirianPt: DeedTemplate = {
     const jangka = str(d.jangkaWaktu) || "tidak terbatas";
     const kuasa = person(d.penerimaKuasa);
 
+    const persenSetor = ditempatkan && dasar ? `${angka(Math.round((ditempatkan / dasar) * 10000) / 100)} persen` : "[...] persen";
     const lembar = (n: number) => (n ? `${terbilang(n)} (${formatThousands(n)}) saham` : "[...] saham");
 
     const blocks: Block[] = [
@@ -164,7 +165,7 @@ export const pendirianPt: DeedTemplate = {
       ...pasal(4),
       ...ayat([
         `Modal dasar Perseroan berjumlah ${rupiah(dasar)}, terbagi atas ${lembar(lembarDasar)}, masing-masing saham bernilai nominal ${rupiah(nominal)}.`,
-        `Dari modal dasar tersebut telah ditempatkan dan disetor penuh sebesar ${ditempatkan ? Math.round((ditempatkan / (dasar || ditempatkan)) * 100) : "[...]"}% (${ditempatkan && dasar ? terbilang(Math.round((ditempatkan / dasar) * 100)) : "[...]"} persen) atau sejumlah ${lembar(totalSaham)} dengan nilai nominal seluruhnya sebesar ${rupiah(ditempatkan)} oleh para pendiri yang telah mengambil bagian saham dan rincian serta nilai nominal saham yang disebutkan pada bagian akhir akta ini.`,
+        `Dari modal dasar tersebut telah ditempatkan dan disetor penuh sebesar ${persenSetor} atau sejumlah ${lembar(totalSaham)} dengan nilai nominal seluruhnya sebesar ${rupiah(ditempatkan)} oleh para pendiri yang telah mengambil bagian saham dan rincian serta nilai nominal saham yang disebutkan pada bagian akhir akta ini.`,
         "Saham-saham yang masih dalam simpanan akan dikeluarkan oleh Perseroan menurut keperluan modal Perseroan dengan persetujuan Rapat Umum Pemegang Saham, dengan memperhatikan peraturan perundang-undangan yang berlaku."
       ]),
 
@@ -210,9 +211,10 @@ export const pendirianPt: DeedTemplate = {
       { t: "center", text: "DIREKSI", bold: true },
       ...pasal(9),
       ...ayat([
-        "Perseroan diurus dan dipimpin oleh Direksi yang terdiri dari satu (1) orang anggota Direksi atau lebih; apabila diangkat lebih dari satu (1) orang, seorang di antaranya dapat diangkat sebagai Direktur Utama.",
+        "Perseroan diurus dan dipimpin oleh Direksi yang terdiri atas satu (1) orang anggota Direksi atau lebih; apabila diangkat lebih dari satu (1) orang, seorang di antaranya dapat diangkat sebagai Direktur Utama.",
         "Anggota Direksi diangkat oleh RUPS untuk jangka waktu lima (5) tahun dan dapat diangkat kembali, dengan tidak mengurangi hak RUPS untuk memberhentikannya sewaktu-waktu.",
         "Direksi berhak mewakili Perseroan di dalam dan di luar Pengadilan tentang segala hal dan dalam segala kejadian, mengikat Perseroan dengan pihak lain dan pihak lain dengan Perseroan, serta menjalankan segala tindakan, baik mengenai kepengurusan maupun kepemilikan, dengan pembatasan bahwa untuk meminjam atau meminjamkan uang atas nama Perseroan (tidak termasuk mengambil uang Perseroan di bank), membeli, menjual, atau dengan cara lain memperoleh atau melepaskan hak atas barang tidak bergerak, serta mengagunkan kekayaan Perseroan, Direksi harus mendapat persetujuan tertulis dari Dewan Komisaris.",
+        "Perbuatan hukum untuk mengalihkan kekayaan Perseroan atau menjadikan jaminan utang kekayaan Perseroan yang merupakan lebih dari lima puluh persen (50%) jumlah kekayaan bersih Perseroan dalam satu (1) transaksi atau lebih, baik yang berkaitan satu sama lain maupun tidak, wajib mendapat persetujuan RUPS sebagaimana dimaksud dalam Pasal 102 Undang-Undang Nomor 40 Tahun 2007 tentang Perseroan Terbatas.",
         "Direktur Utama berhak dan berwenang bertindak untuk dan atas nama Direksi serta mewakili Perseroan; dalam hal Direktur Utama tidak hadir atau berhalangan, yang tidak perlu dibuktikan kepada pihak ketiga, salah seorang anggota Direksi lainnya berhak dan berwenang bertindak untuk dan atas nama Direksi serta mewakili Perseroan.",
         "Rapat Direksi dapat diadakan sewaktu-waktu bila dianggap perlu, dan keputusan diambil berdasarkan musyawarah untuk mufakat atau, bila tidak tercapai, dengan suara terbanyak biasa."
       ]),
@@ -220,7 +222,7 @@ export const pendirianPt: DeedTemplate = {
       { t: "center", text: "DEWAN KOMISARIS", bold: true },
       ...pasal(10),
       ...ayat([
-        "Dewan Komisaris terdiri dari satu (1) orang anggota Dewan Komisaris atau lebih; apabila diangkat lebih dari satu (1) orang, seorang di antaranya dapat diangkat sebagai Komisaris Utama.",
+        "Dewan Komisaris terdiri atas satu (1) orang anggota Dewan Komisaris atau lebih; apabila diangkat lebih dari satu (1) orang, seorang di antaranya dapat diangkat sebagai Komisaris Utama.",
         "Anggota Dewan Komisaris diangkat oleh RUPS untuk jangka waktu lima (5) tahun dan dapat diangkat kembali, dengan tidak mengurangi hak RUPS untuk memberhentikannya sewaktu-waktu.",
         "Dewan Komisaris melakukan pengawasan atas kebijakan pengurusan dan jalannya pengurusan Perseroan oleh Direksi, serta memberikan nasihat kepada Direksi.",
         "Dewan Komisaris setiap waktu dalam jam kerja kantor Perseroan berhak memasuki bangunan dan halaman atau tempat lain yang dipergunakan atau yang dikuasai oleh Perseroan serta berhak memeriksa buku, surat, dan alat bukti lainnya."
@@ -279,7 +281,7 @@ export const pendirianPt: DeedTemplate = {
         text: `sehingga seluruhnya berjumlah ${lembar(totalSaham)} dengan nilai nominal seluruhnya sebesar ${rupiah(ditempatkan)}.`
       },
       { t: "item", marker: "b.", text: "Penyetoran modal tersebut telah dilakukan oleh masing-masing pendiri dengan bukti penyetoran yang sah." },
-      { t: "item", marker: "c.", text: "Menyimpang dari ketentuan tentang tata cara pengangkatan anggota Direksi dan Dewan Komisaris, telah diangkat untuk pertama kalinya:" },
+      { t: "item", marker: "c.", text: "Menyimpang dari ketentuan tentang tata cara pengangkatan anggota Direksi dan Dewan Komisaris, telah diangkat untuk pertama kalinya, untuk masa jabatan lima (5) tahun terhitung sejak tanggal Perseroan memperoleh pengesahan sebagai badan hukum dari Menteri Hukum Republik Indonesia:" },
       { t: "item", marker: "", level: 1, text: "**DIREKSI**:" },
       ...direksi.map((x, i) => ({
         t: "item" as const,
@@ -298,8 +300,9 @@ export const pendirianPt: DeedTemplate = {
       {
         t: "item",
         marker: "d.",
-        text: `Para penghadap memberi kuasa kepada ${str(kuasa.nama) ? `${komparisi(kuasa, "")}, ` : "Direksi Perseroan, "}dengan hak substitusi, untuk memohon pengesahan badan hukum Perseroan kepada Menteri Hukum Republik Indonesia melalui Sistem Administrasi Badan Hukum, mengajukan dan menandatangani semua permohonan dan dokumen lainnya, memilih tempat kedudukan, serta melakukan perubahan dan/atau tambahan dalam bentuk yang bagaimanapun juga yang diperlukan untuk memperoleh pengesahan tersebut, dan untuk mengajukan serta menandatangani semua permohonan dan dokumen lainnya, serta melaksanakan tindakan lain yang mungkin diperlukan.`
+        text: `Para penghadap memberi kuasa kepada ${str(kuasa.nama) ? `${komparisi(kuasa, "")}, ` : "Direksi Perseroan, "}dengan hak substitusi, untuk mengajukan permohonan pengesahan badan hukum Perseroan kepada Menteri Hukum Republik Indonesia melalui Sistem Administrasi Badan Hukum, membuat dan menandatangani segala permohonan dan dokumen yang diperlukan, melakukan perubahan dan/atau tambahan dalam bentuk apa pun yang diminta untuk memperoleh pengesahan tersebut, serta melakukan segala tindakan lain yang diperlukan untuk maksud tersebut.`
       },
+      domisili(d, "para penghadap"),
       ...penutup(d, variant)
     ];
     return blocks;

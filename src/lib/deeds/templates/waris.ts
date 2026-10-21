@@ -2,8 +2,8 @@ import type { DeedTemplate } from "../types";
 import { personFromClient } from "../types";
 import type { Block } from "../layout";
 import type { Person, SectionDef } from "../schema";
-import { daftarPenghadap, dikenal, domisili, identitas, judul, komparisi, list, namaTebal, pembuka, penutup, person, str } from "../common";
-import { tanggalHuruf } from "../words";
+import { almarhum, daftarPenghadap, dikenal, domisili, identitas, judul, komparisi, list, namaTebal, pembuka, penutup, person, str } from "../common";
+import { pecahan, tanggalHuruf } from "../words";
 
 type AhliWaris = { orang?: Person; hubungan?: string; bagian?: string };
 
@@ -41,7 +41,7 @@ export const waris: DeedTemplate = {
           fields: [
             { kind: "person", key: "orang", label: "Identitas" },
             { kind: "text", key: "hubungan", label: "Hubungan dengan pewaris", placeholder: "istri / anak kandung" },
-            { kind: "text", key: "bagian", label: "Bagian", placeholder: "1/4 (satu per empat)" }
+            { kind: "text", key: "bagian", label: "Bagian (mis. 1/4)", placeholder: "1/4" }
           ]
         }
       ]
@@ -62,27 +62,27 @@ export const waris: DeedTemplate = {
       ...pembuka(d),
       ...daftarPenghadap(ahli.map((a) => ({ p: person(a.orang), peran: "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }))),
       dikenal(ahli.length),
-      { t: "p", text: "Para penghadap menerangkan dengan ini dan menjamin kebenarannya:" },
+      { t: "p", text: "{Penghadap} menerangkan dengan ini dan menjamin kebenarannya:" },
       {
         t: "item",
         marker: "a.",
-        text: `bahwa ${namaTebal(pw)}, ${identitas(pw)}, telah meninggal dunia di ${str(d.tempatMeninggal) || "[...]"} pada tanggal ${tanggalHuruf(str(d.tanggalMeninggal))}, sebagaimana ternyata dari ${str(d.aktaKematian) || "[...]"}; untuk selanjutnya disebut **PEWARIS**;`
+        text: `bahwa ${almarhum(pw)} ${namaTebal(pw)}, ${identitas(pw, { almarhum: true })}, telah meninggal dunia di ${str(d.tempatMeninggal) || "[...]"} pada tanggal ${tanggalHuruf(str(d.tanggalMeninggal))}, sebagaimana ternyata dari ${str(d.aktaKematian) || "[...]"}; untuk selanjutnya disebut **PEWARIS**;`
       },
-      { t: "item", marker: "b.", text: `bahwa semasa hidupnya Pewaris ${str(d.perkawinan) || "[...]"};` },
+      { t: "item", marker: "b.", text: `bahwa semasa hidupnya Pewaris ${str(d.perkawinan) || "[...]"}, dan perkawinan tersebut merupakan satu-satunya perkawinan Pewaris;` },
       { t: "item", marker: "c.", text: `bahwa Pewaris tidak meninggalkan surat wasiat, sebagaimana ternyata dari ${str(d.keteranganWasiat) || "[...]"};` },
       { t: "item", marker: "d.", text: `bahwa menurut ${str(d.hukum) || "Kitab Undang-Undang Hukum Perdata"}, yang berhak atas harta peninggalan Pewaris adalah para ahli waris berikut dengan bagian masing-masing:` },
       ...ahli.map((a, i) => ({
         t: "item" as const,
         marker: `${i + 1}.`,
         level: 1,
-        text: `${namaTebal(person(a.orang))}, selaku ${str(a.hubungan) || "[...]"} Pewaris, berhak atas ${str(a.bagian) || "[...]"} bagian${i === ahli.length - 1 ? "." : ";"}`
+        text: `${namaTebal(person(a.orang))}, selaku ${str(a.hubungan) || "[...]"} Pewaris, berhak atas ${pecahan(str(a.bagian)) || "[...]"} bagian${i === ahli.length - 1 ? "." : ";"}`
       })),
-      { t: "p", text: "Selain para ahli waris tersebut di atas, tidak ada lagi orang lain yang berhak atas harta peninggalan Pewaris." },
+      { t: "p", text: "Para ahli waris tersebut di atas merupakan satu-satunya ahli waris Pewaris, dan selain mereka tidak ada lagi orang lain yang berhak atas harta peninggalan Pewaris." },
       {
         t: "p",
-        text: "Para penghadap bertanggung jawab sepenuhnya atas kebenaran keterangan yang diberikan dalam akta ini, dan membebaskan Notaris dari segala tuntutan apabila di kemudian hari ternyata keterangan tersebut tidak benar."
+        text: "{Penghadap} bertanggung jawab sepenuhnya atas kebenaran keterangan yang diberikan dalam akta ini, dan membebaskan Notaris dari segala tuntutan apabila di kemudian hari ternyata keterangan tersebut tidak benar."
       },
-      domisili(d),
+      domisili(d, "{PENGHADAP}"),
       ...penutup(d, variant)
     ];
     return blocks;
@@ -128,12 +128,13 @@ export const kuasaWaris: DeedTemplate = {
       dikenal(pemberi.length),
       {
         t: "p",
-        text: `Para penghadap menerangkan bahwa mereka adalah ahli waris dari almarhum/almarhumah ${namaTebal(pw)}, yang telah meninggal dunia pada tanggal ${tanggalHuruf(str(d.tanggalMeninggal))} sebagaimana ternyata dari ${str(d.aktaKematian) || "[...]"}, berdasarkan ${str(d.buktiWaris) || "[...]"}; para penghadap untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:`
+        text: `{Penghadap} menerangkan bahwa ${pemberi.length > 1 ? "mereka adalah para" : "penghadap adalah"} ahli waris dari ${almarhum(pw)} ${namaTebal(pw)}, yang telah meninggal dunia pada tanggal ${tanggalHuruf(str(d.tanggalMeninggal))} sebagaimana ternyata dari ${str(d.aktaKematian) || "[...]"}, untuk selanjutnya disebut **PEWARIS**, berdasarkan ${str(d.buktiWaris) || "[...]"}.`
       },
+      { t: "p", text: "{Penghadap}, untuk selanjutnya disebut **PEMBERI KUASA**, menerangkan dengan ini memberi kuasa kepada:" },
       { t: "item", marker: "", text: komparisi(person(d.penerima), ".") },
       { t: "p", text: "Untuk selanjutnya disebut **PENERIMA KUASA**." },
       { t: "center", text: "KHUSUS", bold: true },
-      { t: "p", text: `Untuk dan atas nama Pemberi Kuasa selaku ahli waris ${str(d.keperluan) || "[...]"}.` }
+      { t: "p", text: `Untuk dan atas nama Pemberi Kuasa selaku ahli waris Pewaris, ${str(d.keperluan) || "[...]"}.` }
     ];
     if (wewenang.length) {
       blocks.push({ t: "p", text: "Untuk keperluan tersebut, Penerima Kuasa dikuasakan untuk:" });
@@ -150,6 +151,16 @@ export const kuasaWaris: DeedTemplate = {
 };
 
 type Wasiat = { penerima?: string; isi?: string };
+
+/** "Nyonya RINA SANTOSO, anak kandung" -> "Nyonya **RINA SANTOSO**, anak kandung". */
+function penerimaTebal(v: string): string {
+  if (!v) return "[...]";
+  const [nama, ...rest] = v.split(",");
+  const m = nama.trim().match(/^((?:Tuan|Nyonya|Nona)\s+)?(.+)$/i);
+  const sapaan = m?.[1] ?? "";
+  const inti = (m?.[2] ?? nama).trim().toUpperCase();
+  return `${sapaan}**${inti}**${rest.length ? "," + rest.join(",") : ""}`;
+}
 
 export const wasiat: DeedTemplate = {
   key: "wasiat",
@@ -191,19 +202,19 @@ export const wasiat: DeedTemplate = {
       ...pembuka(d),
       ...daftarPenghadap([{ p, peran: "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }]),
       dikenal(1),
-      { t: "p", text: "Penghadap dalam keadaan sehat jasmani dan rohani, atas kehendaknya sendiri tanpa paksaan dari siapa pun, menyatakan kehendak terakhirnya kepada saya, Notaris, di hadapan saksi-saksi, untuk dituangkan dalam akta wasiat umum ini, sebagai berikut:" }
+      { t: "p", text: "Penghadap, untuk selanjutnya disebut **PEWASIAT**, dalam keadaan sehat jasmani dan rohani, atas kehendaknya sendiri tanpa paksaan dari siapa pun, menyatakan kehendak terakhirnya kepada saya, Notaris, di hadapan saksi-saksi, untuk dituangkan dalam akta wasiat umum ini, sebagai berikut:" }
     ];
     let n = 1;
     if (str(d.cabut) !== "Tidak") {
-      blocks.push({ t: "item", marker: `${n++}.`, text: "Penghadap mencabut seluruh surat wasiat, hibah wasiat, dan ketetapan kehendak terakhir lainnya yang pernah dibuat sebelum akta ini." });
+      blocks.push({ t: "item", marker: `${n++}.`, text: "Pewasiat mencabut seluruh surat wasiat, hibah wasiat, dan ketetapan kehendak terakhir lainnya yang pernah dibuat sebelum akta ini." });
     }
     isi.forEach((w) => {
-      blocks.push({ t: "item", marker: `${n++}.`, text: `Penghadap menghibahwasiatkan kepada ${str(w.penerima) || "[...]"}: ${str(w.isi) || "[...]"}.` });
+      blocks.push({ t: "item", marker: `${n++}.`, text: `Pewasiat menghibahwasiatkan kepada ${penerimaTebal(str(w.penerima))}, berupa ${str(w.isi).replace(/[.;]+$/, "") || "[...]"}.` });
     });
-    if (str(d.pelaksana)) blocks.push({ t: "item", marker: `${n++}.`, text: `Penghadap mengangkat ${str(d.pelaksana)} sebagai pelaksana wasiat (executeur testamentair) dengan segala hak dan kewenangan menurut undang-undang.` });
+    if (str(d.pelaksana)) blocks.push({ t: "item", marker: `${n++}.`, text: `Pewasiat mengangkat ${str(d.pelaksana)} sebagai pelaksana wasiat (executeur testamentair) dengan segala hak dan kewenangan menurut undang-undang.` });
     blocks.push(
-      { t: "p", text: "Penghadap menerangkan bahwa wasiat ini dibuat dengan memperhatikan bagian mutlak para ahli warisnya menurut hukum yang berlaku." },
-      ...penutup(d, variant)
+      { t: "p", text: "Pewasiat menerangkan bahwa wasiat ini dibuat dengan memperhatikan bagian mutlak para ahli warisnya menurut hukum yang berlaku." },
+      ...penutup(d, variant, { wasiat: true })
     );
     return blocks;
   }

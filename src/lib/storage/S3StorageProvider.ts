@@ -1,7 +1,7 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
-import type { FileStorageService, UploadResult } from "./FileStorageService";
+import { buildStorageKey, type FileStorageService, type UploadResult } from "./FileStorageService";
 
 export interface S3StorageConfig {
   endpoint: string;
@@ -40,9 +40,7 @@ export class S3StorageProvider implements FileStorageService {
   }
 
   async upload(params: { buffer: Buffer; fileName: string; contentType: string; folder?: string }): Promise<UploadResult> {
-    const folder = params.folder ?? "misc";
-    const safeName = `${randomUUID()}-${params.fileName.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
-    const key = `${folder}/${safeName}`;
+    const key = buildStorageKey(params.folder ?? "misc", params.fileName, randomUUID());
     await this.client.send(
       new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: params.buffer, ContentType: params.contentType })
     );
@@ -56,6 +54,26 @@ export class S3StorageProvider implements FileStorageService {
 
   async delete(storageKey: string): Promise<void> {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: storageKey }));
+  }
+
+  supportsDirectUpload(): boolean {
+    return true;
+  }
+
+  async getSignedPutUrl(storageKey: string, contentType: string, expiresInSeconds = 600): Promise<string> {
+    const command = new PutObjectCommand({ Bucket: this.bucket, Key: storageKey, ContentType: contentType });
+    return awsGetSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
+  }
+
+  async headObject(storageKey: string): Promise<{ size: number; contentType: string | null } | null> {
+    try {
+      const res = await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: storageKey }));
+      return { size: Number(res.ContentLength ?? 0), contentType: res.ContentType ?? null };
+    } catch (err) {
+      const status = (err as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+      if (status === 404 || (err as Error).name === "NotFound") return null;
+      throw err;
+    }
   }
 
   async getObjectBuffer(storageKey: string): Promise<Buffer> {

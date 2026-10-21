@@ -7,8 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
-import { getFileStorage } from "@/lib/storage";
-import { validateUploadFile } from "@/lib/uploadValidation";
+import { issueUploadTicket, resolveUploadFromForm, type TicketResult } from "@/lib/upload/directUpload";
 
 const CATEGORY_VALUES = ["CLIENT_DOCUMENT", "WORKING_DOCUMENT", "FINAL_DOCUMENT", "SUPPORTING_DOCUMENT"] as const;
 
@@ -49,16 +48,6 @@ export async function uploadDocument(_prevState: DocumentFormState, formData: Fo
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { formError: "Pilih file terlebih dahulu." };
-  }
-
-  const validation = validateUploadFile(file);
-  if (!validation.ok) {
-    return { formError: validation.message };
-  }
-
   const data = parsed.data;
   const clientId = toNullable(data.clientId);
   const jobId = toNullable(data.jobId);
@@ -79,21 +68,17 @@ export async function uploadDocument(_prevState: DocumentFormState, formData: Fo
     return { formError: "Job yang dipilih bukan milik client tersebut." };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const upload = await getFileStorage().upload({
-    buffer,
-    fileName: file.name,
-    contentType: file.type || "application/octet-stream",
-    folder: folderFor(clientId, jobId)
-  });
+  const resolved = await resolveUploadFromForm(formData, { principal: `staff:${user.id}`, folder: folderFor(clientId, jobId) });
+  if (!resolved.ok) return { formError: resolved.error };
+  const upload = resolved.file;
 
   const document = await prisma.$transaction(async (tx) => {
     const doc = await tx.document.create({
       data: {
         clientId,
         jobId,
-        fileName: file.name,
-        fileType: file.type || "application/octet-stream",
+        fileName: upload.fileName,
+        fileType: upload.fileType,
         fileSize: upload.size,
         category: data.category,
         description: toNullable(data.description),
@@ -108,8 +93,8 @@ export async function uploadDocument(_prevState: DocumentFormState, formData: Fo
         versionNumber: 1,
         isCurrent: true,
         storageKey: upload.storageKey,
-        fileName: file.name,
-        fileType: file.type || "application/octet-stream",
+        fileName: upload.fileName,
+        fileType: upload.fileType,
         fileSize: upload.size,
         uploadedBy: user.id
       }
@@ -133,18 +118,14 @@ export async function uploadDocument(_prevState: DocumentFormState, formData: Fo
   redirect(`/documents/${document.id}`);
 }
 
-export async function uploadNewVersion(documentId: string, formData: FormData) {
+export type VersionUploadState = { error?: string; success?: string };
+
+export async function uploadNewVersion(documentId: string, _prev: VersionUploadState, formData: FormData): Promise<VersionUploadState> {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
 
   const document = await prisma.document.findUnique({ where: { id: documentId } });
-  if (!document) return;
-
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) return;
-
-  const validation = validateUploadFile(file);
-  if (!validation.ok) return;
+  if (!document) return { error: "Dokumen tidak ditemukan." };
 
   const notes = toNullable(String(formData.get("notes") ?? ""));
 
@@ -154,18 +135,16 @@ export async function uploadNewVersion(documentId: string, formData: FormData) {
   });
   const nextVersionNumber = (existingVersions[0]?.versionNumber ?? 1) + 1;
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  // File baru selalu dapat storageKey baru (randomUUID di provider) --
-  // file versi lama TIDAK pernah ditimpa/dihapus. Upload fisik dilakukan
-  // SEBELUM transaksi DB supaya kalau ada error, yang terjadi paling buruk
-  // adalah file baru "menggantung" di storage -- bukan kehilangan current
-  // version yang valid di database.
-  const upload = await getFileStorage().upload({
-    buffer,
-    fileName: file.name,
-    contentType: file.type || "application/octet-stream",
+  // File baru selalu dapat storageKey baru -- file versi lama TIDAK pernah
+  // ditimpa/dihapus. Upload fisik terjadi SEBELUM transaksi DB supaya kalau
+  // ada error, yang terjadi paling buruk adalah file baru "menggantung" di
+  // storage -- bukan kehilangan current version yang valid di database.
+  const resolved = await resolveUploadFromForm(formData, {
+    principal: `staff:${user.id}`,
     folder: folderFor(document.clientId, document.jobId)
   });
+  if (!resolved.ok) return { error: resolved.error };
+  const upload = resolved.file;
 
   // Semua perubahan status "current version" + insert versi baru + update
   // Document dilakukan dalam SATU transaksi -- kalau salah satu gagal,
@@ -198,8 +177,8 @@ export async function uploadNewVersion(documentId: string, formData: FormData) {
         versionNumber: nextVersionNumber,
         isCurrent: true,
         storageKey: upload.storageKey,
-        fileName: file.name,
-        fileType: file.type || "application/octet-stream",
+        fileName: upload.fileName,
+        fileType: upload.fileType,
         fileSize: upload.size,
         uploadedBy: user.id,
         notes
@@ -209,8 +188,8 @@ export async function uploadNewVersion(documentId: string, formData: FormData) {
     return tx.document.update({
       where: { id: documentId },
       data: {
-        fileName: file.name,
-        fileType: file.type || "application/octet-stream",
+        fileName: upload.fileName,
+        fileType: upload.fileType,
         fileSize: upload.size,
         storageKey: upload.storageKey
       }
@@ -230,6 +209,38 @@ export async function uploadNewVersion(documentId: string, formData: FormData) {
   revalidatePath("/documents");
   if (document.jobId) revalidatePath(`/jobs/${document.jobId}`);
   if (document.clientId) revalidatePath(`/clients/${document.clientId}`);
+  return { success: `Versi ${nextVersionNumber} tersimpan.` };
+}
+
+export type UploadScope = { kind: "new"; clientId?: string | null; jobId?: string | null } | { kind: "version"; documentId: string };
+
+/**
+ * Terbitkan tiket unggah langsung untuk staf. Pemeriksaan izin & kecocokan
+ * job/klien sama dengan aksi simpannya, supaya folder di tiket sah.
+ */
+export async function requestOfficeUploadTicket(
+  scope: UploadScope,
+  meta: { fileName: string; fileType: string; fileSize: number }
+): Promise<TicketResult> {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
+
+  let folder: string;
+  if (scope.kind === "version") {
+    const doc = await prisma.document.findUnique({ where: { id: scope.documentId }, select: { clientId: true, jobId: true } });
+    if (!doc) return { mode: "error", error: "Dokumen tidak ditemukan." };
+    folder = folderFor(doc.clientId, doc.jobId);
+  } else {
+    const clientId = toNullable(scope.clientId ?? undefined);
+    const jobId = toNullable(scope.jobId ?? undefined);
+    if (jobId) {
+      const job = await prisma.job.findUnique({ where: { id: jobId }, select: { clientId: true } });
+      if (!job) return { mode: "error", error: "Job tidak ditemukan." };
+      if (clientId && job.clientId !== clientId) return { mode: "error", error: "Job yang dipilih bukan milik client tersebut." };
+    }
+    folder = folderFor(clientId, jobId);
+  }
+  return issueUploadTicket({ principal: `staff:${user.id}`, folder, ...meta });
 }
 
 export async function archiveDocument(documentId: string) {

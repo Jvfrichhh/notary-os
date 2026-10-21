@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
-import { validateUploadFile } from "@/lib/uploadValidation";
-import { getFileStorage } from "@/lib/storage";
+import { issueUploadTicket, resolveUploadFromForm, type TicketResult } from "@/lib/upload/directUpload";
 import { writeAuditLog } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 
@@ -27,17 +26,12 @@ export interface PortalUploadState {
  * reviewStatus = PENDING_REVIEW (status checklist tetap MISSING sampai
  * staff menerima); audit log; notifikasi ke PIC job.
  */
-export async function uploadChecklistDocument(
-  checklistItemId: string,
-  _prev: PortalUploadState,
-  formData: FormData
-): Promise<PortalUploadState> {
-  const principal = await requireClientAccount();
-
+/** Cari item checklist milik klien yang boleh menerima unggahan; null + pesan bila tidak boleh. */
+async function findUploadableItem(checklistItemId: string, clientId: string) {
   const item = await prisma.checklistItem.findFirst({
     where: {
       id: checklistItemId,
-      checklist: { job: { clientId: principal.clientId, recordStatus: "ACTIVE" } }
+      checklist: { job: { clientId, recordStatus: "ACTIVE" } }
     },
     select: {
       id: true,
@@ -46,36 +40,59 @@ export async function uploadChecklistDocument(
       checklist: { select: { job: { select: { id: true, jobNumber: true, picId: true, status: true } } } }
     }
   });
-  if (!item) return { error: "Dokumen yang diminta tidak ditemukan." };
-
+  if (!item) return { item: null, error: "Dokumen yang diminta tidak ditemukan." } as const;
   const job = item.checklist.job;
   if (job.status === "COMPLETED" || job.status === "CANCELLED") {
-    return { error: "Pekerjaan ini sudah selesai/dibatalkan. Hubungi kantor jika perlu mengirim dokumen." };
+    return { item: null, error: "Pekerjaan ini sudah selesai/dibatalkan. Hubungi kantor jika perlu mengirim dokumen." } as const;
   }
   if (item.reviewStatus === "ACCEPTED") {
-    return { error: "Dokumen ini sudah diterima kantor dan tidak dapat diganti. Hubungi kantor jika ada perubahan." };
+    return { item: null, error: "Dokumen ini sudah diterima kantor dan tidak dapat diganti. Hubungi kantor jika ada perubahan." } as const;
   }
+  return { item, error: null } as const;
+}
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) return { error: "Pilih file terlebih dahulu." };
-  const validation = validateUploadFile(file);
-  if (!validation.ok) return { error: validation.message };
+const portalFolder = (jobId: string) => `documents/job-${jobId}/client-uploads`;
 
-  const contentType = file.type || "application/octet-stream";
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const upload = await getFileStorage().upload({
-    buffer,
-    fileName: file.name,
-    contentType,
-    folder: `documents/job-${job.id}/client-uploads`
+/** Tiket unggah langsung untuk klien (file besar tidak lewat server). */
+export async function requestPortalUploadTicket(
+  checklistItemId: string,
+  meta: { fileName: string; fileType: string; fileSize: number }
+): Promise<TicketResult> {
+  const principal = await requireClientAccount();
+  const found = await findUploadableItem(checklistItemId, principal.clientId);
+  if (!found.item) return { mode: "error", error: found.error };
+  return issueUploadTicket({
+    principal: `client:${principal.accountId}`,
+    folder: portalFolder(found.item.checklist.job.id),
+    ...meta
   });
+}
+
+export async function uploadChecklistDocument(
+  checklistItemId: string,
+  _prev: PortalUploadState,
+  formData: FormData
+): Promise<PortalUploadState> {
+  const principal = await requireClientAccount();
+  const found = await findUploadableItem(checklistItemId, principal.clientId);
+  if (!found.item) return { error: found.error };
+  const item = found.item;
+  const job = item.checklist.job;
+
+  const resolved = await resolveUploadFromForm(formData, {
+    principal: `client:${principal.accountId}`,
+    folder: portalFolder(job.id)
+  });
+  if (!resolved.ok) return { error: resolved.error };
+  const upload = resolved.file;
+  const contentType = upload.fileType;
 
   const document = await prisma.$transaction(async (tx) => {
     const doc = await tx.document.create({
       data: {
         clientId: principal.clientId,
         jobId: job.id,
-        fileName: file.name,
+        fileName: upload.fileName,
         fileType: contentType,
         fileSize: upload.size,
         category: "CLIENT_DOCUMENT",
@@ -91,7 +108,7 @@ export async function uploadChecklistDocument(
         versionNumber: 1,
         isCurrent: true,
         storageKey: upload.storageKey,
-        fileName: file.name,
+        fileName: upload.fileName,
         fileType: contentType,
         fileSize: upload.size,
         uploadedBy: null
@@ -137,5 +154,5 @@ export async function uploadChecklistDocument(
   revalidatePath(`/portal/jobs/${job.id}`);
   revalidatePath("/portal");
   revalidatePath(`/jobs/${job.id}`);
-  return { success: `"${file.name}" berhasil dikirim dan menunggu pemeriksaan kantor.` };
+  return { success: `"${upload.fileName}" berhasil dikirim dan menunggu pemeriksaan kantor.` };
 }

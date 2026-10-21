@@ -25,4 +25,21 @@ export interface FileStorageService {
    * Pemanggil wajib sudah memeriksa izin; fungsi ini tidak tahu konteks user.
    */
   getObjectBuffer(storageKey: string): Promise<Buffer>;
+
+  /**
+   * Unggah langsung dari browser (tanpa melewati server, yang di Vercel
+   * dibatasi ±4,5 MB per request). Provider yang tidak mendukung (local)
+   * mengembalikan false dan aplikasi memakai jalur form biasa.
+   */
+  supportsDirectUpload(): boolean;
+  /** URL PUT bertanda tangan berumur pendek untuk satu storageKey + Content-Type. */
+  getSignedPutUrl(storageKey: string, contentType: string, expiresInSeconds?: number): Promise<string>;
+  /** Metadata objek (untuk memverifikasi unggahan langsung); null bila tidak ada. */
+  headObject(storageKey: string): Promise<{ size: number; contentType: string | null } | null>;
+}
+
+/** Bentuk storageKey yang dipakai semua provider: "<folder>/<uuid>-<nama-aman>". */
+export function buildStorageKey(folder: string, fileName: string, uuid: string): string {
+  const safeName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, "_").slice(-120);
+  return `${folder}/${uuid}-${safeName}`;
 }

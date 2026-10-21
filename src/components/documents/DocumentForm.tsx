@@ -1,10 +1,11 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormState } from "react-dom";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ACCEPT_ATTRIBUTE, ALLOWED_EXTENSIONS_LABEL } from "@/lib/uploadValidation";
-import type { DocumentFormState } from "@/app/(dashboard)/documents/actions";
+import { requestOfficeUploadTicket, type DocumentFormState } from "@/app/(dashboard)/documents/actions";
+import { useDirectUpload } from "@/components/upload/useDirectUpload";
 
 const CATEGORIES = [
   { value: "CLIENT_DOCUMENT", label: "Client Document" },
@@ -39,15 +40,14 @@ const initialState: DocumentFormState = {};
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+function SubmitButton({ busy, uploading }: { busy: boolean; uploading: boolean }) {
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={busy}
       className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
     >
-      {pending ? "Mengunggah..." : "Upload Dokumen"}
+      {uploading ? "Mengunggah..." : busy ? "Menyimpan..." : "Upload Dokumen"}
     </button>
   );
 }
@@ -55,19 +55,25 @@ function SubmitButton() {
 export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, cancelHref }: DocumentFormProps) {
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
+  const { onSubmit, busy, uploading, uploadError } = useDirectUpload((form, meta) => {
+    const fd = new FormData(form);
+    return requestOfficeUploadTicket(
+      { kind: "new", clientId: String(fd.get("clientId") ?? ""), jobId: String(fd.get("jobId") ?? "") },
+      meta
+    );
+  }, formAction);
+  const formError = uploadError ?? state.formError;
 
   return (
-    <form action={formAction} className="space-y-4" encType="multipart/form-data">
-      {state.formError && (
-        <p className="rounded-md bg-status-overdue/10 px-3 py-2 text-sm text-status-overdue">{state.formError}</p>
-      )}
+    <form onSubmit={onSubmit} className="space-y-4">
+      {formError && <p className="rounded-md bg-status-overdue/10 px-3 py-2 text-sm text-status-overdue">{formError}</p>}
 
       <div>
         <label htmlFor="file" className="mb-1 block text-sm font-medium text-foreground">
           File <span className="text-status-overdue">*</span>
         </label>
         <input id="file" name="file" type="file" required accept={ACCEPT_ATTRIBUTE} className={fieldClass} />
-        <p className="mt-1 text-xs text-muted-foreground">Format yang didukung: {ALLOWED_EXTENSIONS_LABEL}.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Format yang didukung: {ALLOWED_EXTENSIONS_LABEL}. Maksimal 20 MB.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -137,7 +143,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
       </div>
 
       <div className="flex items-center gap-3">
-        <SubmitButton />
+        <SubmitButton busy={busy} uploading={uploading} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal
         </Link>

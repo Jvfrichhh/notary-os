@@ -51,6 +51,23 @@ export class LocalStorageProvider implements FileStorageService {
     await fs.unlink(fullPath).catch(() => undefined);
   }
 
+  supportsDirectUpload(): boolean {
+    return false;
+  }
+
+  async getSignedPutUrl(): Promise<string> {
+    throw new Error("Unggah langsung tidak didukung storage lokal.");
+  }
+
+  async headObject(storageKey: string): Promise<{ size: number; contentType: string | null } | null> {
+    try {
+      const stat = await fs.stat(path.resolve(this.basePath, storageKey));
+      return { size: stat.size, contentType: null };
+    } catch {
+      return null;
+    }
+  }
+
   async getObjectBuffer(storageKey: string): Promise<Buffer> {
     // Tolak path traversal (storageKey selalu "folder/uuid-nama").
     const fullPath = path.resolve(this.basePath, storageKey);

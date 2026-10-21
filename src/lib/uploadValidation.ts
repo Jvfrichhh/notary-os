@@ -35,13 +35,22 @@ function getExtension(fileName: string): string {
   return parts.length > 1 ? parts[parts.length - 1] : "";
 }
 
-function getMaxUploadSizeBytes(): number {
+export function getMaxUploadSizeBytes(): number {
   const mb = parseInt(process.env.MAX_UPLOAD_SIZE_MB || "20", 10);
   const safeMb = Number.isFinite(mb) && mb > 0 ? mb : 20;
   return safeMb * 1024 * 1024;
 }
 
 export function validateUploadFile(file: File): { ok: true } | { ok: false; message: string } {
+  return validateUploadMeta({ name: file.name, type: file.type, size: file.size });
+}
+
+/**
+ * Validasi yang sama berdasarkan metadata saja -- dipakai untuk unggah
+ * langsung (file tidak lewat server; ukuran asli dicek lagi ke storage).
+ */
+export function validateUploadMeta(file: { name: string; type: string; size: number }): { ok: true } | { ok: false; message: string } {
+  if (!file.size || file.size <= 0) return { ok: false, message: "File kosong." };
   const ext = getExtension(file.name);
   const allowedMimes = ALLOWED_EXTENSIONS[ext];
 

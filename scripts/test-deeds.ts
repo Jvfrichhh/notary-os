@@ -9,7 +9,7 @@
 import { mkdirSync, writeFileSync } from "fs";
 import { DEED_TEMPLATES, sectionsFor } from "../src/lib/deeds/registry";
 import { applyDefaults, renderDeed } from "../src/lib/deeds/render";
-import { blocksToLines, LINE_WIDTH } from "../src/lib/deeds/layout";
+import { blocksToLines, LINE_WIDTH, LINES_PER_PAGE, paginate } from "../src/lib/deeds/layout";
 
 const out = process.argv[2];
 if (out) mkdirSync(out, { recursive: true });
@@ -44,6 +44,25 @@ for (const t of Object.values(DEED_TEMPLATES)) {
         const len = l.col + l.segs.reduce((n, s) => n + s.text.length, 0);
         if (len !== LINE_WIDTH) fail(`${t.key} ${variant} baris ${i + 1}: ${len} huruf`);
       });
+      // Teks yang tidak boleh muncul di akta.
+      const text = body.map((l) => l.segs.map((sg) => sg.text).join("")).join("\n");
+      for (const bad of ["undefined", "null", "NaN", "**", "[object"]) {
+        if (text.includes(bad)) fail(`${t.key} ${variant}: memuat "${bad}"`);
+      }
+      body.forEach((l, i) => {
+        // Kolom nomor butir ("1. ", "a. ", "-  ") memang berspasi; abaikan.
+        const raw = l.segs.map((sg) => sg.text).join("").replace(/-+$/, "").replace(/^\s*[-a-z0-9.()]{1,4} +/i, "");
+        if (/\S {2,}\S/.test(raw)) fail(`${t.key} ${variant} baris ${i + 1}: spasi ganda "${raw}"`);
+        if (/ [,.;:)]/.test(raw)) fail(`${t.key} ${variant} baris ${i + 1}: spasi sebelum tanda baca "${raw}"`);
+      });
+      // Pagination: setiap halaman (kecuali terakhir) tepat 30 baris badan + tanda tangan.
+      const sigProbe = paginate(title, body, -1, [], 0);
+      const breaks = sigProbe.map((l, i) => (l.pageBreakBefore ? i : -1)).filter((i) => i >= 0);
+      let prev = 0;
+      for (const b of breaks) {
+        if (b - prev !== LINES_PER_PAGE) fail(`${t.key} ${variant}: halaman berisi ${b - prev} baris`);
+        prev = b;
+      }
       const r = renderDeed(t, data, variant);
       if (r.buffer.subarray(0, 2).toString() !== "PK") fail(`${t.key}: bukan file zip`);
       if (out && data === sample) writeFileSync(`${out}/${t.key}_${variant}.docx`, r.buffer);

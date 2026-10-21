@@ -4,6 +4,7 @@ import { createNotification } from "@/lib/notifications";
 import { writeAuditLog } from "@/lib/audit";
 import { formatDate } from "@/lib/format";
 import { autoSetJobStatus, notifyJobPeople } from "@/lib/jobAutomation";
+import { completeStage } from "@/lib/ppatStages";
 
 /**
  * Buku Daftar Akta PPAT. Nomor akta PPAT berurut per tahun ("12/2026"),
@@ -119,6 +120,7 @@ export async function registerPpatDeed(input: PpatInput, userId: string, sequenc
       relatedEntityType: "Job",
       relatedEntityId: deed.jobId
     });
+    await completeStage(deed.jobId, "TANDA_TANGAN", { userId, date: deed.deedDate, reference: `Akta PPAT ${deed.deedNumber}` });
     const done = await autoSetJobStatus(deed.jobId, "COMPLETED", `akta PPAT ${deed.deedNumber} didaftarkan`, userId, { force: true });
     if (done && job) await notifyJobPeople(deed.jobId, `Akta PPAT ${deed.deedNumber} didaftarkan; pekerjaan ${job.jobNumber} selesai.`, { pic: true });
   }
@@ -129,6 +131,7 @@ export async function registerPpatDeed(input: PpatInput, userId: string, sequenc
 export async function markSubmittedToBpn(id: string, date: Date, userId: string) {
   const deed = await prisma.ppatDeed.update({ where: { id }, data: { submittedToBpnAt: date } });
   if (deed.jobId) {
+    await completeStage(deed.jobId, isSkmht(deed.deedType) ? "APHT_DIBUAT" : "KE_BPN", { userId, date });
     await prisma.jobTask.updateMany({
       where: { jobId: deed.jobId, status: { not: "DONE" }, title: { endsWith: `akta PPAT ${deed.deedNumber}` } },
       data: { status: "DONE", completedAt: new Date() }

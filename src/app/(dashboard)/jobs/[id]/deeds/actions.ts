@@ -12,6 +12,8 @@ import { getDeedTemplate } from "@/lib/deeds/registry";
 import { syncDraftToVault } from "@/lib/deeds/vault";
 import { autoSetJobStatus, notifyJobPeople } from "@/lib/jobAutomation";
 import { nextDeedNumber } from "@/lib/deeds/numbering";
+import { nextPpatSequence, registerPpatDeed } from "@/lib/ppat";
+import { fromDateInput } from "@/lib/format";
 import { createStatutoryTasks } from "@/lib/compliance/statutory";
 import { draftHash } from "@/lib/deeds/review";
 import { createClientNotification } from "@/lib/clientNotifications";
@@ -139,9 +141,9 @@ export async function saveDeedDraft(
   }
   if (!data || typeof data !== "object" || Array.isArray(data)) return { ok: false, error: "Data tidak valid." };
 
-  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, deedId: true, data: true, updatedAt: true } });
+  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, deedId: true, ppatDeedId: true, data: true, updatedAt: true } });
   if (!draft) return { ok: false, error: "Draft tidak ditemukan." };
-  if (draft.deedId) return { ok: false, error: "Draft sudah disahkan dan terkunci." };
+  if (draft.deedId || draft.ppatDeedId) return { ok: false, error: "Draft sudah disahkan dan terkunci." };
   // Tidak ada perubahan -> tidak perlu versi dokumen baru di Document Vault.
   if (sameJson(draft.data, data)) {
     const hasVault = await prisma.document.count({ where: { jobId: draft.jobId, description: { contains: `[draft-akta:${draftId}:` } } });
@@ -161,8 +163,8 @@ export async function saveDeedDraft(
 export async function deleteDeedDraft(draftId: string) {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
-  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, templateKey: true, deedId: true } });
-  if (!draft || draft.deedId) return; // draft yang sudah disahkan tidak boleh dihapus
+  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { id: true, jobId: true, templateKey: true, deedId: true, ppatDeedId: true } });
+  if (!draft || draft.deedId || draft.ppatDeedId) return; // draft yang sudah disahkan tidak boleh dihapus
   await prisma.deedDraft.delete({ where: { id: draftId } });
   // File Word draft ini di Document Vault ikut diarsipkan (tidak dihapus, riwayat tetap ada).
   const archived = await prisma.document.updateMany({
@@ -206,11 +208,61 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
 
   const draft = await prisma.deedDraft.findUnique({
     where: { id: draftId },
-    select: { id: true, deedId: true, templateKey: true, data: true, job: { select: { id: true, clientId: true } } }
+    select: { id: true, deedId: true, ppatDeedId: true, templateKey: true, data: true, job: { select: { id: true, clientId: true } } }
   });
   const template = draft ? getDeedTemplate(draft.templateKey) : null;
   if (!draft || !template) return { error: "Draft tidak ditemukan." };
-  if (draft.deedId) return { error: "Draft ini sudah disahkan." };
+  if (draft.deedId || draft.ppatDeedId) return { error: "Draft ini sudah disahkan." };
+
+  // Akta PPAT: nomor urut per tahun di Buku Daftar Akta PPAT (bukan repertorium notaris).
+  if (template.ppat) {
+    const year = Number(tanggal.slice(0, 4));
+    const seq = Number(nomor);
+    if (await prisma.ppatDeed.findUnique({ where: { year_sequence: { year, sequence: seq } }, select: { id: true } })) {
+      return { error: `Nomor akta PPAT ${seq}/${year} sudah terdaftar.` };
+    }
+    const pdata = { ...((draft.data ?? {}) as Record<string, unknown>), nomorAkta: `${seq}/${year}`, tanggalAkta: tanggal };
+    await prisma.deedDraft.update({ where: { id: draftId }, data: { data: pdata as Prisma.InputJsonValue, updatedById: user.id } });
+    const pvault = await syncDraftToVault(draftId, user.id, { final: true });
+    if (pvault.error) return { error: pvault.error };
+    const reg = template.ppat.register(pdata);
+    let ppatId: string;
+    try {
+      const deed = await registerPpatDeed(
+        {
+          deedDate: new Date(`${tanggal}T00:00:00.000Z`),
+          deedType: template.ppat.deedType,
+          jobId: draft.job.id,
+          clientId: draft.job.clientId,
+          partyFrom: reg.partyFrom,
+          partyTo: reg.partyTo,
+          rightType: reg.rightType,
+          location: reg.location,
+          landArea: reg.landArea,
+          buildingArea: reg.buildingArea,
+          transactionValue: reg.transactionValue,
+          njopValue: reg.njopValue,
+          nop: reg.nop,
+          sspDate: reg.sspDate ? fromDateInput(reg.sspDate) : null,
+          sspAmount: reg.sspAmount,
+          sspdDate: reg.sspdDate ? fromDateInput(reg.sspdDate) : null,
+          sspdAmount: reg.sspdAmount,
+          notes: null
+        },
+        user.id,
+        seq
+      );
+      ppatId = deed.id;
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Gagal mendaftarkan akta PPAT." };
+    }
+    await prisma.deedDraft.update({ where: { id: draftId }, data: { ppatDeedId: ppatId } });
+    await writeAuditLog({ userId: user.id, action: "deed_draft_finalized", entityType: "PpatDeed", entityId: ppatId, newValue: { draftId, deedNumber: `${seq}/${year}` } });
+    revalidatePath(`/jobs/${draft.job.id}`);
+    revalidatePath("/ppat");
+    revalidatePath("/deeds");
+    redirect(`/ppat/${ppatId}?ok=created`);
+  }
 
   const [y, m] = tanggal.split("-").map(Number);
   const deedNumber = `${Number(nomor)}/${pad2(m)}/${y}`;
@@ -310,7 +362,7 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
   }
 
   // Semua draft akta job ini sudah disahkan -> pekerjaan otomatis selesai.
-  const openDrafts = await prisma.deedDraft.count({ where: { jobId: draft.job.id, deedId: null } });
+  const openDrafts = await prisma.deedDraft.count({ where: { jobId: draft.job.id, deedId: null, ppatDeedId: null } });
   if (openDrafts === 0) {
     const done = await autoSetJobStatus(draft.job.id, "COMPLETED", `akta ${deedNumber} disahkan`, user.id, { force: true });
     if (done) await notifyJobPeople(draft.job.id, `Akta ${deedNumber} disahkan; pekerjaan selesai.`, { pic: true });
@@ -324,12 +376,12 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
   redirect(`/archive/deed/${deedId}`);
 }
 
-/** Usulan nomor akta berikutnya untuk bulan tanggal yang dipilih di form pengesahan. */
-export async function suggestDeedNumber(ymd: string): Promise<string> {
+/** Usulan nomor akta berikutnya (notaris: per bulan; PPAT: urut per tahun) untuk form pengesahan. */
+export async function suggestDeedNumber(ymd: string, ppat = false): Promise<string> {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_MINUTA);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
-  return nextDeedNumber(ymd);
+  return ppat ? String(await nextPpatSequence(Number(ymd.slice(0, 4)))) : nextDeedNumber(ymd);
 }
 
 /** Bagikan draft ke portal klien untuk dibaca & disetujui (versi isian saat ini). */
@@ -338,9 +390,9 @@ export async function shareDraftWithClient(draftId: string) {
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
   const draft = await prisma.deedDraft.findUnique({
     where: { id: draftId },
-    select: { id: true, data: true, deedId: true, title: true, job: { select: { id: true, jobNumber: true, clientId: true } } }
+    select: { id: true, data: true, deedId: true, ppatDeedId: true, title: true, job: { select: { id: true, jobNumber: true, clientId: true } } }
   });
-  if (!draft || draft.deedId) return;
+  if (!draft || draft.deedId || draft.ppatDeedId) return;
   const review = await prisma.deedDraftReview.create({ data: { draftId, sharedById: user.id, dataHash: draftHash(draft.data) } });
   await createClientNotification({
     clientId: draft.job.clientId,

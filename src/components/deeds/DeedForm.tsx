@@ -234,7 +234,8 @@ export function DeedForm({
   sections,
   initialData,
   canEdit,
-  submitJobId
+  submitJobId,
+  labels = { minuta: "Minuta", salinan: "Salinan" }
 }: {
   draftId: string;
   sections: SectionDef[];
@@ -242,6 +243,8 @@ export function DeedForm({
   canEdit: boolean;
   /** Diisi bila staf boleh "Simpan & Ajukan ke Notaris" dari halaman ini. */
   submitJobId?: string;
+  /** Nama unduhan (akta PPAT: Lembar Pertama/Kedua). */
+  labels?: { minuta: string; salinan: string };
 }) {
   const [data, setData] = useState<DeedData>(() => {
     // Daftar berulang tampil minimal sejumlah `min` item.
@@ -282,7 +285,7 @@ export function DeedForm({
         setStatus(
           res.warning
             ? res.warning
-            : `Tersimpan ${time}${res.vaultFiles ? " · Minuta & Salinan masuk Document Vault" : ""}`
+            : `Tersimpan ${time}${res.vaultFiles ? ` · ${labels.minuta} & ${labels.salinan} masuk Document Vault` : ""}`
         );
         then?.();
       } else setStatus(res.error ?? "Gagal menyimpan.");
@@ -344,7 +347,7 @@ export function DeedForm({
           disabled={pending}
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
         >
-          <Download className="h-4 w-4" /> Unduh Minuta (.docx)
+          <Download className="h-4 w-4" /> Unduh {labels.minuta} (.docx)
         </button>
         <button
           type="button"
@@ -352,7 +355,7 @@ export function DeedForm({
           disabled={pending}
           className="inline-flex items-center gap-1.5 rounded-md border border-status-overdue/50 px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10 disabled:opacity-60"
         >
-          <Download className="h-4 w-4" /> Unduh Salinan (.docx)
+          <Download className="h-4 w-4" /> Unduh {labels.salinan} (.docx)
         </button>
         <span className="text-xs text-muted-foreground">{dirty ? "Ada perubahan belum disimpan" : status}</span>
       </div>

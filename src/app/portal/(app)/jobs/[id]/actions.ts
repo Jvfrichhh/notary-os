@@ -168,10 +168,10 @@ export async function respondDraftReview(reviewId: string, decision: "APPROVED" 
       decision: true,
       dataHash: true,
       draftId: true,
-      draft: { select: { data: true, title: true, deedId: true, job: { select: { id: true, jobNumber: true } } } }
+      draft: { select: { data: true, title: true, deedId: true, ppatDeedId: true, job: { select: { id: true, jobNumber: true } } } }
     }
   });
-  if (!review || review.decision || review.draft.deedId) return;
+  if (!review || review.decision || review.draft.deedId || review.draft.ppatDeedId) return;
   if (decision === "CHANGES" && note.length < 3) return;
   const latest = await prisma.deedDraftReview.findFirst({ where: { draftId: review.draftId }, orderBy: { sharedAt: "desc" }, select: { id: true } });
   if (latest?.id !== review.id || draftHash(review.draft.data) !== review.dataHash) return; // versi lama

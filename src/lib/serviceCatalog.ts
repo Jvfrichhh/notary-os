@@ -64,6 +64,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     name: "Akta Jual Beli",
     category: "PPAT",
     ppatType: "Jual Beli",
+    deedKey: "ajb",
     description: "Jual beli hak atas tanah/bangunan (dibuat selaku PPAT).",
     checklist: [
       { label: "KTP Penjual" },
@@ -80,6 +81,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     name: "Akta Hibah (PPAT)",
     category: "PPAT",
     ppatType: "Hibah",
+    deedKey: "hibah_ppat",
     description: "Hibah hak atas tanah/bangunan (dibuat selaku PPAT).",
     checklist: [
       { label: "KTP Pemberi & Penerima Hibah" },

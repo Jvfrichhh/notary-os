@@ -342,6 +342,7 @@ model Job {
   payments     Payment[]
   appointments Appointment[]
   ppatDeeds  PpatDeed[]
+  ppatStages PpatStage[]
   deedDrafts   DeedDraft[]
 
   @@index([status])
@@ -806,6 +807,9 @@ model DeedDraft {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  /// Terisi bila draft akta PPAT sudah disahkan (didaftarkan di Buku Akta PPAT).
+  ppatDeedId String?   @unique
+  ppatDeed   PpatDeed? @relation(fields: [ppatDeedId], references: [id], onDelete: SetNull)
   reviews DeedDraftReview[]
 
   @@index([jobId])
@@ -844,6 +848,8 @@ model PpatDeed {
   createdById      String?
   createdAt        DateTime     @default(now())
 
+  deedDraft DeedDraft?
+
   @@unique([year, sequence])
   @@index([deedDate])
   @@map("ppat_deeds")
@@ -865,4 +871,21 @@ model DeedDraftReview {
 
   @@index([draftId])
   @@map("deed_draft_reviews")
+}
+
+/// Langkah proses PPAT per pekerjaan (cek sertifikat, validasi pajak, ...,
+/// sertifikat selesai). Satu baris per langkah yang sudah selesai.
+model PpatStage {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  step        String
+  doneAt      DateTime
+  reference   String?
+  note        String?
+  doneById    String?
+  createdAt   DateTime @default(now())
+
+  @@unique([jobId, step])
+  @@map("ppat_stages")
 }

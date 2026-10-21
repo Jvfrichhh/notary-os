@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
-import { getDeedTemplate, sectionsFor } from "@/lib/deeds/registry";
+import { getDeedTemplate, sectionsFor, variantLabels } from "@/lib/deeds/registry";
+import { nextPpatSequence } from "@/lib/ppat";
 import type { DeedData } from "@/lib/deeds/schema";
 import { DeedForm } from "@/components/deeds/DeedForm";
 import { deleteDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
@@ -42,12 +43,15 @@ export default async function DeedDraftPage({
         }
       },
       reviews: { orderBy: { sharedAt: "desc" }, take: 1 },
-      deed: { select: { id: true, deedNumber: true, repertorium: { select: { id: true, year: true, sequenceNumber: true } } } }
+      deed: { select: { id: true, deedNumber: true, repertorium: { select: { id: true, year: true, sequenceNumber: true } } } },
+      ppatDeed: { select: { id: true, deedNumber: true } }
     }
   });
   const template = draft ? getDeedTemplate(draft.templateKey) : null;
   if (!draft || !template) notFound();
-  const finalized = !!draft.deed;
+  const finalized = !!draft.deed || !!draft.ppatDeed;
+  const isPpat = !!template.ppat;
+  const labels = variantLabels(template);
   const canEdit = canEditJobs && !finalized;
   const data = (draft.data ?? {}) as DeedData;
   // Staf bisa langsung "Simpan & Ajukan" selama pekerjaan masih dikerjakan.
@@ -61,7 +65,8 @@ export default async function DeedDraftPage({
   const review = reviewState(latestReview, draftHash(draft.data));
   const hasPortal = draft.job.client._count.accounts > 0;
   const todayJakarta = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
-  const suggestedNomor = canFinalize && !finalized ? await nextDeedNumber(todayJakarta) : "";
+  const suggestedNomor =
+    canFinalize && !finalized ? (isPpat ? String(await nextPpatSequence(Number(todayJakarta.slice(0, 4)))) : await nextDeedNumber(todayJakarta)) : "";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -72,8 +77,9 @@ export default async function DeedDraftPage({
           </Link>
           <h1 className="text-xl font-semibold text-foreground">Draft {template.title}</h1>
           <p className="text-sm text-muted-foreground">
-            Isi data lalu unduh Minuta (garis hitam) dan Salinan (garis merah) dalam format akta kantor. Bagian yang kosong
-            tertulis [...] di akta.
+            {isPpat
+              ? "Akta PPAT: isi data lalu unduh Lembar Pertama (disimpan PPAT) dan Lembar Kedua (untuk Kantor Pertanahan). Bagian yang kosong tertulis [...] di akta."
+              : "Isi data lalu unduh Minuta (garis hitam) dan Salinan (garis merah) dalam format akta kantor. Bagian yang kosong tertulis [...] di akta."}
           </p>
         </div>
         {canEdit && !finalized && (
@@ -87,6 +93,16 @@ export default async function DeedDraftPage({
           </form>
         )}
       </div>
+
+      {draft.ppatDeed && (
+        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-4 py-3 text-sm text-foreground">
+          Draft ini sudah <strong>disahkan</strong> sebagai{" "}
+          <Link href={`/ppat/${draft.ppatDeed.id}`} className="font-medium text-primary hover:underline">
+            Akta PPAT Nomor {draft.ppatDeed.deedNumber}
+          </Link>
+          . Isian dikunci; Lembar Pertama & Kedua final ada di Document Vault.
+        </div>
+      )}
 
       {finalized && draft.deed && (
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-4 py-3 text-sm text-foreground">
@@ -157,6 +173,7 @@ export default async function DeedDraftPage({
         initialData={data}
         canEdit={canEdit}
         submitJobId={canSubmit ? draft.job.id : undefined}
+        labels={labels}
       />
 
       {canFinalize && !finalized && (
@@ -164,6 +181,7 @@ export default async function DeedDraftPage({
           draftId={draft.id}
           defaultNomor={suggestedNomor}
           defaultTanggal={todayJakarta}
+          ppat={isPpat}
           plannedTanggal={typeof data.tanggalAkta === "string" && data.tanggalAkta !== todayJakarta ? data.tanggalAkta : undefined}
         />
       )}

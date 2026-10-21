@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { userHasPermission } from "@/lib/permissions";
 import { PERMISSIONS } from "@/lib/permissionKeys";
-import { getDeedTemplate } from "@/lib/deeds/registry";
+import { getDeedTemplate, variantLabels } from "@/lib/deeds/registry";
 import { renderDeed } from "@/lib/deeds/render";
 import type { DeedData } from "@/lib/deeds/schema";
 
@@ -29,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: { draftId: string
   if (!draft || !template) return NextResponse.json({ error: "Draft tidak ditemukan." }, { status: 404 });
 
   const { buffer } = renderDeed(template, (draft.data ?? {}) as DeedData, variant);
-  const label = variant === "minuta" ? "Minuta" : "Salinan";
+  const label = variantLabels(template)[variant].replace(/ /g, "_");
   const fileName = `${label}_${template.title.replace(/[^A-Za-z0-9]+/g, "_")}_${draft.job.jobNumber}.docx`;
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

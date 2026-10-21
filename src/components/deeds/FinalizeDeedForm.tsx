@@ -26,13 +26,16 @@ export function FinalizeDeedForm({
   draftId,
   defaultNomor,
   defaultTanggal,
-  plannedTanggal
+  plannedTanggal,
+  ppat = false
 }: {
   draftId: string;
   defaultNomor: string;
   defaultTanggal: string;
   /** Rencana tanggal di draft bila berbeda dari hari ini (sebagai pengingat). */
   plannedTanggal?: string;
+  /** Akta PPAT: nomor urut per tahun di Buku Daftar Akta PPAT. */
+  ppat?: boolean;
 }) {
   const [state, action] = useFormState(finalizeDeedDraft.bind(null, draftId), {} as FinalizeState);
   const [nomor, setNomor] = useState(defaultNomor);
@@ -40,7 +43,7 @@ export function FinalizeDeedForm({
 
   const changeDate = async (v: string) => {
     setTanggal(v);
-    const next = await suggestDeedNumber(v);
+    const next = await suggestDeedNumber(v, ppat);
     if (next) setNomor(next);
   };
 
@@ -49,13 +52,14 @@ export function FinalizeDeedForm({
       <div>
         <h2 className="text-sm font-semibold text-foreground">Sahkan & Daftarkan</h2>
         <p className="text-xs text-muted-foreground">
-          Setelah akta ditandatangani: sistem mencatat Akta di Lemari Arsip, menempelkan Minuta & Salinan (Word final),
-          mendaftarkannya ke Repertorium, mengunci draft ini, dan menyelesaikan pekerjaan bila semua draftnya sudah disahkan.
+          {ppat
+            ? "Setelah akta ditandatangani: sistem mendaftarkannya di Buku Daftar Akta PPAT (nomor urut tahun berjalan), menyimpan Lembar Pertama & Kedua (Word final), membuat tugas penyampaian ke Kantor Pertanahan (7 hari kerja), mengunci draft, dan menyelesaikan pekerjaan."
+            : "Setelah akta ditandatangani: sistem mencatat Akta di Lemari Arsip, menempelkan Minuta & Salinan (Word final), mendaftarkannya ke Repertorium, mengunci draft ini, dan menyelesaikan pekerjaan bila semua draftnya sudah disahkan."}
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-3">
         <label className="w-32">
-          <span className="mb-1 block text-xs text-muted-foreground">Nomor akta</span>
+          <span className="mb-1 block text-xs text-muted-foreground">{ppat ? "Nomor akta PPAT" : "Nomor akta"}</span>
           <input
             name="nomor"
             required
@@ -78,7 +82,7 @@ export function FinalizeDeedForm({
           />
         </label>
         <p className="pb-2 text-xs text-muted-foreground">
-          Nomor diusulkan otomatis dari akta terakhir bulan itu.
+          {ppat ? "Nomor diusulkan otomatis: urut berikutnya tahun itu." : "Nomor diusulkan otomatis dari akta terakhir bulan itu."}
           {plannedTanggal && ` Rencana tanggal di draft: ${plannedTanggal}.`}
         </p>
       </div>

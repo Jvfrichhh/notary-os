@@ -10,6 +10,7 @@ import { pascaNikah, praNikah } from "./templates/perkawinan";
 import { fidusia } from "./templates/fidusia";
 import { peralihanSaham, perubahanPt } from "./templates/saham";
 import { kuasaWaris, waris, wasiat } from "./templates/waris";
+import { ajbPpat, hibahPpat } from "./templates/ppatAkta";
 
 /** Semua template draft akta yang tersedia. Kunci = SERVICE_CATALOG[].deedKey. */
 export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
@@ -28,7 +29,9 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     kerjasamaInvestasi,
     pendirianPt,
     perubahanPt,
-    peralihanSaham
+    peralihanSaham,
+    ajbPpat,
+    hibahPpat
   ].map((t) => [t.key, t])
 );
 
@@ -43,5 +46,10 @@ export function sectionsFor(t: DeedTemplate): SectionDef[] {
 
 /** Daftar ringkas untuk pilihan di UI. */
 export function deedTemplateOptions(): { key: string; title: string; description: string }[] {
-  return Object.values(DEED_TEMPLATES).map((t) => ({ key: t.key, title: t.title, description: t.description }));
+  return Object.values(DEED_TEMPLATES).map((t) => ({ key: t.key, title: t.ppat ? `${t.title} (PPAT)` : t.title, description: t.description }));
+}
+
+/** Label unduhan: akta notaris = Minuta/Salinan; akta PPAT = Lembar Pertama/Kedua. */
+export function variantLabels(t: DeedTemplate | null): { minuta: string; salinan: string } {
+  return t?.ppat ? { minuta: "Lembar Pertama", salinan: "Lembar Kedua" } : { minuta: "Minuta", salinan: "Salinan" };
 }

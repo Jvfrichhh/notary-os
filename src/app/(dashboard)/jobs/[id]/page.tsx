@@ -5,7 +5,7 @@ import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatCurrency, formatDate, formatDateJakarta, formatStatusLabel, toDateInput } from "@/lib/format";
+import { classifyDeadline, formatCurrency, formatDate, formatDateJakarta, formatStatusLabel, getJakartaToday as getJakartaTodayDate, toDateInput } from "@/lib/format";
 import { getValidNextStatuses } from "@/lib/jobStatus";
 import {
   addJobTask,
@@ -15,6 +15,8 @@ import {
   submitJobForReview,
   updateJobDetails,
   updateTaskDueDate,
+  createCovernote,
+  setPpatStage,
   reviewChecklistDocument,
   toggleChecklistItem,
   toggleTaskStatus
@@ -24,12 +26,14 @@ import { DocumentAiPanel } from "@/components/documents/DocumentAiPanel";
 import { toAnalysisView } from "@/lib/ai/analysisView";
 import { latestAnalysisFor } from "@/lib/ai/documentAnalysis";
 import { isAiEnabled } from "@/lib/ai/client";
-import { deedTemplateOptions } from "@/lib/deeds/registry";
+import { deedTemplateOptions, getDeedTemplate, variantLabels } from "@/lib/deeds/registry";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { formatDateTime as fmtDeedTime } from "@/lib/format";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { draftHash, reviewState } from "@/lib/deeds/review";
+import { suggestCovernoteItems } from "@/lib/covernote";
+import { stagesFor } from "@/lib/ppatStages";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +42,7 @@ export default async function JobDetailPage({
   searchParams
 }: {
   params: { id: string };
-  searchParams?: { created?: string; ok?: string; err?: string; portal?: string };
+  searchParams?: { created?: string; ok?: string; err?: string; portal?: string; doc?: string; cn?: string };
 }) {
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
@@ -70,6 +74,7 @@ export default async function JobDetailPage({
           updatedAt: true,
           data: true,
           deed: { select: { deedNumber: true } },
+          ppatDeed: { select: { deedNumber: true } },
           reviews: { orderBy: { sharedAt: "desc" }, take: 1, select: { dataHash: true, decision: true } }
         }
       },
@@ -83,7 +88,8 @@ export default async function JobDetailPage({
       payments: true,
       documents: true,
       deeds: { orderBy: { createdAt: "desc" } },
-      ppatDeeds: { orderBy: { createdAt: "desc" }, select: { id: true, deedNumber: true, deedType: true, deedDate: true, submittedToBpnAt: true } }
+      ppatDeeds: { orderBy: { createdAt: "desc" }, select: { id: true, deedNumber: true, deedType: true, deedDate: true, submittedToBpnAt: true } },
+      ppatStages: true
     }
   });
 
@@ -117,8 +123,12 @@ export default async function JobDetailPage({
       })
     : [];
   const dateInput = toDateInput;
-  const openDrafts = job.deedDrafts.filter((d) => !d.deed).length;
+  const openDrafts = job.deedDrafts.filter((d) => !d.deed && !d.ppatDeed).length;
   const isPpatService = !!SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.ppatType;
+  const ppatStageDefs = stagesFor(job.ppatDeeds[0]?.deedType ?? SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.ppatType);
+  const stageDone = new Map(job.ppatStages.map((st) => [st.step, st]));
+  const nextStage = ppatStageDefs.find((d) => !stageDone.has(d.key));
+  const covernoteItems = isNotary ? await suggestCovernoteItems(job.id) : [];
 
   // Riwayat pekerjaan dari audit log (status, draft akta, pengesahan).
   const timeline = await prisma.auditLog.findMany({
@@ -126,7 +136,8 @@ export default async function JobDetailPage({
       OR: [
         { entityType: "Job", entityId: job.id },
         { entityType: "DeedDraft", entityId: { in: job.deedDrafts.map((d) => d.id) } },
-        { entityType: "Deed", entityId: { in: job.deeds.map((d) => d.id) } }
+        { entityType: "Deed", entityId: { in: job.deeds.map((d) => d.id) } },
+        { entityType: "PpatDeed", entityId: { in: job.ppatDeeds.map((d) => d.id) } }
       ]
     },
     orderBy: { timestamp: "desc" },
@@ -147,7 +158,8 @@ export default async function JobDetailPage({
     submitted: "Pekerjaan diajukan ke Notaris. Notaris sudah diberi tahu.",
     approved: "Pekerjaan disetujui; PIC diberi tahu untuk menyiapkan penandatanganan.",
     revision: "Permintaan revisi terkirim ke PIC.",
-    edited: "Perubahan pekerjaan tersimpan."
+    edited: "Perubahan pekerjaan tersimpan.",
+    covernote: `Covernote ${searchParams?.cn ?? ""} dibuat dan tersimpan di Document Vault.`
   };
   const ERR_MSG: Record<string, string> = {
     nodraft: "Buat dan simpan draft akta dulu sebelum mengajukan ke Notaris.",
@@ -155,7 +167,8 @@ export default async function JobDetailPage({
     state: "Status pekerjaan sudah berubah; muat ulang halaman.",
     note: "Tulis catatan revisi minimal 3 huruf.",
     edit: "Isian tidak valid; periksa kembali.",
-    pic: "Staf yang dipilih tidak aktif."
+    pic: "Staf yang dipilih tidak aktif.",
+    covernote: "Isi nama bank, nama debitur, dan minimal satu uraian."
   };
   const flashOk = searchParams?.ok ? OK_MSG[searchParams.ok] : undefined;
   const flashErr = searchParams?.err ? ERR_MSG[searchParams.err] : undefined;
@@ -163,7 +176,17 @@ export default async function JobDetailPage({
   return (
     <div className="space-y-6">
       {flashOk && (
-        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">{flashOk}</div>
+        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
+          {flashOk}
+          {searchParams?.ok === "covernote" && searchParams.doc && (
+            <>
+              {" "}
+              <a href={`/api/documents/${searchParams.doc}/download`} className="font-medium text-primary hover:underline">
+                Unduh covernote
+              </a>
+            </>
+          )}
+        </div>
       )}
       {flashErr && (
         <div role="alert" className="rounded-md border border-status-overdue/40 bg-status-overdue/10 px-3 py-2 text-sm text-foreground">
@@ -368,7 +391,8 @@ export default async function JobDetailPage({
                     <Link href={`/jobs/${job.id}/deeds/${d.id}`} className="font-medium text-primary hover:underline">
                       {d.title ?? d.templateKey}
                       {d.deed ? <span className="ml-2 text-xs font-normal text-status-on-track">Disahkan · No. {d.deed.deedNumber}</span> : null}
-                      {!d.deed &&
+                      {d.ppatDeed ? <span className="ml-2 text-xs font-normal text-status-on-track">Disahkan · Akta PPAT No. {d.ppatDeed.deedNumber}</span> : null}
+                      {!d.deed && !d.ppatDeed &&
                         (() => {
                           const st = reviewState(d.reviews[0], draftHash(d.data));
                           const map: Record<string, [string, string] | null> = {
@@ -384,8 +408,8 @@ export default async function JobDetailPage({
                     </Link>
                     <span className="flex items-center gap-3 text-xs text-muted-foreground">
                       diperbarui {fmtDeedTime(d.updatedAt)}
-                      <a href={`/api/deeds/${d.id}/minuta`} className="text-foreground hover:underline">Minuta</a>
-                      <a href={`/api/deeds/${d.id}/salinan`} className="text-status-overdue hover:underline">Salinan</a>
+                      <a href={`/api/deeds/${d.id}/minuta`} className="text-foreground hover:underline">{variantLabels(getDeedTemplate(d.templateKey)).minuta}</a>
+                      <a href={`/api/deeds/${d.id}/salinan`} className="text-status-overdue hover:underline">{variantLabels(getDeedTemplate(d.templateKey)).salinan}</a>
                     </span>
                   </li>
                 ))}
@@ -428,7 +452,7 @@ export default async function JobDetailPage({
             ) : (
               job.deedDrafts.length === 0 && <p className="text-sm text-muted-foreground">Belum ada draft akta.</p>
             )}
-            {job.deeds.length > 0 && openDrafts > 0 && !isFinal && (
+            {(job.deeds.length > 0 || job.ppatDeeds.length > 0) && openDrafts > 0 && !isFinal && (
               <p className="mt-2 rounded-md bg-status-due-soon/10 px-3 py-2 text-xs text-foreground">
                 Masih ada {openDrafts} draft belum disahkan. Pekerjaan selesai otomatis setelah semua draft disahkan; hapus draft yang tidak dipakai.
               </p>
@@ -527,6 +551,66 @@ export default async function JobDetailPage({
             </Card>
           )}
 
+          {/* Proses PPAT */}
+          {ppatStageDefs.length > 0 && (
+            <Card>
+              <h2 className="mb-3 text-sm font-semibold text-foreground">
+                Proses PPAT ({ppatStageDefs.filter((d) => stageDone.has(d.key)).length}/{ppatStageDefs.length})
+              </h2>
+              <ol className="space-y-2">
+                {ppatStageDefs.map((d, i) => {
+                  const done = stageDone.get(d.key);
+                  const isNext = nextStage?.key === d.key;
+                  return (
+                    <li key={d.key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className={
+                            done
+                              ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-white"
+                              : isNext
+                                ? "flex h-5 w-5 items-center justify-center rounded-full border-2 border-primary text-[11px] text-primary"
+                                : "flex h-5 w-5 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground"
+                          }
+                        >
+                          {done ? "✓" : i + 1}
+                        </span>
+                        <span className={done ? "text-foreground" : isNext ? "font-medium text-foreground" : "text-muted-foreground"}>{d.label}</span>
+                        {done && (
+                          <span className="text-xs text-muted-foreground">
+                            {formatDateJakarta(done.doneAt)}
+                            {done.reference ? ` · ${done.reference}` : ""}
+                          </span>
+                        )}
+                      </span>
+                      {canEdit && !done && isNext && d.key !== "TANDA_TANGAN" && (
+                        <form action={setPpatStage.bind(null, job.id, d.key)} className="flex flex-wrap items-center gap-1">
+                          {d.refLabel && <input name="reference" placeholder={d.refLabel} className="w-40 rounded border border-border bg-background px-2 py-1 text-xs" />}
+                          <input type="date" name="date" defaultValue={toDateInput(getJakartaTodayDate())} className="rounded border border-border bg-background px-2 py-1 text-xs" />
+                          <button type="submit" className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">
+                            Selesai
+                          </button>
+                        </form>
+                      )}
+                      {isNotary && done && (
+                        <form action={setPpatStage.bind(null, job.id, d.key)}>
+                          <input type="hidden" name="undo" value="1" />
+                          <button type="submit" className="text-xs text-muted-foreground hover:text-status-overdue">
+                            batalkan
+                          </button>
+                        </form>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Tanda tangan & penyampaian ke BPN tercentang otomatis dari Buku Akta PPAT. Tahap yang tertahan diingatkan setiap pagi; klien melihat
+                kemajuannya di portal.
+              </p>
+            </Card>
+          )}
+
           {/* Akta PPAT (layanan selaku PPAT) */}
           {canViewArchive && (isPpatService || job.ppatDeeds.length > 0) && (
             <Card>
@@ -556,6 +640,47 @@ export default async function JobDetailPage({
                   ))}
                 </ul>
               )}
+            </Card>
+          )}
+
+          {/* Covernote ke bank (Notaris/PPAT) */}
+          {isNotary && (isPpatService || job.ppatDeeds.length > 0 || job.deeds.length > 0) && (
+            <Card>
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">Covernote ke bank</summary>
+                <form action={createCovernote.bind(null, job.id)} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs text-muted-foreground">Kepada (bank & cabang)</span>
+                    <input name="bank" required placeholder="mis. PT Bank Mandiri (Persero) Tbk. KCP Bogor Pajajaran" className={fieldCls} />
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs text-muted-foreground">Alamat bank (opsional)</span>
+                    <input name="bankAddress" className={fieldCls} />
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs text-muted-foreground">Nama debitur</span>
+                    <input name="debtor" required defaultValue={job.client.fullName} className={fieldCls} />
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs text-muted-foreground">Perkiraan penyerahan sertipikat</span>
+                    <input name="estimate" type="date" className={fieldCls} />
+                  </label>
+                  <label className="text-sm sm:col-span-2">
+                    <span className="mb-1 block text-xs text-muted-foreground">Uraian (satu poin per baris; terisi dari akta pekerjaan ini)</span>
+                    <textarea name="items" rows={6} required defaultValue={covernoteItems.join("\n")} className={fieldCls} />
+                  </label>
+                  <label className="text-sm sm:col-span-2">
+                    <span className="mb-1 block text-xs text-muted-foreground">Catatan tambahan (opsional)</span>
+                    <input name="note" className={fieldCls} />
+                  </label>
+                  <div className="sm:col-span-2">
+                    <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                      Buat covernote (Word)
+                    </button>
+                    <span className="ml-2 text-xs text-muted-foreground">Nomor otomatis; file tersimpan di Dokumen pekerjaan ini.</span>
+                  </div>
+                </form>
+              </details>
             </Card>
           )}
 
@@ -752,6 +877,10 @@ function timelineLabel(action: string, value: unknown): string {
       return "Draft akta dibuat";
     case "deed_draft_deleted":
       return "Draft akta dihapus";
+    case "covernote_issued":
+      return `Covernote ${typeof v.number === "string" ? v.number : ""} dibuat${typeof v.bank === "string" ? ` untuk ${v.bank}` : ""}`;
+    case "ppat_deed_registered":
+      return `Akta PPAT ${typeof v.deedNumber === "string" ? v.deedNumber : ""} didaftarkan`;
     case "deed_draft_finalized":
       return `Akta disahkan${typeof v.deedNumber === "string" ? ` · No. ${v.deedNumber}` : ""}`;
     default:

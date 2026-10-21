@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getFileStorage } from "@/lib/storage";
 import { writeAuditLog } from "@/lib/audit";
-import { getDeedTemplate } from "@/lib/deeds/registry";
+import { getDeedTemplate, variantLabels } from "@/lib/deeds/registry";
 import { renderDeed } from "@/lib/deeds/render";
 import type { DeedData } from "@/lib/deeds/schema";
 
@@ -35,7 +35,7 @@ export async function syncDraftToVault(
   try {
     for (const variant of ["minuta", "salinan"] as const) {
       const { buffer } = renderDeed(template, (draft.data ?? {}) as DeedData, variant);
-      const label = variant === "minuta" ? "Minuta" : "Salinan";
+      const label = variantLabels(template)[variant].replace(/ /g, "_");
       const fileName = `${label}_${template.title.replace(/[^A-Za-z0-9]+/g, "_")}_${draft.job.jobNumber}.docx`;
       const tag = marker(draft.id, variant);
       const upload = await getFileStorage().upload({ buffer, fileName, contentType: DOCX_MIME, folder: `documents/job-${draft.job.id}` });

@@ -5,7 +5,7 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { deedTemplateOptions } from "@/lib/deeds/registry";
+import { deedTemplateOptions, getDeedTemplate, variantLabels } from "@/lib/deeds/registry";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraftFromList } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 
@@ -50,6 +50,7 @@ export default async function DeedsPage() {
         templateKey: true,
         updatedAt: true,
         deed: { select: { deedNumber: true } },
+        ppatDeed: { select: { deedNumber: true } },
         job: { select: { id: true, jobNumber: true, status: true, picId: true, client: { select: { fullName: true } } } }
       }
     }),
@@ -200,6 +201,8 @@ export default async function DeedsPage() {
                     // Posisi draft di alur: disahkan / disetujui / diperiksa / revisi / masih draft.
                     const [label, cls] = d.deed
                       ? [`Disahkan · Akta No. ${d.deed.deedNumber}`, "bg-status-on-track/10 text-status-on-track"]
+                      : d.ppatDeed
+                      ? [`Disahkan · Akta PPAT No. ${d.ppatDeed.deedNumber}`, "bg-status-on-track/10 text-status-on-track"]
                       : d.job.status === "READY_FOR_SIGNING"
                         ? ["Disetujui · siap tanda tangan", "bg-status-on-track/10 text-status-on-track"]
                         : d.job.status === "REVIEW"
@@ -216,10 +219,10 @@ export default async function DeedsPage() {
                 </div>
                 <span className="flex items-center gap-3 text-xs">
                   <a href={`/api/deeds/${d.id}/minuta`} className="text-foreground hover:underline">
-                    Minuta
+                    {variantLabels(getDeedTemplate(d.templateKey)).minuta}
                   </a>
                   <a href={`/api/deeds/${d.id}/salinan`} className="text-status-overdue hover:underline">
-                    Salinan
+                    {variantLabels(getDeedTemplate(d.templateKey)).salinan}
                   </a>
                 </span>
               </li>

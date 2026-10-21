@@ -3,6 +3,7 @@ import { createNotification } from "@/lib/notifications";
 import { formatDate, getJakartaToday } from "@/lib/format";
 import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, REPORT_KINDS, REPORT_LABEL, reportSentInfo } from "@/lib/compliance/monthly";
 import { createDatabaseBackup, lastBackupAt } from "@/lib/compliance/backup";
+import { stalledStages } from "@/lib/ppatStages";
 
 /**
  * Pengecekan harian (dipanggil cron Vercel ~06.00 WIB):
@@ -59,6 +60,13 @@ export async function runDailyChecks() {
     if (await reportSentInfo(kind, ym)) continue;
     const msg = `${REPORT_LABEL[kind]} bulan ${monthLabel(ym)} belum ditandai terkirim (tenggat tanggal ${due}). Buka menu Laporan Bulanan.`;
     for (const u of notaryIds) if (await notifyOnce(u, msg, day > due ? "overdue" : "deadline")) reminders++;
+  }
+
+  // 2b. Langkah proses PPAT yang macet
+  for (const s of await stalledStages()) {
+    const msg = `Proses PPAT ${s.jobNumber} tertahan ${s.days} hari di tahap: ${s.label}.`;
+    const to = new Set<string>([...(s.picId ? [s.picId] : []), ...notaryIds]);
+    for (const u of Array.from(to)) if (await notifyOnce(u, msg, "deadline", s.jobId)) reminders++;
   }
 
   // 3. Backup mingguan

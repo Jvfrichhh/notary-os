@@ -7,7 +7,7 @@ import { zip } from "@/lib/deeds/zip";
 
 export type DocBlock =
   | { t: "p"; text: string; bold?: boolean; align?: "left" | "center" | "right" | "both"; size?: number; spaceAfter?: number }
-  | { t: "table"; header: string[]; rows: string[][]; widths?: number[]; noHeader?: boolean }
+  | { t: "table"; header: string[]; rows: string[][]; widths?: number[]; noHeader?: boolean; borderless?: boolean }
   | { t: "pageBreak" };
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -33,6 +33,11 @@ function runs(text: string, bold = false, size?: number): string {
 }
 
 function para(b: Extract<DocBlock, { t: "p" }>): string {
+  // Rata kanan-kiri + baris baru: pecah per baris agar baris terakhir tiap bagian tidak "melar".
+  if (b.align === "both" && b.text.includes("\n")) {
+    const parts = b.text.split("\n");
+    return parts.map((t, i) => para({ ...b, text: t, spaceAfter: i === parts.length - 1 ? b.spaceAfter : 0 })).join("");
+  }
   return `<w:p><w:pPr><w:jc w:val="${b.align ?? "left"}"/><w:spacing w:after="${b.spaceAfter ?? 120}"/></w:pPr>${runs(b.text, b.bold, b.size)}</w:p>`;
 }
 
@@ -45,7 +50,7 @@ function table(b: Extract<DocBlock, { t: "table" }>, total: number): string {
   const row = (cells: string[], header: boolean) =>
     `<w:tr>${header ? "<w:trPr><w:tblHeader/></w:trPr>" : ""}${cells.map((c, i) => cell(c, i, header)).join("")}</w:tr>`;
   const borders = ["top", "left", "bottom", "right", "insideH", "insideV"]
-    .map((s) => `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="000000"/>`)
+    .map((s) => (b.borderless ? `<w:${s} w:val="nil"/>` : `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="000000"/>`))
     .join("");
   return `<w:tbl><w:tblPr><w:tblW w:w="${total}" w:type="dxa"/><w:tblBorders>${borders}</w:tblBorders><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${tw
     .map((w) => `<w:gridCol w:w="${w}"/>`)

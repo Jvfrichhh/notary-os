@@ -11,6 +11,17 @@ export const NOTARIS = {
   kota: "Kota Bogor"
 };
 
+/**
+ * Data jabatan PPAT (isi sesuai SK pengangkatan). Kosong -> tertulis [...]
+ * di akta PPAT supaya terlihat dan dilengkapi.
+ */
+export const PPAT = {
+  skNomor: "",
+  skTanggal: "",
+  daerahKerja: "Kota Bogor",
+  alamatKantor: ""
+};
+
 export const str = (v: unknown): string => (typeof v === "string" ? v.trim() : v == null ? "" : String(v));
 export const person = (v: unknown): Person => (v && typeof v === "object" ? (v as Person) : {});
 export const list = <T = Record<string, unknown>>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);

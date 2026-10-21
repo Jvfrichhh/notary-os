@@ -15,6 +15,8 @@ import { autoSetJobStatus, notifyJobPeople, onChecklistChanged } from "@/lib/job
 import { userHasPermission } from "@/lib/permissions";
 import { formatDate, formatDateJakarta, fromDateInput } from "@/lib/format";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
+import { issueCovernote } from "@/lib/covernote";
+import { completeStage, undoStage } from "@/lib/ppatStages";
 import type { JobPriority, JobStatus } from "@prisma/client";
 
 /** Status yang hanya boleh diputuskan Notaris (pemberi perintah). */
@@ -447,4 +449,51 @@ export async function updateTaskDueDate(taskId: string, jobId: string, formData:
   });
   revalidateJob(jobId);
   revalidatePath("/compliance");
+}
+
+/** Buat covernote untuk bank (Notaris/PPAT); file Word masuk Document Vault pekerjaan. */
+export async function createCovernote(jobId: string, formData: FormData) {
+  const user = await requireUser();
+  if (!(await isNotaryLevel(user.id))) return;
+  const bank = String(formData.get("bank") ?? "").trim().slice(0, 200);
+  const debtor = String(formData.get("debtor") ?? "").trim().slice(0, 200);
+  const items = String(formData.get("items") ?? "")
+    .split(/\r?\n/)
+    .map((l) => l.replace(/^\s*\d+[.)]\s*/, "").trim())
+    .filter(Boolean)
+    .slice(0, 15);
+  if (!bank || !debtor || items.length === 0) backToJob(jobId, "err", "covernote");
+  const { documentId, number } = await issueCovernote(
+    jobId,
+    {
+      bank,
+      bankAddress: String(formData.get("bankAddress") ?? "").trim().slice(0, 300) || null,
+      debtor,
+      items,
+      estimate: fromDateInput(String(formData.get("estimate") ?? "")),
+      estimateText: null,
+      note: String(formData.get("note") ?? "").trim().slice(0, 1000) || null
+    },
+    user.id
+  );
+  revalidateJob(jobId);
+  revalidatePath("/documents");
+  redirect(`/jobs/${jobId}?ok=covernote&doc=${documentId}&cn=${encodeURIComponent(number)}`);
+}
+
+/** Tandai / batalkan satu langkah proses PPAT pada pekerjaan. */
+export async function setPpatStage(jobId: string, step: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  if (formData.get("undo") === "1") {
+    if (!(await isNotaryLevel(user.id))) return;
+    await undoStage(jobId, step, user.id);
+  } else {
+    await completeStage(jobId, step, {
+      userId: user.id,
+      date: fromDateInput(String(formData.get("date") ?? "")) ?? new Date(),
+      reference: String(formData.get("reference") ?? "").trim().slice(0, 200) || null
+    });
+  }
+  revalidateJob(jobId);
 }

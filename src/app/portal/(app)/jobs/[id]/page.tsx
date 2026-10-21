@@ -7,9 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { classifyDeadline, formatCurrency, formatDate, formatDateTime } from "@/lib/format";
+import { classifyDeadline, formatCurrency, formatDate, formatDateJakarta, formatDateTime } from "@/lib/format";
 import { PORTAL_JOB_STATUS, portalStatusLabel } from "@/lib/portalLabels";
 import { draftHash, reviewState } from "@/lib/deeds/review";
+import { stagesFor } from "@/lib/ppatStages";
+import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { respondDraftReview } from "./actions";
 import type { JobStatus } from "@prisma/client";
 
@@ -34,9 +36,11 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
       completionDate: true,
       createdAt: true,
       serviceType: { select: { name: true, category: true } },
+      ppatStages: { select: { step: true, doneAt: true } },
+      ppatDeeds: { select: { deedType: true }, take: 1 },
       pic: { select: { name: true } },
       deedDrafts: {
-        where: { deedId: null, reviews: { some: {} } },
+        where: { deedId: null, ppatDeedId: null, reviews: { some: {} } },
         select: {
           id: true,
           title: true,
@@ -103,6 +107,9 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
   const jobClosed = job.status === "COMPLETED" || job.status === "CANCELLED";
   const missingRequired = checklistItems.filter((i) => i.isRequired && i.status !== "COMPLETE");
   const statusInfo = PORTAL_JOB_STATUS[job.status];
+  // Kemajuan proses PPAT (cek sertipikat -> pajak -> tanda tangan -> BPN -> sertipikat).
+  const ppatDefs = stagesFor(job.ppatDeeds[0]?.deedType ?? SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.ppatType);
+  const ppatDone = new Map(job.ppatStages.map((st) => [st.step, st.doneAt]));
 
   return (
     <div className="space-y-6">
@@ -137,6 +144,32 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
             <Row label="Penanggung jawab" value={job.pic?.name ?? "—"} />
           </dl>
         </Card>
+
+        {ppatDefs.length > 0 && (
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">Tahapan Proses</h2>
+            <ol className="space-y-2 text-sm">
+              {ppatDefs.map((d, i) => {
+                const at = ppatDone.get(d.key);
+                return (
+                  <li key={d.key} className="flex items-center gap-2">
+                    <span
+                      className={
+                        at
+                          ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-white"
+                          : "flex h-5 w-5 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground"
+                      }
+                    >
+                      {at ? "✓" : i + 1}
+                    </span>
+                    <span className={at ? "text-foreground" : "text-muted-foreground"}>{d.clientLabel}</span>
+                    {at && <span className="text-xs text-muted-foreground">{formatDateJakarta(at)}</span>}
+                  </li>
+                );
+              })}
+            </ol>
+          </Card>
+        )}
 
         {job.deedDrafts.map((d) => {
           const r = d.reviews[0];

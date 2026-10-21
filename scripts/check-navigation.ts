@@ -13,31 +13,17 @@ import { PERMISSIONS } from "../src/lib/permissionKeys";
 const ALL = Object.values(PERMISSIONS) as string[];
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   NOTARY: ALL.filter((p) => p !== "view_visits" && p !== "create_visits"),
-  ADMIN: [
-    "view_clients", "edit_clients",
-    "view_jobs", "edit_jobs",
-    "view_documents", "upload_documents",
-    "view_finance", "edit_finance",
-    "view_minuta", "view_repertorium",
-    "view_legalisasi", "view_waarmerking", "view_wasiat"
-  ],
   STAFF: [
     "view_clients",
     "view_jobs", "edit_jobs",
     "view_documents", "upload_documents"
   ],
-  VIEWER: [
-    "view_clients", "view_jobs", "view_documents", "view_finance", "view_minuta", "view_repertorium",
-    "view_legalisasi", "view_waarmerking", "view_wasiat"
-  ]
 };
 
 // Ekspektasi menu yang TIDAK boleh muncul per role.
 const MUST_BE_HIDDEN: Record<string, string[]> = {
   NOTARY: ["/visits"],
-  ADMIN: ["/admin", "/visits"],
-  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin", "/visits"],
-  VIEWER: ["/admin", "/visits"]
+  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin", "/visits"]
 };
 
 let failures = 0;

@@ -21,7 +21,7 @@ export default async function NewClientPage() {
       }),
       prisma.user.findMany({
         // PIC = staf pelaksana; notaris sendiri tidak dipilih sebagai PIC.
-        where: { isActive: true, role: { name: { in: ["STAFF", "ADMIN"] } } },
+        where: { isActive: true, role: { name: "STAFF" } },
         orderBy: { name: "asc" },
         select: { id: true, name: true }
       })

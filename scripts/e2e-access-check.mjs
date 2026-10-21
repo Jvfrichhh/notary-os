@@ -27,23 +27,20 @@ import { assertSafeTarget, bindTestDatabase } from "./lib/e2e-guard.mjs";
 const { testDbUrl } = assertSafeTarget(BASE);
 
 const ROLES = {
-  NOTARY: { email: "notary@demo.local", forbidden: [] },
-  ADMIN: { email: "admin@demo.local", forbidden: ["/admin", "/archive/minuta/new", "/notary-record/new"] },
+  NOTARY: { email: "notary@demo.local", forbidden: ["/visits"] },
+  // Peran ADMIN & VIEWER dihapus (Okt 2026). STAFF hanya mengerjakan job dari Notaris.
   STAFF: {
     email: "staff@demo.local",
-    forbidden: ["/admin", "/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/clients/1/edit"]
-  },
-  VIEWER: {
-    email: "viewer@demo.local",
-    forbidden: ["/admin", "/clients/new", "/jobs/new", "/visits/new", "/documents/new", "/payments/new", "/archive/deed/new", "/legalisasi/new", "/wasiat/new"]
+    forbidden: [
+      "/admin", "/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments",
+      "/clients/1/edit", "/clients/new", "/jobs/new", "/visits", "/visits/new"
+    ]
   }
 };
 
 const EXPECTED_HIDDEN = {
-  NOTARY: [],
-  ADMIN: ["/admin"],
-  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin"],
-  VIEWER: ["/admin"]
+  NOTARY: ["/visits"],
+  STAFF: ["/archive", "/notary-record", "/legalisasi", "/waarmerking", "/wasiat", "/payments", "/admin", "/visits"]
 };
 
 let failures = 0;
@@ -113,7 +110,7 @@ for (const [role, cfg] of Object.entries(ROLES)) {
 
   if (role === "NOTARY") {
     // Ambil ID server action createClient dari form Notaris (yang berhak)
-    // untuk nanti dipakai VIEWER sebagai percobaan bypass.
+    // untuk nanti dipakai STAFF (tidak berhak menambah klien) sebagai percobaan bypass.
     await page.goto(`${BASE}/clients/new`);
     const html = await page.content();
     const m = html.match(/\$ACTION_ID_([0-9a-f]+)/);
@@ -122,7 +119,7 @@ for (const [role, cfg] of Object.entries(ROLES)) {
     notaryCtx = ctx; // simpan untuk hitung client via /api/search nanti
   }
 
-  if (role === "VIEWER" && viewerClientActionId) {
+  if (role === "STAFF" && viewerClientActionId) {
     const probeName = `BYPASS-TEST-${Date.now()}`;
     const form = new FormData();
     form.append(`$ACTION_ID_${viewerClientActionId}`, "");
@@ -136,7 +133,7 @@ for (const [role, cfg] of Object.entries(ROLES)) {
     });
     const body = await res.text();
     const created = /"clientNumber"|CLI-\d{4}/.test(body) && !/PermissionError|tidak memiliki akses/.test(body);
-    check(!created, `VIEWER memanggil server action createClient langsung -> ditolak (status ${res.status()})`);
+    check(!created, `STAFF memanggil server action createClient langsung -> ditolak (status ${res.status()})`);
     // Verifikasi lewat pencarian sebagai Notaris: nama probe tidak boleh ada.
     const search = await notaryCtx.request.get(`${BASE}/api/search?q=${encodeURIComponent("BYPASS-TEST")}`);
     const json = await search.json();

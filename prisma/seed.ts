@@ -26,23 +26,11 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   // Alur kantor (Okt 2026): hanya NOTARY yang menerima klien & memberi job
   // (create_clients, create_jobs); fitur Visits tidak dipakai lagi oleh siapa pun.
   NOTARY: PERMISSIONS.filter((p) => p !== "view_visits" && p !== "create_visits"),
-  ADMIN: [
-    "view_clients", "edit_clients",
-    "view_jobs", "edit_jobs",
-    "view_documents", "upload_documents",
-    "view_finance", "edit_finance",
-    "view_minuta", "view_repertorium",
-    "view_legalisasi", "view_waarmerking", "view_wasiat"
-  ],
   STAFF: [
     "view_clients",
     "view_jobs", "edit_jobs",
     "view_documents", "upload_documents"
   ],
-  VIEWER: [
-    "view_clients", "view_jobs", "view_documents", "view_finance", "view_minuta", "view_repertorium",
-    "view_legalisasi", "view_waarmerking", "view_wasiat"
-  ]
 };
 
 /** Host & nama database dari DATABASE_URL, tanpa password (untuk ditampilkan). */
@@ -112,9 +100,7 @@ async function main() {
 
   const demoUsers = [
     { name: "Budi Notaris", email: "notary@demo.local", role: "NOTARY" },
-    { name: "Admin Kantor", email: "admin@demo.local", role: "ADMIN" },
-    { name: "Staff Satu", email: "staff@demo.local", role: "STAFF" },
-    { name: "Viewer Kantor", email: "viewer@demo.local", role: "VIEWER" }
+    { name: "Staff Satu", email: "staff@demo.local", role: "STAFF" }
   ];
 
   const users: Record<string, { id: string }> = {};

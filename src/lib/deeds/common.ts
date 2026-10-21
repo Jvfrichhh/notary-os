@@ -22,10 +22,11 @@ export const PPAT = {
   skTanggal: "2024-01-17",
   daerahKerja: "Kota Bogor",
   alamatKantor:
-    "Tata Hill Townhouse Yasmin Blok D Nomor 6, Jalan Cimanggu Pabuaran, Kelurahan Cilendek Timur, Kecamatan Bogor Barat, Kota Bogor",
+    "Tata Hill Townhouse Yasmin, Blok D Nomor 06, Jalan Cimanggu Pabuaran, Kelurahan Cilendek Timur, Kecamatan Bogor Barat, Kota Bogor, Provinsi Jawa Barat",
   /** Untuk kop surat (covernote, tagihan). */
-  alamatSurat: "Tata Hill Townhouse Yasmin Blok D No. 6, Jl. Cimanggu Pabuaran, Kel. Cilendek Timur, Kec. Bogor Barat, Kota Bogor 16112",
-  telepon: "0812-1311-5252 / 0817-985-4676"
+  alamatSurat: "Tata Hill Townhouse Yasmin, Blok D No. 06, Jl. Cimanggu Pabuaran, Kel. Cilendek Timur, Kec. Bogor Barat, Kota Bogor, Jawa Barat 16112",
+  telepon: "0812-1311-5252 / 0817-985-4676",
+  email: "no.ppat.ariyudani@gmail.com"
 };
 
 export const str = (v: unknown): string => (typeof v === "string" ? v.trim() : v == null ? "" : String(v));

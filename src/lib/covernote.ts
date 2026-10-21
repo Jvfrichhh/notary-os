@@ -77,7 +77,7 @@ export function buildCovernoteDocx(number: string, today: Date, input: Covernote
     { t: "p", text: `**NOTARIS & PPAT ${NOTARIS.namaSingkat}**`, align: "center", spaceAfter: 0, size: 13 },
     { t: "p", text: `${NOTARIS.kedudukan} · PPAT daerah kerja ${PPAT.daerahKerja}`, align: "center", spaceAfter: 0 },
     { t: "p", text: PPAT.alamatSurat, align: "center", spaceAfter: 0, size: 10 },
-    { t: "p", text: `Telp. ${PPAT.telepon}`, align: "center", spaceAfter: 240, size: 10 },
+    { t: "p", text: `Telp. ${PPAT.telepon} · Email: ${PPAT.email}`, align: "center", spaceAfter: 240, size: 10 },
     { t: "p", text: `${kota}, ${tgl(today)}`, align: "right" },
     { t: "p", text: `Nomor  : ${number}`, spaceAfter: 0 },
     { t: "p", text: "Perihal : Surat Keterangan (Covernote)", spaceAfter: 240 },

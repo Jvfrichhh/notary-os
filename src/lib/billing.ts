@@ -169,7 +169,7 @@ function kop(): DocBlock[] {
   return [
     { t: "p", text: `**KANTOR NOTARIS ${NOTARIS.namaSingkat}**`, align: "center", spaceAfter: 0, size: 13 },
     { t: "p", text: `${NOTARIS.kedudukan} · PPAT daerah kerja ${PPAT.daerahKerja}`, align: "center", spaceAfter: 0 },
-    { t: "p", text: `${PPAT.alamatSurat} · Telp. ${PPAT.telepon}`, align: "center", spaceAfter: 240, size: 10 }
+    { t: "p", text: `${PPAT.alamatSurat} · Telp. ${PPAT.telepon} · Email: ${PPAT.email}`, align: "center", spaceAfter: 240, size: 10 }
   ];
 }
 

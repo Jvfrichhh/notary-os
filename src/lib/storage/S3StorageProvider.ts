@@ -80,6 +80,14 @@ export class S3StorageProvider implements FileStorageService {
     }
   }
 
+  async readHead(storageKey: string, bytes: number): Promise<Buffer> {
+    const res = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: storageKey, Range: `bytes=0-${Math.max(0, bytes - 1)}` })
+    );
+    if (!res.Body) return Buffer.alloc(0);
+    return Buffer.from(await res.Body.transformToByteArray()).subarray(0, bytes);
+  }
+
   async getObjectBuffer(storageKey: string): Promise<Buffer> {
     const res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: storageKey }));
     if (!res.Body) throw new Error("File kosong atau tidak ditemukan di storage.");

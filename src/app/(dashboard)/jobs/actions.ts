@@ -153,12 +153,16 @@ export async function addJobTask(jobId: string, formData: FormData) {
   if (!title) return;
 
   const job0 = await prisma.job.findUnique({ where: { id: jobId }, select: { picId: true } });
+  if (!job0) return;
+  // Penanggung jawab harus akun internal yang aktif.
+  let assignee = toNullable(String(formData.get("assignedTo") ?? ""));
+  if (assignee && !(await prisma.user.count({ where: { id: assignee, isActive: true } }))) assignee = null;
   const task = await prisma.jobTask.create({
     data: {
       jobId,
-      title,
+      title: title.slice(0, 300),
       // Tanpa pilihan khusus, tugas baru menjadi tanggung jawab PIC job.
-      assignedTo: toNullable(String(formData.get("assignedTo") ?? "")) ?? job0?.picId ?? null,
+      assignedTo: assignee ?? job0.picId ?? null,
       dueDate: fromDateInput(String(formData.get("dueDate") ?? ""))
     }
   });
@@ -196,7 +200,7 @@ export async function toggleTaskStatus(taskId: string, jobId: string) {
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
 
-  const task = await prisma.jobTask.findUnique({ where: { id: taskId } });
+  const task = await prisma.jobTask.findFirst({ where: { id: taskId, jobId } });
   if (!task) return;
   const nextStatus = task.status === "DONE" ? "TODO" : "DONE";
 

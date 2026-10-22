@@ -11,7 +11,8 @@ import { Eye, EyeOff } from "lucide-react";
 // pesan spesifik hanya untuk akun yang SUDAH berhasil login lalu dinonaktifkan.
 const ERROR_MESSAGES: Record<string, string> = {
   account_inactive: "Akun portal Anda tidak aktif. Silakan hubungi kantor notaris.",
-  client_inactive: "Data klien Anda tidak lagi aktif. Silakan hubungi kantor notaris."
+  client_inactive: "Data klien Anda tidak lagi aktif. Silakan hubungi kantor notaris.",
+  session_expired: "Sesi Anda berakhir karena password diganti. Silakan masuk lagi dengan password terbaru."
 };
 
 function PortalLoginForm() {
@@ -39,7 +40,11 @@ function PortalLoginForm() {
 
     if (res?.error) {
       setLoading(false);
-      setError("Email atau password salah, atau akun tidak aktif.");
+      setError(
+        res.error === "TOO_MANY_ATTEMPTS"
+          ? "Terlalu banyak percobaan gagal. Tunggu 15 menit lalu coba lagi."
+          : "Email atau password salah, atau akun tidak aktif."
+      );
       return;
     }
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { assertPermission } from "@/lib/permissions";
@@ -259,7 +259,10 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     } catch (err) {
       // Nomor & tanggal final dilepas lagi dari draft supaya bisa dicoba ulang.
       await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
-      return { error: err instanceof Error ? err.message : "Gagal mendaftarkan akta PPAT." };
+      // Pesan teknis (database) tidak ditampilkan ke pengguna.
+      console.error("[deeds] gagal mendaftarkan akta PPAT", err);
+      const known = err instanceof Error && !(err instanceof Prisma.PrismaClientKnownRequestError) && !/prisma|invocation/i.test(err.message);
+      return { error: known ? (err as Error).message : "Gagal mendaftarkan akta PPAT. Coba lagi atau hubungi admin." };
     }
     await prisma.deedDraft.update({ where: { id: draftId }, data: { ppatDeedId: ppatId } });
     await writeAuditLog({ userId: user.id, action: "deed_draft_finalized", entityType: "PpatDeed", entityId: ppatId, newValue: { draftId, deedNumber: `${seq}/${year}` } });

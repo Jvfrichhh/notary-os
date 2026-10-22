@@ -68,6 +68,10 @@ export class LocalStorageProvider implements FileStorageService {
     }
   }
 
+  async readHead(storageKey: string, bytes: number): Promise<Buffer> {
+    return (await this.getObjectBuffer(storageKey)).subarray(0, bytes);
+  }
+
   async getObjectBuffer(storageKey: string): Promise<Buffer> {
     // Tolak path traversal (storageKey selalu "folder/uuid-nama").
     const fullPath = path.resolve(this.basePath, storageKey);

@@ -1,15 +1,27 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { isAllowedRedirectHost } from "@/lib/hosts";
+import {
+  clientIp,
+  comparePassword,
+  isLoginLocked,
+  LOGIN_LOCKED_ERROR,
+  normalizeEmail,
+  passwordVersion,
+  recordLoginFailure
+} from "@/lib/loginGuard";
+
+/** Sesi berlaku 12 jam sejak aktivitas terakhir; setelah itu wajib login ulang. */
+const SESSION_MAX_AGE = 12 * 60 * 60;
 
 /** Nilai `role` yang ditulis ke session untuk akun portal klien (bukan Role RBAC). */
 export const CLIENT_PORTAL_ROLE = "CLIENT";
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: SESSION_MAX_AGE },
+  jwt: { maxAge: SESSION_MAX_AGE },
   pages: {
     signIn: "/login"
   },
@@ -24,18 +36,22 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
+        const email = normalizeEmail(credentials.email);
+        const ip = clientIp(req?.headers);
+        if (await isLoginLocked("staff", email, ip)) throw new Error(LOGIN_LOCKED_ERROR);
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
           include: { role: true }
         });
 
-        if (!user || !user.isActive) return null;
-
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!isValid) return null;
+        const isValid = await comparePassword(credentials.password, user?.passwordHash);
+        if (!user || !user.isActive || !isValid) {
+          await recordLoginFailure("staff", email, ip, !user ? "unknown_account" : !user.isActive ? "inactive" : "wrong_password");
+          return null;
+        }
 
         // Satu akun = satu sesi: login baru mengganti penanda sesi, sehingga
         // browser lain yang masih login otomatis dikeluarkan (lihat callback jwt).
@@ -68,20 +84,24 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
+        const email = normalizeEmail(credentials.email);
+        const ip = clientIp(req?.headers);
+        if (await isLoginLocked("client", email, ip)) throw new Error(LOGIN_LOCKED_ERROR);
 
         const account = await prisma.clientAccount.findUnique({
-          where: { email: credentials.email },
+          where: { email },
           include: { client: { select: { id: true, fullName: true, status: true } } }
         });
 
         // Akun nonaktif, atau record Client-nya diarsipkan/dihapus -> tolak.
         // Pesan error ke user sengaja generik (lihat /portal/login).
-        if (!account || !account.isActive || account.client.status !== "ACTIVE") return null;
-
-        const isValid = await bcrypt.compare(credentials.password, account.passwordHash);
-        if (!isValid) return null;
+        const isValid = await comparePassword(credentials.password, account?.passwordHash);
+        if (!account || !account.isActive || account.client.status !== "ACTIVE" || !isValid) {
+          await recordLoginFailure("client", email, ip, !account ? "unknown_account" : !isValid ? "wrong_password" : "inactive");
+          return null;
+        }
 
         await prisma.clientAccount.update({
           where: { id: account.id },
@@ -94,11 +114,21 @@ export const authOptions: NextAuthOptions = {
           email: account.email,
           role: CLIENT_PORTAL_ROLE,
           kind: "client" as const,
-          clientId: account.client.id
+          clientId: account.client.id,
+          pwv: passwordVersion(account.passwordHash)
         };
       }
     })
   ],
+  events: {
+    // Logout akun internal: hapus penanda sesi di database supaya token yang
+    // mungkin masih tersimpan (mis. disalin dari browser) tidak bisa dipakai lagi.
+    async signOut({ token }) {
+      if (token?.kind === "staff" && token.id && token.sid) {
+        await prisma.user.updateMany({ where: { id: token.id, activeSessionId: token.sid }, data: { activeSessionId: null } });
+      }
+    }
+  },
   callbacks: {
     /**
      * Tujuan redirect setelah signIn/signOut. Default NextAuth hanya
@@ -123,6 +153,7 @@ export const authOptions: NextAuthOptions = {
         token.kind = user.kind;
         token.clientId = user.clientId;
         token.sid = user.sid;
+        token.pwv = user.pwv;
         token.revoked = false;
         return token;
       }
@@ -134,6 +165,11 @@ export const authOptions: NextAuthOptions = {
       if (token.kind === "staff" && token.id && !token.revoked) {
         const u = await prisma.user.findUnique({ where: { id: token.id }, select: { activeSessionId: true, isActive: true } });
         if (!u || !u.isActive || !token.sid || u.activeSessionId !== token.sid) token.revoked = true;
+      }
+      // Akun portal: password diganti/di-reset kantor sejak login -> sesi lama gugur.
+      if (token.kind === "client" && token.id && !token.revoked) {
+        const a = await prisma.clientAccount.findUnique({ where: { id: token.id }, select: { passwordHash: true, isActive: true } });
+        if (!a || !a.isActive || !token.pwv || passwordVersion(a.passwordHash) !== token.pwv) token.revoked = true;
       }
       return token;
     },

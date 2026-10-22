@@ -4,7 +4,8 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { assertPermission, PERMISSIONS } from "@/lib/permissions";
+import { assertPermission, PERMISSIONS, userHasPermission } from "@/lib/permissions";
+import { isProtocolDocument } from "@/lib/protocolDocuments";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
 import { issueUploadTicket, resolveUploadFromForm, type TicketResult } from "@/lib/upload/directUpload";
@@ -118,6 +119,14 @@ export async function uploadDocument(_prevState: DocumentFormState, formData: Fo
   redirect(`/documents/${document.id}`);
 }
 
+const PROTOCOL_LOCKED = "File minuta/salinan/grosse/kutipan resmi hanya bisa diganti oleh Notaris.";
+
+/** File protokol akta resmi hanya boleh diganti pemegang izin edit_minuta. */
+async function canReplaceFile(userId: string, documentId: string): Promise<boolean> {
+  if (!(await isProtocolDocument(documentId))) return true;
+  return userHasPermission(userId, PERMISSIONS.EDIT_MINUTA);
+}
+
 export type VersionUploadState = { error?: string; success?: string };
 
 export async function uploadNewVersion(documentId: string, _prev: VersionUploadState, formData: FormData): Promise<VersionUploadState> {
@@ -126,6 +135,7 @@ export async function uploadNewVersion(documentId: string, _prev: VersionUploadS
 
   const document = await prisma.document.findUnique({ where: { id: documentId } });
   if (!document) return { error: "Dokumen tidak ditemukan." };
+  if (!(await canReplaceFile(user.id, documentId))) return { error: PROTOCOL_LOCKED };
 
   const notes = toNullable(String(formData.get("notes") ?? ""));
 
@@ -229,6 +239,7 @@ export async function requestOfficeUploadTicket(
   if (scope.kind === "version") {
     const doc = await prisma.document.findUnique({ where: { id: scope.documentId }, select: { clientId: true, jobId: true } });
     if (!doc) return { mode: "error", error: "Dokumen tidak ditemukan." };
+    if (!(await canReplaceFile(user.id, scope.documentId))) return { mode: "error", error: PROTOCOL_LOCKED };
     folder = folderFor(doc.clientId, doc.jobId);
   } else {
     const clientId = toNullable(scope.clientId ?? undefined);

@@ -37,7 +37,11 @@ function LoginForm() {
 
     if (res?.error) {
       setLoading(false);
-      setError("Email atau password salah.");
+      setError(
+        res.error === "TOO_MANY_ATTEMPTS"
+          ? "Terlalu banyak percobaan gagal. Tunggu 15 menit lalu coba lagi."
+          : "Email atau password salah."
+      );
       return;
     }
 

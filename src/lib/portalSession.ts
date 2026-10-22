@@ -20,7 +20,7 @@ export interface PortalPrincipal {
 }
 
 /** Alasan akun portal ditolak; dipakai untuk pesan di /portal/login?error=... */
-export type PortalDenyReason = "unauthenticated" | "not_client" | "account_inactive" | "client_inactive";
+export type PortalDenyReason = "unauthenticated" | "not_client" | "account_inactive" | "client_inactive" | "session_expired";
 
 /**
  * Versi "lunak": kembalikan principal atau alasan penolakan, tanpa redirect.
@@ -33,6 +33,8 @@ export async function getPortalPrincipal(): Promise<
   const session = await getServerSession(authOptions);
   if (!session?.user) return { ok: false, reason: "unauthenticated" };
   if (session.user.kind !== "client") return { ok: false, reason: "not_client" };
+  // Password diganti / di-reset sejak login -> sesi ini tidak berlaku lagi.
+  if (session.user.revoked) return { ok: false, reason: "session_expired" };
 
   // Verifikasi ulang ke database pada SETIAP request -- bukan hanya percaya
   // JWT -- supaya akun yang dinonaktifkan atau klien yang diarsipkan setelah

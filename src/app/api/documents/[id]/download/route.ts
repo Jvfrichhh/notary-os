@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { userHasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getFileStorage } from "@/lib/storage";
+import { isProtocolDocument } from "@/lib/protocolDocuments";
 
 /**
  * Satu-satunya pintu masuk untuk membuka/mengunduh dokumen. Route ini yang
@@ -14,7 +15,7 @@ import { getFileStorage } from "@/lib/storage";
  */
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.revoked) {
+  if (!session?.user || session.user.kind === "client" || session.user.revoked) {
     return NextResponse.json({ error: "Anda harus login." }, { status: 401 });
   }
 
@@ -26,6 +27,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const document = await prisma.document.findUnique({ where: { id: params.id } });
   if (!document) {
     return NextResponse.json({ error: "Dokumen tidak ditemukan." }, { status: 404 });
+  }
+
+  // Minuta/salinan/grosse/kutipan resmi: hanya untuk pemegang izin view_minuta.
+  if ((await isProtocolDocument(document.id)) && !(await userHasPermission(session.user.id, PERMISSIONS.VIEW_MINUTA))) {
+    return NextResponse.json({ error: "Dokumen protokol akta hanya bisa dibuka oleh Notaris." }, { status: 403 });
   }
 
   const versionParam = req.nextUrl.searchParams.get("version");

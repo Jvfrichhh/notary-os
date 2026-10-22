@@ -24,11 +24,50 @@ const GENERIC_CONTENT_TYPES = new Set(["", "application/octet-stream"]);
 
 export const ALLOWED_EXTENSIONS_LABEL = "PDF, DOC, DOCX, XLS, XLSX, JPG, JPEG, PNG";
 
+// Portal klien: format Office lama (.doc/.xls) bisa membawa makro berbahaya
+// yang lalu dibuka staf di kantor -> tidak diterima dari klien.
+const PORTAL_BLOCKED = new Set(["doc", "xls"]);
+export const PORTAL_EXTENSIONS_LABEL = "PDF, DOCX, XLSX, JPG, JPEG, PNG";
+
 // input attribute `accept` -- turunan langsung dari whitelist di atas, dipakai
 // UI supaya konsisten dengan yang benar-benar dicek server.
 export const ACCEPT_ATTRIBUTE = Object.keys(ALLOWED_EXTENSIONS)
   .map((ext) => `.${ext}`)
   .join(",");
+
+export const PORTAL_ACCEPT_ATTRIBUTE = Object.keys(ALLOWED_EXTENSIONS)
+  .filter((ext) => !PORTAL_BLOCKED.has(ext))
+  .map((ext) => `.${ext}`)
+  .join(",");
+
+// Tanda tangan byte awal tiap format: isi file harus benar-benar sesuai
+// ekstensinya (mis. file .exe yang diganti nama jadi .pdf ditolak).
+const MAGIC: Record<string, number[][]> = {
+  pdf: [[0x25, 0x50, 0x44, 0x46]], // %PDF
+  docx: [[0x50, 0x4b, 0x03, 0x04]], // ZIP
+  xlsx: [[0x50, 0x4b, 0x03, 0x04]],
+  doc: [[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]], // OLE2
+  xls: [[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]],
+  jpg: [[0xff, 0xd8, 0xff]],
+  jpeg: [[0xff, 0xd8, 0xff]],
+  png: [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]]
+};
+
+/** Jumlah byte awal yang perlu dibaca untuk memeriksa isi file. */
+export const MAGIC_BYTES_NEEDED = 1024;
+
+/** Periksa byte awal file cocok dengan ekstensinya. */
+export function validateFileSignature(fileName: string, head: Buffer): { ok: true } | { ok: false; message: string } {
+  const ext = getExtension(fileName);
+  const sigs = MAGIC[ext];
+  if (!sigs) return { ok: false, message: "Tipe file tidak diizinkan." };
+  // PDF boleh diawali sedikit data sampah sebelum "%PDF" (spesifikasi: dalam 1024 byte pertama).
+  const match =
+    ext === "pdf"
+      ? head.subarray(0, 1024).includes("%PDF")
+      : sigs.some((sig) => head.length >= sig.length && sig.every((b, i) => head[i] === b));
+  return match ? { ok: true } : { ok: false, message: `Isi file bukan ${ext.toUpperCase()} yang valid. Upload ditolak.` };
+}
 
 function getExtension(fileName: string): string {
   const parts = fileName.toLowerCase().split(".");
@@ -41,21 +80,25 @@ export function getMaxUploadSizeBytes(): number {
   return safeMb * 1024 * 1024;
 }
 
-export function validateUploadFile(file: File): { ok: true } | { ok: false; message: string } {
-  return validateUploadMeta({ name: file.name, type: file.type, size: file.size });
+export function validateUploadFile(file: File, opts: { portal?: boolean } = {}): { ok: true } | { ok: false; message: string } {
+  return validateUploadMeta({ name: file.name, type: file.type, size: file.size }, opts);
 }
 
 /**
  * Validasi yang sama berdasarkan metadata saja -- dipakai untuk unggah
  * langsung (file tidak lewat server; ukuran asli dicek lagi ke storage).
  */
-export function validateUploadMeta(file: { name: string; type: string; size: number }): { ok: true } | { ok: false; message: string } {
+export function validateUploadMeta(
+  file: { name: string; type: string; size: number },
+  opts: { portal?: boolean } = {}
+): { ok: true } | { ok: false; message: string } {
   if (!file.size || file.size <= 0) return { ok: false, message: "File kosong." };
   const ext = getExtension(file.name);
   const allowedMimes = ALLOWED_EXTENSIONS[ext];
 
-  if (!allowedMimes) {
-    return { ok: false, message: `Tipe file tidak diizinkan. Format yang didukung: ${ALLOWED_EXTENSIONS_LABEL}.` };
+  if (!allowedMimes || (opts.portal && PORTAL_BLOCKED.has(ext))) {
+    const label = opts.portal ? PORTAL_EXTENSIONS_LABEL : ALLOWED_EXTENSIONS_LABEL;
+    return { ok: false, message: `Tipe file tidak diizinkan. Format yang didukung: ${label}.` };
   }
 
   if (file.type && !GENERIC_CONTENT_TYPES.has(file.type) && !allowedMimes.includes(file.type)) {

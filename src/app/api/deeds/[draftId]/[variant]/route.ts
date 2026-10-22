@@ -23,10 +23,14 @@ export async function GET(_req: Request, { params }: { params: { draftId: string
 
   const draft = await prisma.deedDraft.findUnique({
     where: { id: params.draftId },
-    select: { templateKey: true, data: true, job: { select: { jobNumber: true } } }
+    select: { templateKey: true, data: true, deedId: true, ppatDeedId: true, job: { select: { jobNumber: true } } }
   });
   const template = draft ? getDeedTemplate(draft.templateKey) : null;
   if (!draft || !template) return NextResponse.json({ error: "Draft tidak ditemukan." }, { status: 404 });
+  // Draft yang sudah disahkan = akta resmi -> hanya pemegang izin view_minuta.
+  if ((draft.deedId || draft.ppatDeedId) && !(await userHasPermission(session.user.id, PERMISSIONS.VIEW_MINUTA))) {
+    return NextResponse.json({ error: "Akta yang sudah disahkan hanya bisa diunduh oleh Notaris." }, { status: 403 });
+  }
 
   const { buffer } = renderDeed(template, (draft.data ?? {}) as DeedData, variant);
   const label = variantLabels(template)[variant].replace(/ /g, "_");

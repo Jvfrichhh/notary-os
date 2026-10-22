@@ -20,7 +20,14 @@ const stamp = () => new Date().toISOString().replace(/[-:]/g, "").slice(0, 13); 
 
 const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
-/** Semua tabel -> JSON. Hash password ikut tersimpan: file backup bersifat RAHASIA. */
+/**
+ * Kolom yang TIDAK ikut dibackup: hash password & penanda sesi. File backup
+ * sering diunduh ke laptop / Google Drive; bila bocor, hash password tidak
+ * ikut bocor. Setelah restore, password akun perlu di-reset.
+ */
+const OMIT_COLUMNS = new Set(["passwordHash", "activeSessionId"]);
+
+/** Semua tabel -> JSON (berisi data pribadi klien: file backup bersifat RAHASIA). */
 export async function createDatabaseBackup(userId: string | null, trigger: "manual" | "otomatis") {
   const files: { name: string; data: string }[] = [];
   const counts: Record<string, number> = {};
@@ -29,7 +36,7 @@ export async function createDatabaseBackup(userId: string | null, trigger: "manu
     if (!delegate?.findMany) continue;
     const rows = await delegate.findMany();
     counts[name] = rows.length;
-    files.push({ name: `tabel/${name}.json`, data: JSON.stringify(rows, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 1) });
+    files.push({ name: `tabel/${name}.json`, data: JSON.stringify(rows, (k, v) => (OMIT_COLUMNS.has(k) ? undefined : typeof v === "bigint" ? v.toString() : v), 1) });
   }
   const manifest = {
     aplikasi: "Notary OS",
@@ -37,7 +44,7 @@ export async function createDatabaseBackup(userId: string | null, trigger: "manu
     dibuat: new Date().toISOString(),
     pemicu: trigger,
     jumlahBaris: counts,
-    catatan: "Berisi data pribadi klien dan hash password. Simpan di tempat aman; jangan dibagikan."
+    catatan: "Berisi data pribadi klien. Simpan di tempat aman; jangan dibagikan. Hash password tidak disertakan: setelah restore, reset password semua akun."
   };
   files.unshift({ name: "MANIFEST.json", data: JSON.stringify(manifest, null, 2) });
   const buffer = zip(files);

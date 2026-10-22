@@ -1,7 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { getFileStorage } from "@/lib/storage";
 import { buildStorageKey } from "@/lib/storage/FileStorageService";
-import { validateUploadFile, validateUploadMeta } from "@/lib/uploadValidation";
+import { prisma } from "@/lib/prisma";
+import { MAGIC_BYTES_NEEDED, validateFileSignature, validateUploadFile, validateUploadMeta } from "@/lib/uploadValidation";
 
 /**
  * Unggah dokumen dalam dua jalur dengan hasil yang sama:
@@ -19,7 +20,12 @@ import { validateUploadFile, validateUploadMeta } from "@/lib/uploadValidation";
  * dihitung ulang server untuk aksi itu (tiket job A tidak bisa dipakai di job B).
  */
 
-const TICKET_TTL_SECONDS = 15 * 60;
+/** URL PUT ke storage hanya berlaku 2 menit (cukup untuk MULAI mengunggah). */
+const PUT_URL_TTL_SECONDS = 120;
+/** Tiket boleh dikirim bersama form s.d. 30 menit (unggahan besar di HP bisa lama). */
+const TICKET_TTL_SECONDS = 30 * 60;
+
+const isPortal = (principal: string) => principal.startsWith("client:");
 
 export interface ResolvedUpload {
   storageKey: string;
@@ -85,14 +91,14 @@ export async function issueUploadTicket(params: {
   fileSize: number;
 }): Promise<TicketResult> {
   const contentType = params.fileType || "application/octet-stream";
-  const check = validateUploadMeta({ name: params.fileName, type: contentType, size: params.fileSize });
+  const check = validateUploadMeta({ name: params.fileName, type: contentType, size: params.fileSize }, { portal: isPortal(params.principal) });
   if (!check.ok) return { mode: "error", error: check.message };
 
   const storage = getFileStorage();
   if (!storage.supportsDirectUpload()) return { mode: "form" };
 
   const key = buildStorageKey(params.folder, params.fileName, randomUUID());
-  const url = await storage.getSignedPutUrl(key, contentType, TICKET_TTL_SECONDS);
+  const url = await storage.getSignedPutUrl(key, contentType, PUT_URL_TTL_SECONDS);
   const ticket = encodeTicket({
     k: key,
     n: params.fileName.slice(0, 255),
@@ -121,11 +127,19 @@ export async function resolveUploadFromForm(
     if (t.p !== expected.principal || t.f !== expected.folder) {
       return { ok: false, error: "Tiket unggah tidak cocok dengan tujuan dokumen ini." };
     }
-    const head = await getFileStorage().headObject(t.k);
+    // Satu tiket = satu dokumen: tiket yang sudah dipakai tidak bisa dipakai lagi.
+    const [usedDoc, usedVer] = await Promise.all([
+      prisma.document.count({ where: { storageKey: t.k } }),
+      prisma.documentVersion.count({ where: { storageKey: t.k } })
+    ]);
+    if (usedDoc + usedVer > 0) return { ok: false, error: "Tiket unggah sudah dipakai. Pilih file lagi lalu kirim ulang." };
+    const storage = getFileStorage();
+    const head = await storage.headObject(t.k);
     if (!head) return { ok: false, error: "File belum sampai di penyimpanan. Coba unggah lagi." };
-    const check = validateUploadMeta({ name: t.n, type: t.t, size: head.size });
+    let check = validateUploadMeta({ name: t.n, type: t.t, size: head.size }, { portal: isPortal(t.p) });
+    if (check.ok) check = validateFileSignature(t.n, await storage.readHead(t.k, MAGIC_BYTES_NEEDED));
     if (!check.ok) {
-      await getFileStorage().delete(t.k).catch(() => undefined);
+      await storage.delete(t.k).catch(() => undefined);
       return { ok: false, error: check.message };
     }
     return { ok: true, file: { storageKey: t.k, fileName: t.n, fileType: t.t, size: head.size } };
@@ -133,11 +147,14 @@ export async function resolveUploadFromForm(
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Pilih file terlebih dahulu." };
-  const validation = validateUploadFile(file);
+  const validation = validateUploadFile(file, { portal: isPortal(expected.principal) });
   if (!validation.ok) return { ok: false, error: validation.message };
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const signature = validateFileSignature(file.name, buffer.subarray(0, MAGIC_BYTES_NEEDED));
+  if (!signature.ok) return { ok: false, error: signature.message };
   const contentType = file.type || "application/octet-stream";
   const upload = await getFileStorage().upload({
-    buffer: Buffer.from(await file.arrayBuffer()),
+    buffer,
     fileName: file.name,
     contentType,
     folder: expected.folder

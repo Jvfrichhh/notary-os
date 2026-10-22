@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Circle, Clock3, AlertTriangle, Download } from "lucide-react";
 import { ChecklistUploadForm } from "@/components/portal/ChecklistUploadForm";
-import { ACCEPT_ATTRIBUTE, ALLOWED_EXTENSIONS_LABEL } from "@/lib/uploadValidation";
+import { PORTAL_ACCEPT_ATTRIBUTE, PORTAL_EXTENSIONS_LABEL } from "@/lib/uploadValidation";
 import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
 import { Card } from "@/components/ui/Card";
@@ -246,8 +246,8 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
                       {canUpload && (
                         <ChecklistUploadForm
                           checklistItemId={item.id}
-                          accept={ACCEPT_ATTRIBUTE}
-                          allowedLabel={ALLOWED_EXTENSIONS_LABEL}
+                          accept={PORTAL_ACCEPT_ATTRIBUTE}
+                          allowedLabel={PORTAL_EXTENSIONS_LABEL}
                           replace={review === "PENDING_REVIEW" || review === "NEEDS_REVISION"}
                         />
                       )}

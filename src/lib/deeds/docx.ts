@@ -18,7 +18,10 @@ const MARK_THICK_EMU = 19050; // 1,5 pt
 
 export type Variant = "minuta" | "salinan";
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// Karakter kontrol (selain tab/baris baru) membuat file Word rusak -> dibuang.
+// eslint-disable-next-line no-control-regex
+const esc = (s: string) =>
+  s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 function markDrawing(id: number, col: number, bottom: boolean): string {
   const x = col * TWIP_PER_CHAR * EMU_PER_TWIP - MARK_THICK_EMU;

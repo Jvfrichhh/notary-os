@@ -89,11 +89,16 @@ export async function resetInternalUserPassword(userId: string, _prev: UserAdmin
   const admin = await requireUser();
   await assertPermission(admin.id, PERMISSIONS.MANAGE_USERS);
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, role: { select: { name: true } } } });
   if (!user) return { error: "User tidak ditemukan." };
+  // Akun Notaris hanya bisa diganti password-nya oleh pemiliknya sendiri.
+  if (user.role.name === "NOTARY" && user.id !== admin.id) {
+    return { error: "Password akun Notaris lain tidak bisa di-reset dari sini." };
+  }
 
   const temporaryPassword = generateTemporaryPassword();
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(temporaryPassword) } });
+  // activeSessionId = null -> sesi yang sedang login di akun itu langsung dikeluarkan.
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(temporaryPassword), activeSessionId: null } });
   await writeAuditLog({ userId: admin.id, action: "user_password_reset", entityType: "User", entityId: user.id, newValue: { email: user.email } });
 
   revalidatePath("/admin/users");

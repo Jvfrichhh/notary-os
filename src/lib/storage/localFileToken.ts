@@ -12,9 +12,12 @@ interface LocalFileTokenPayload {
 }
 
 function getSecret(): string {
-  // Reuse NEXTAUTH_SECRET supaya tidak perlu env var baru. Fallback dev-only
-  // kalau env belum di-set sama sekali (misal saat build lokal tanpa .env).
-  return process.env.NEXTAUTH_SECRET || "dev-only-insecure-secret-change-me";
+  // Reuse NEXTAUTH_SECRET supaya tidak perlu env var baru. Fallback hanya
+  // untuk komputer lokal; di server (Vercel/production) wajib ada secret.
+  const s = process.env.NEXTAUTH_SECRET;
+  if (s) return s;
+  if (process.env.VERCEL_ENV || process.env.NODE_ENV === "production") throw new Error("NEXTAUTH_SECRET belum diset.");
+  return "dev-only-insecure-secret-change-me";
 }
 
 function base64url(input: string): string {

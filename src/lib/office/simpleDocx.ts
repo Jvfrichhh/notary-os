@@ -10,7 +10,10 @@ export type DocBlock =
   | { t: "table"; header: string[]; rows: string[][]; widths?: number[]; noHeader?: boolean; borderless?: boolean }
   | { t: "pageBreak" };
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// Karakter kontrol (selain tab/baris baru) membuat file Word rusak -> dibuang.
+// eslint-disable-next-line no-control-regex
+const esc = (s: string) =>
+  s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /** Teks dengan **tebal** ringan dan baris baru (\n). */
 function runs(text: string, bold = false, size?: number): string {

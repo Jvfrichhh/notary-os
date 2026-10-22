@@ -1,7 +1,6 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireClientAccount } from "@/lib/portalSession";
 import { hashPassword, validateNewPassword } from "@/lib/passwords";
@@ -13,7 +12,7 @@ export type { ChangePasswordState };
 /**
  * Klien mengganti password-nya sendiri. Wajib tahu password saat ini
  * (termasuk password sementara dari kantor). Setelah berhasil,
- * mustChangePassword = false dan klien diarahkan ke beranda portal.
+ * mustChangePassword = false, form login ulang otomatis lalu ke beranda.
  */
 export async function changePortalPassword(_prev: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
   const principal = await requireClientAccount({ allowPendingPasswordChange: true });
@@ -45,5 +44,6 @@ export async function changePortalPassword(_prev: ChangePasswordState, formData:
     newValue: { clientAccountId: principal.accountId }
   });
 
-  redirect("/portal?password=changed");
+  // Sesi lama gugur karena password berubah; form login ulang otomatis.
+  return { relogin: { provider: "client-credentials", email: principal.email, redirectTo: "/portal?password=changed" } };
 }

@@ -36,6 +36,8 @@ export interface FileStorageService {
   getSignedPutUrl(storageKey: string, contentType: string, expiresInSeconds?: number): Promise<string>;
   /** Metadata objek (untuk memverifikasi unggahan langsung); null bila tidak ada. */
   headObject(storageKey: string): Promise<{ size: number; contentType: string | null } | null>;
+  /** Baca beberapa byte pertama file (untuk memeriksa isi sesuai ekstensi). */
+  readHead(storageKey: string, bytes: number): Promise<Buffer>;
 }
 
 /** Bentuk storageKey yang dipakai semua provider: "<folder>/<uuid>-<nama-aman>". */

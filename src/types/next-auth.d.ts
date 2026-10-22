@@ -33,6 +33,8 @@ declare module "next-auth" {
     clientId?: string;
     /** Penanda sesi login akun internal. */
     sid?: string;
+    /** Sidik password akun portal (lihat lib/loginGuard.ts). */
+    pwv?: string;
   }
 }
 
@@ -43,6 +45,7 @@ declare module "next-auth/jwt" {
     kind: SessionKind;
     clientId?: string;
     sid?: string;
+    pwv?: string;
     revoked?: boolean;
   }
 }

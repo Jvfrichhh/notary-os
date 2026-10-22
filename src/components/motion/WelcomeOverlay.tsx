@@ -65,7 +65,7 @@ export function WelcomeOverlay({ name, subtitle }: { name: string; subtitle: str
       role="status"
       aria-live="polite"
       onClick={skip}
-      className={`welcome-overlay fixed inset-0 z-[70] flex cursor-pointer items-center justify-center bg-brand-deep text-primary-foreground ${leaving ? "welcome-leaving" : ""}`}
+      className={`welcome-overlay fixed inset-0 z-[70] flex cursor-pointer items-center justify-center bg-brand-deep text-white ${leaving ? "welcome-leaving" : ""}`}
     >
       <div className="px-6 text-center">
         <img src="/brand/nexora-mark.png" alt="Nexora" className="welcome-mark mx-auto h-24 w-auto" />

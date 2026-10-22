@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { LineChart } from "@/components/charts/LineChart";
+import { CountUp } from "@/components/motion/CountUp";
 import { formatCurrency, getJakartaToday } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ function BarList({ data }: { data: { label: string; value: number }[] }) {
   const maxValue = Math.max(1, ...data.map((d) => d.value));
   return (
     <ul className="space-y-3">
-      {data.map((d) => (
+      {data.map((d, i) => (
         <li key={d.label} title={`${d.label}: ${d.value}`} className="group">
           <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
             <span className="truncate font-medium text-[#344054]">{d.label}</span>
@@ -29,8 +30,8 @@ function BarList({ data }: { data: { label: string; value: number }[] }) {
           </div>
           <div className="h-2 rounded-full bg-muted">
             <div
-              className="h-2 rounded-full bg-primary transition-opacity group-hover:opacity-80"
-              style={{ width: `${Math.max(2, (d.value / maxValue) * 100)}%` }}
+              className="bar-grow h-2 rounded-full bg-primary transition-opacity group-hover:opacity-80"
+              style={{ width: `${Math.max(2, (d.value / maxValue) * 100)}%`, ["--d" as string]: `${150 + i * 70}ms` }}
             />
           </div>
         </li>
@@ -208,16 +209,24 @@ export default async function ReportsPage({ searchParams }: PageProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        {kpis.map((k) => (
-          <div key={k.label} className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 shadow-card">
+        {kpis.map((k, i) => (
+          <div
+            key={k.label}
+            style={{ ["--d" as string]: `${i * 60}ms` }}
+            className="rise flex flex-col gap-2 rounded-xl border border-border bg-background p-4 shadow-card"
+          >
             <span className="text-[13px] font-semibold text-[#475467]">{k.label}</span>
-            <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">{k.value.toLocaleString("id-ID")}</span>
+            <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground"><CountUp value={k.value} delay={i * 60} /></span>
             <Delta now={k.value} before={k.prev} year={year} />
           </div>
         ))}
-        <div className="col-span-2 flex flex-col gap-2 rounded-xl border border-[#FECDCA] bg-[#FEF3F2] p-4 lg:col-span-1">
+        <div
+          style={{ ["--d" as string]: "240ms" }}
+          className="rise col-span-2 flex flex-col gap-2 rounded-xl border border-[#FECDCA] bg-[#FEF3F2] p-4 lg:col-span-1">
           <span className="text-[13px] font-semibold text-[#912018]">Terlambat saat ini</span>
-          <span className="text-3xl font-extrabold leading-none tracking-tight text-status-overdue">{overdueCount}</span>
+          <span className="text-3xl font-extrabold leading-none tracking-tight text-status-overdue">
+            <CountUp value={overdueCount} delay={240} />
+          </span>
           <Link href="/deadlines" className="text-xs font-bold text-status-overdue hover:underline">
             Lihat daftar →
           </Link>

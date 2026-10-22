@@ -180,7 +180,18 @@ export function LineChart({
           )}
 
           {paths.map((d, k) => (
-            <path key={series[k].name} d={d} fill="none" stroke={series[k].color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            <path
+              key={series[k].name}
+              d={d}
+              pathLength={1}
+              className="chart-draw"
+              style={{ ["--d" as string]: `${120 + k * 160}ms` }}
+              fill="none"
+              stroke={series[k].color}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
           ))}
 
           {active !== null &&
@@ -192,7 +203,7 @@ export function LineChart({
             })}
 
           {active === null && endLabels.map((e) => (
-            <g key={series[e.idx].name}>
+            <g key={series[e.idx].name} className="chart-fade" style={{ ["--d" as string]: `${1100 + e.idx * 160}ms` }}>
               <circle cx={x(e.i)} cy={y(e.v)} r={3.5} fill={series[e.idx].color} stroke="#FFFFFF" strokeWidth={2} />
               <text x={x(e.i) + 10} y={e.y} dy="0.32em" fontSize={12} fill="#344054" fontWeight={600}>
                 {series[e.idx].name}

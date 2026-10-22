@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { CountUp } from "@/components/motion/CountUp";
 
 /**
  * Diagram donat untuk komposisi satu keseluruhan (mis. pekerjaan aktif per
@@ -40,7 +41,7 @@ export function DonutChart({ slices, centerLabel }: { slices: DonutSlice[]; cent
   return (
     <div className="flex flex-wrap items-center gap-5">
       <div className="relative mx-auto shrink-0" style={{ width: SIZE, height: SIZE }}>
-        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={`${centerLabel}: ${total}`}>
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={`${centerLabel}: ${total}`} className="donut-spin">
           <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="#F2F4F7" strokeWidth={STROKE} />
           {total > 0 &&
             arcs.map((a) => (
@@ -53,10 +54,16 @@ export function DonutChart({ slices, centerLabel }: { slices: DonutSlice[]; cent
                 stroke={a.color}
                 strokeWidth={active === a.i ? STROKE + 6 : STROKE}
                 strokeDasharray={`${a.dash} ${C - a.dash}`}
+                style={{
+                  ["--dash" as string]: `${a.dash}`,
+                  ["--rest" as string]: `${C - a.dash}`,
+                  ["--c" as string]: `${C}`,
+                  ["--d" as string]: `${100 + (a.offset / C) * 500}ms`
+                }}
                 strokeDashoffset={-a.offset}
                 transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
                 opacity={active === null || active === a.i ? 1 : 0.35}
-                className="cursor-pointer transition-all duration-150"
+                className="donut-arc cursor-pointer transition-[stroke-width,opacity] duration-150"
                 onPointerEnter={() => setActive(a.i)}
                 onPointerLeave={() => setActive(null)}
               >
@@ -65,7 +72,7 @@ export function DonutChart({ slices, centerLabel }: { slices: DonutSlice[]; cent
             ))}
         </svg>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">{focus ? focus.value : total}</span>
+          <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">{focus ? focus.value : <CountUp value={total} duration={1000} />}</span>
           <span className="mt-1 max-w-[96px] text-xs font-medium leading-tight text-muted-foreground">{focus ? focus.label : centerLabel}</span>
         </div>
       </div>

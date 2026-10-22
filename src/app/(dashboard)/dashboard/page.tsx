@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DonutChart } from "@/components/charts/DonutChart";
+import { CountUp } from "@/components/motion/CountUp";
 import { classifyDeadline, formatDate, formatStatusLabel, getJakartaToday } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
@@ -220,17 +221,20 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       {cards.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-          {cards.map((c) => (
+          {cards.map((c, i) => (
             <Link
               key={c.label}
               href={c.href}
-              className="flex flex-col gap-2.5 rounded-xl border border-border bg-background p-4 shadow-card transition-shadow hover:shadow-md"
+              style={{ ["--d" as string]: `${i * 60}ms` }}
+              className="rise flex flex-col gap-2.5 rounded-xl border border-border bg-background p-4 shadow-card transition-shadow hover:shadow-md"
             >
               <span className="flex items-center justify-between gap-2">
                 <span className="text-[13px] font-semibold text-[#475467]">{c.label}</span>
                 <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} />
               </span>
-              <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">{c.value}</span>
+              <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">
+                <CountUp value={c.value} delay={i * 60} />
+              </span>
               <span className="text-xs text-muted-foreground">{c.hint}</span>
             </Link>
           ))}

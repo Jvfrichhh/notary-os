@@ -1,6 +1,9 @@
 import { PortalHeader } from "@/components/portal/PortalHeader";
 import { requireClientAccount } from "@/lib/portalSession";
 import { prisma } from "@/lib/prisma";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/motion/NavigationProgress";
+import { WELCOME_PENDING_SCRIPT, WelcomeOverlay } from "@/components/motion/WelcomeOverlay";
 
 // Layout membaca session + database -> selalu dinamis, tidak di-cache lintas klien.
 export const dynamic = "force-dynamic";
@@ -17,6 +20,11 @@ export default async function PortalLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-screen bg-muted">
+      <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
+      <WelcomeOverlay name={principal.displayName} subtitle="Portal Klien" />
+      <Suspense>
+        <NavigationProgress />
+      </Suspense>
       <PortalHeader
         displayName={principal.displayName}
         clientNumber={principal.client.clientNumber}

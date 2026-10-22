@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
+import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -36,19 +37,24 @@ function PortalLoginForm() {
       redirect: false
     });
 
-    setLoading(false);
-
     if (res?.error) {
+      setLoading(false);
       setError("Email atau password salah, atau akun tidak aktif.");
       return;
     }
 
+    // Sambutan singkat ditampilkan sekali di halaman berikutnya.
+    try {
+      sessionStorage.setItem(WELCOME_FLAG, "1");
+    } catch {
+      /* abaikan bila penyimpanan browser tidak tersedia */
+    }
     router.push("/portal");
     router.refresh();
   }
 
   return (
-    <div className="w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
+    <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Portal Klien</p>
       <h1 className="mt-1 text-lg font-semibold text-foreground">Notary Operating System</h1>
       <p className="mt-1 text-sm text-muted-foreground">Pantau perkembangan pekerjaan Anda di kantor notaris</p>

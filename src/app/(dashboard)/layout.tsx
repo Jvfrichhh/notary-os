@@ -1,6 +1,9 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { SessionWatcher } from "@/components/layout/SessionWatcher";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/motion/NavigationProgress";
+import { WELCOME_PENDING_SCRIPT, WelcomeOverlay } from "@/components/motion/WelcomeOverlay";
 import { requireUser } from "@/lib/session";
 import { getUserPermissions } from "@/lib/permissions";
 import { filterNavSections, NAV_SECTIONS } from "@/lib/navigation";
@@ -21,6 +24,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted">
+      <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
+      <WelcomeOverlay name={user.name ?? "Pengguna"} subtitle={user.role === "NOTARY" ? "Notaris & PPAT" : "Staf Kantor Notaris"} />
+      <Suspense>
+        <NavigationProgress />
+      </Suspense>
       <SessionWatcher />
       <Sidebar sections={sections} />
       <div className="flex flex-1 flex-col overflow-hidden">

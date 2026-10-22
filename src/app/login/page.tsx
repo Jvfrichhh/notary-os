@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
+import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -34,19 +35,24 @@ function LoginForm() {
       redirect: false
     });
 
-    setLoading(false);
-
     if (res?.error) {
+      setLoading(false);
       setError("Email atau password salah.");
       return;
     }
 
+    // Sambutan singkat ditampilkan sekali di halaman berikutnya.
+    try {
+      sessionStorage.setItem(WELCOME_FLAG, "1");
+    } catch {
+      /* abaikan bila penyimpanan browser tidak tersedia */
+    }
     router.push("/dashboard");
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
+      <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
         <h1 className="text-lg font-semibold text-foreground">Notary Operating System</h1>
         <p className="mt-1 text-sm text-muted-foreground">Masuk ke sistem manajemen kantor notaris</p>
 

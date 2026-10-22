@@ -33,6 +33,8 @@ export default async function BackupPage({ searchParams }: { searchParams: { ok?
           Protokol notaris wajib disimpan selamanya. Sistem membuat backup database otomatis tiap minggu; unduh secara berkala dan simpan di luar
           cloud (harddisk kantor / Google Drive kantor).
         </p>
+        {/* Versi mesin server: untuk memastikan pembaruan keamanan Node.js sudah aktif. */}
+        <p className="mt-1 text-xs text-muted-foreground">Versi Node.js server: {process.version}</p>
       </div>
 
       {searchParams.ok === "backup" && (

@@ -114,9 +114,9 @@ export async function middleware(req: NextRequest) {
 }
 
 // Semua route dilindungi KECUALI halaman login (internal & portal), endpoint
-// NextAuth, dan asset statis. "/login" tetap masuk matcher agar di domain
+// NextAuth, dan asset statis (termasuk logo /brand/* & ikon app). "/login" tetap masuk matcher agar di domain
 // portal bisa di-rewrite ke /portal/login; halaman login sendiri tidak butuh
 // token (ditangani di dalam: path /login & /portal/login lolos tanpa token).
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"]
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|brand/).*)"]
 };

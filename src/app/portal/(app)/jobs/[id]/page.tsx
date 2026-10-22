@@ -163,7 +163,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
                 {state === "waiting" && (
                   <div className="space-y-2">
                     <form action={respondDraftReview.bind(null, r.id, "APPROVED")}>
-                      <button type="submit" className="w-full rounded-md bg-status-on-track py-2.5 text-sm font-medium text-white hover:opacity-90">
+                      <button type="submit" className="w-full rounded-md bg-status-on-track py-2.5 text-sm font-medium text-background hover:opacity-90">
                         Saya sudah membaca dan setuju
                       </button>
                     </form>
@@ -285,7 +285,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
                     <span
                       className={
                         at
-                          ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-white"
+                          ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-background"
                           : "flex h-5 w-5 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground"
                       }
                     >

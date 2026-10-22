@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { Bell, KeyRound, LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function PortalHeader({
   displayName,
@@ -24,6 +25,7 @@ export function PortalHeader({
           </span>
         </Link>
         <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+          <ThemeToggle className="h-11 w-11" />
           <Link
             href="/portal/notifications"
             className="relative flex h-11 w-11 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -31,7 +33,7 @@ export function PortalHeader({
           >
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-status-overdue text-[10px] font-medium text-white">
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-status-overdue text-[10px] font-medium text-background">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}

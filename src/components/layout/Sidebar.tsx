@@ -138,7 +138,7 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                       isActive
                         ? "bg-primary-soft font-bold text-primary"
-                        : "font-medium text-[#475467] hover:bg-muted hover:text-foreground"
+                        : "font-medium text-fg-3 hover:bg-muted hover:text-foreground"
                     )}
                   >
                     {Icon && <Icon className="h-[18px] w-[18px] shrink-0" />}

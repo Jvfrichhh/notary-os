@@ -25,7 +25,7 @@ function BarList({ data }: { data: { label: string; value: number }[] }) {
       {data.map((d, i) => (
         <li key={d.label} title={`${d.label}: ${d.value}`} className="group">
           <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-            <span className="truncate font-medium text-[#344054]">{d.label}</span>
+            <span className="truncate font-medium text-fg-2">{d.label}</span>
             <span className="shrink-0 font-bold tabular-nums text-foreground">{d.value}</span>
           </div>
           <div className="h-2 rounded-full bg-muted">
@@ -200,7 +200,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
               key={y}
               href={`/reports?year=${y}`}
               aria-current={y === year ? "page" : undefined}
-              className={`rounded-sm px-3.5 py-1.5 font-semibold ${y === year ? "bg-primary text-primary-foreground" : "text-[#475467] hover:bg-muted"}`}
+              className={`rounded-sm px-3.5 py-1.5 font-semibold ${y === year ? "bg-primary text-primary-foreground" : "text-fg-3 hover:bg-muted"}`}
             >
               {y}
             </Link>
@@ -215,15 +215,15 @@ export default async function ReportsPage({ searchParams }: PageProps) {
             style={{ ["--d" as string]: `${i * 60}ms` }}
             className="rise flex flex-col gap-2 rounded-xl border border-border bg-background p-4 shadow-card"
           >
-            <span className="text-[13px] font-semibold text-[#475467]">{k.label}</span>
+            <span className="text-[13px] font-semibold text-fg-3">{k.label}</span>
             <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground"><CountUp value={k.value} delay={i * 60} /></span>
             <Delta now={k.value} before={k.prev} year={year} />
           </div>
         ))}
         <div
           style={{ ["--d" as string]: "240ms" }}
-          className="rise col-span-2 flex flex-col gap-2 rounded-xl border border-[#FECDCA] bg-[#FEF3F2] p-4 lg:col-span-1">
-          <span className="text-[13px] font-semibold text-[#912018]">Terlambat saat ini</span>
+          className="rise col-span-2 flex flex-col gap-2 rounded-xl border border-danger-border bg-danger-soft p-4 lg:col-span-1">
+          <span className="text-[13px] font-semibold text-danger-strong">Terlambat saat ini</span>
           <span className="text-3xl font-extrabold leading-none tracking-tight text-status-overdue">
             <CountUp value={overdueCount} delay={240} />
           </span>
@@ -246,9 +246,9 @@ export default async function ReportsPage({ searchParams }: PageProps) {
           ariaLabel={`Grafik garis pekerjaan masuk, klien baru, dan akta per bulan tahun ${year}`}
           labels={MONTH_LABELS}
           series={[
-            { name: "Pekerjaan masuk", color: "#047857", values: upTo(jobsPerMonth) },
-            { name: "Klien baru", color: "#EB6834", values: upTo(clientsPerMonth) },
-            { name: "Akta", color: "#2A78D6", values: upTo(deedsPerMonth) }
+            { name: "Pekerjaan masuk", color: "var(--series-green)", values: upTo(jobsPerMonth) },
+            { name: "Klien baru", color: "var(--series-orange)", values: upTo(clientsPerMonth) },
+            { name: "Akta", color: "var(--series-blue)", values: upTo(deedsPerMonth) }
           ]}
         />
       </Card>
@@ -299,8 +299,8 @@ export default async function ReportsPage({ searchParams }: PageProps) {
               format="rupiah"
               height={240}
               series={[
-                { name: "Ditagihkan", color: "#2A78D6", values: upTo(invoicedPerMonth) },
-                { name: "Diterima", color: "#047857", values: upTo(receivedPerMonth) }
+                { name: "Ditagihkan", color: "var(--series-blue)", values: upTo(invoicedPerMonth) },
+                { name: "Diterima", color: "var(--series-green)", values: upTo(receivedPerMonth) }
               ]}
             />
           </Card>

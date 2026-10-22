@@ -127,7 +127,7 @@ export function LineChart({
 
   return (
     <div>
-      <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] text-[#475467]">
+      <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] text-fg-3">
         {series.map((s) => (
           <li key={s.name} className="flex items-center gap-2">
             <span aria-hidden="true" className="h-[3px] w-4 rounded-full" style={{ background: s.color }} />
@@ -155,8 +155,8 @@ export function LineChart({
         <svg width={width} height={height} className="block max-w-full overflow-visible" aria-hidden="true">
           {ticks.map((t) => (
             <g key={t}>
-              <line x1={PAD.left} x2={width - right} y1={y(t)} y2={y(t)} stroke="#EAECF0" strokeWidth={1} />
-              <text x={PAD.left - 10} y={y(t)} dy="0.32em" textAnchor="end" fontSize={11} fill="#667085">
+              <line x1={PAD.left} x2={width - right} y1={y(t)} y2={y(t)} stroke="rgb(var(--border))" strokeWidth={1} />
+              <text x={PAD.left - 10} y={y(t)} dy="0.32em" textAnchor="end" fontSize={11} fill="rgb(var(--muted-foreground))">
                 {formatValue(t, format, true)}
               </text>
             </g>
@@ -168,7 +168,7 @@ export function LineChart({
               y={height - 8}
               textAnchor="middle"
               fontSize={11}
-              fill={active === i ? "#101828" : "#667085"}
+              fill={active === i ? "rgb(var(--foreground))" : "rgb(var(--muted-foreground))"}
               fontWeight={active === i ? 700 : 400}
             >
               {width < 440 && i % 2 === 1 ? "" : l}
@@ -176,7 +176,7 @@ export function LineChart({
           ))}
 
           {active !== null && (
-            <line x1={x(active)} x2={x(active)} y1={PAD.top} y2={PAD.top + plotH} stroke="#98A2B3" strokeWidth={1} strokeDasharray="3 3" />
+            <line x1={x(active)} x2={x(active)} y1={PAD.top} y2={PAD.top + plotH} stroke="rgb(var(--input))" strokeWidth={1} strokeDasharray="3 3" />
           )}
 
           {paths.map((d, k) => (
@@ -198,14 +198,14 @@ export function LineChart({
             series.map((s) => {
               const v = s.values[active];
               return v === null ? null : (
-                <circle key={s.name} cx={x(active)} cy={y(v)} r={4.5} fill={s.color} stroke="#FFFFFF" strokeWidth={2} />
+                <circle key={s.name} cx={x(active)} cy={y(v)} r={4.5} fill={s.color} stroke="rgb(var(--background))" strokeWidth={2} />
               );
             })}
 
           {active === null && endLabels.map((e) => (
             <g key={series[e.idx].name} className="chart-fade" style={{ ["--d" as string]: `${1100 + e.idx * 160}ms` }}>
-              <circle cx={x(e.i)} cy={y(e.v)} r={3.5} fill={series[e.idx].color} stroke="#FFFFFF" strokeWidth={2} />
-              <text x={x(e.i) + 10} y={e.y} dy="0.32em" fontSize={12} fill="#344054" fontWeight={600}>
+              <circle cx={x(e.i)} cy={y(e.v)} r={3.5} fill={series[e.idx].color} stroke="rgb(var(--background))" strokeWidth={2} />
+              <text x={x(e.i) + 10} y={e.y} dy="0.32em" fontSize={12} fill="rgb(var(--fg-2))" fontWeight={600}>
                 {series[e.idx].name}
               </text>
             </g>
@@ -253,7 +253,7 @@ export function LineChart({
                 <tr key={s.name} className="border-t border-muted">
                   <td className="py-1.5 pr-3 font-semibold text-foreground">{s.name}</td>
                   {s.values.map((v, i) => (
-                    <td key={i} className="px-1.5 py-1.5 text-right tabular-nums text-[#344054]">
+                    <td key={i} className="px-1.5 py-1.5 text-right tabular-nums text-fg-2">
                       {v === null ? "–" : formatValue(v, format, format === "rupiah")}
                     </td>
                   ))}

@@ -105,7 +105,7 @@ export function GlobalSearchBar() {
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setIsOpen(true)}
         placeholder="Cari klien, pekerjaan, nomor akta..."
-        className="h-11 w-full rounded-md border border-[#D0D5DD] bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       />
       {isLoading && (
         <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />

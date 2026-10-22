@@ -85,7 +85,7 @@ function PortalLoginForm() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-[#344054]">Email</label>
+          <label className="block text-sm font-semibold text-fg-2">Email</label>
           <input
             type="email"
             name="email"
@@ -93,13 +93,13 @@ function PortalLoginForm() {
             autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1.5 h-12 w-full rounded-md border border-[#D0D5DD] px-3.5 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
+            className="mt-1.5 h-12 w-full rounded-md border border-input px-3.5 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
             placeholder="Email yang didaftarkan kantor"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-[#344054]">Password</label>
+          <label className="block text-sm font-semibold text-fg-2">Password</label>
           <div className="relative mt-1.5">
             <input
               type={showPassword ? "text" : "password"}
@@ -108,7 +108,7 @@ function PortalLoginForm() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-12 w-full rounded-md border border-[#D0D5DD] px-3.5 pr-11 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
+              className="h-12 w-full rounded-md border border-input px-3.5 pr-11 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
               placeholder="Masukkan Password"
             />
             <button

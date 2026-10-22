@@ -64,7 +64,7 @@ export function ClientUploadReview({
             <input type="hidden" name="decision" value="ACCEPTED" />
             <button
               type="submit"
-              className="rounded-md bg-status-on-track px-3 py-1 text-xs font-medium text-white hover:opacity-90"
+              className="rounded-md bg-status-on-track px-3 py-1 text-xs font-medium text-background hover:opacity-90"
             >
               Terima
             </button>

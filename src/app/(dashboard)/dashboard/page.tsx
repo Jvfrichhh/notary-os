@@ -88,12 +88,12 @@ async function getUpcomingTasks() {
 
 /** Pekerjaan berjalan per status, urut sesuai alur kerja (warna mengikuti status, bukan peringkat). */
 const STATUS_SLICES = [
-  { status: "INBOX", label: "Baru masuk", color: "#2A78D6" },
-  { status: "IN_PROGRESS", label: "Sedang diproses", color: "#EB6834" },
-  { status: "WAITING_FOR_CLIENT", label: "Menunggu klien", color: "#1BAF7A" },
-  { status: "WAITING_FOR_DOCUMENT", label: "Menunggu dokumen", color: "#EDA100" },
-  { status: "REVIEW", label: "Menunggu persetujuan", color: "#E87BA4" },
-  { status: "READY_FOR_SIGNING", label: "Siap tanda tangan", color: "#6250D6" }
+  { status: "INBOX", label: "Baru masuk", color: "var(--series-blue)" },
+  { status: "IN_PROGRESS", label: "Sedang diproses", color: "var(--series-orange)" },
+  { status: "WAITING_FOR_CLIENT", label: "Menunggu klien", color: "var(--series-aqua)" },
+  { status: "WAITING_FOR_DOCUMENT", label: "Menunggu dokumen", color: "var(--series-yellow)" },
+  { status: "REVIEW", label: "Menunggu persetujuan", color: "var(--series-magenta)" },
+  { status: "READY_FOR_SIGNING", label: "Siap tanda tangan", color: "var(--series-violet)" }
 ] as const;
 
 async function getStatusBreakdown() {
@@ -107,9 +107,9 @@ async function getStatusBreakdown() {
 }
 
 const DEADLINE_TONE = {
-  overdue: "bg-[#FEF3F2] text-status-overdue",
-  "due-today": "bg-[#FFFAEB] text-status-due-today",
-  "due-soon": "bg-[#FFFAEB] text-status-due-today",
+  overdue: "bg-danger-soft text-status-overdue",
+  "due-today": "bg-warn-soft text-status-due-today",
+  "due-soon": "bg-warn-soft text-status-due-today",
   "on-track": "bg-muted text-foreground",
   archived: "bg-muted text-foreground"
 } as const;
@@ -189,7 +189,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       </div>
 
       {searchParams.password === "changed" && (
-        <div className="rounded-lg border border-[#ABEFC6] bg-primary-soft px-4 py-3 text-sm font-medium text-status-on-track">
+        <div className="rounded-lg border border-success-border bg-primary-soft px-4 py-3 text-sm font-medium text-status-on-track">
           Password berhasil diganti.
         </div>
       )}
@@ -197,7 +197,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       {complianceAlerts.length > 0 && (
         <Link
           href="/compliance"
-          className="flex items-start gap-3 rounded-lg border border-[#FEDF89] bg-[#FFFAEB] px-4 py-3 text-sm text-[#7A2E0E] hover:opacity-90"
+          className="flex items-start gap-3 rounded-lg border border-warn-border bg-warn-soft px-4 py-3 text-sm text-warn-strong hover:opacity-90"
         >
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-status-due-today" />
           <div className="min-w-0 flex-1 space-y-0.5">
@@ -210,7 +210,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       )}
 
       {accessDenied && (
-        <div role="alert" className="flex items-start gap-3 rounded-lg border border-[#FECDCA] bg-[#FEF3F2] px-4 py-3 text-sm text-foreground">
+        <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger-border bg-danger-soft px-4 py-3 text-sm text-foreground">
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-status-overdue" />
           <p>
             Anda tidak memiliki akses ke halaman yang diminta, sehingga dialihkan ke Dashboard. Hubungi
@@ -229,7 +229,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               className="rise flex flex-col gap-2.5 rounded-xl border border-border bg-background p-4 shadow-card transition-shadow hover:shadow-md"
             >
               <span className="flex items-center justify-between gap-2">
-                <span className="text-[13px] font-semibold text-[#475467]">{c.label}</span>
+                <span className="text-[13px] font-semibold text-fg-3">{c.label}</span>
                 <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} />
               </span>
               <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">
@@ -280,9 +280,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                             {job.jobNumber} · PIC {job.pic?.name ?? "-"}
                           </p>
                         </td>
-                        <td className="px-3 py-3.5 text-[#344054]">{job.client.fullName}</td>
+                        <td className="px-3 py-3.5 text-fg-2">{job.client.fullName}</td>
                         <td className="px-3 py-3.5">
-                          <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-[#344054]">
+                          <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-fg-2">
                             {formatStatusLabel(job.status)}
                           </span>
                         </td>

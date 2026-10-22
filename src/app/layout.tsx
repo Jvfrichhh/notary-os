@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { THEME_INIT_SCRIPT } from "@/components/layout/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "Nexora — Sistem Manajemen Kantor Notaris",
@@ -13,8 +14,9 @@ const FONT_URL = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wgh
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}

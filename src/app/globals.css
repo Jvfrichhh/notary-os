@@ -2,6 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tema "Modern Bersih": mode terang (default) & gelap (class .dark di <html>). */
+:root {
+  color-scheme: light;
+  --background: 255 255 255;
+  --canvas: 246 247 249;
+  --foreground: 16 24 40;
+  --fg-2: 52 64 84;
+  --fg-3: 71 84 103;
+  --muted: 242 244 247;
+  --muted-foreground: 89 97 114;
+  --border: 234 236 240;
+  --input: 208 213 221;
+  --primary: 4 120 87;
+  --primary-foreground: 255 255 255;
+  --primary-soft: 236 253 243;
+  --danger-soft: 254 243 242;
+  --danger-border: 254 205 202;
+  --danger-strong: 145 32 24;
+  --warn-soft: 255 250 235;
+  --warn-border: 254 223 137;
+  --warn-strong: 122 46 14;
+  --success-border: 171 239 198;
+  --status-overdue: 180 35 24;
+  --status-due-today: 181 71 8;
+  --status-due-soon: 161 92 7;
+  --status-on-track: 6 118 71;
+  --status-archived: 102 112 133;
+  /* Seri grafik (urutan tetap; sudah divalidasi untuk buta warna) */
+  --series-green: #047857;
+  --series-blue: #2a78d6;
+  --series-orange: #eb6834;
+  --series-aqua: #1baf7a;
+  --series-yellow: #eda100;
+  --series-magenta: #e87ba4;
+  --series-violet: #6250d6;
+}
+.dark {
+  color-scheme: dark;
+  --background: 22 27 34;
+  --canvas: 13 17 23;
+  --foreground: 230 237 243;
+  --fg-2: 201 209 217;
+  --fg-3: 172 181 192;
+  --muted: 33 39 48;
+  --muted-foreground: 148 158 173;
+  --border: 48 54 61;
+  --input: 72 79 88;
+  --primary: 52 211 153;
+  --primary-foreground: 6 32 24;
+  --primary-soft: 10 58 44;
+  --danger-soft: 60 20 22;
+  --danger-border: 127 29 29;
+  --danger-strong: 252 165 165;
+  --warn-soft: 56 38 10;
+  --warn-border: 120 80 10;
+  --warn-strong: 253 230 138;
+  --success-border: 6 95 70;
+  --status-overdue: 248 113 113;
+  --status-due-today: 251 146 60;
+  --status-due-soon: 250 204 21;
+  --status-on-track: 52 211 153;
+  --status-archived: 148 158 173;
+  --series-green: #16a37a;
+  --series-blue: #3987e5;
+  --series-orange: #d95926;
+  --series-aqua: #199e70;
+  --series-yellow: #c98500;
+  --series-magenta: #d55181;
+  --series-violet: #9085e9;
+}
+
 html,
 body {
   height: 100%;

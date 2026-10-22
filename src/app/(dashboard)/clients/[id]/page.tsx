@@ -61,7 +61,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
     <div className="space-y-6">
       {searchParams?.portal && <PortalAccountBanner status={searchParams.portal} />}
       {searchParams?.jobFailed && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="rounded-md border border-warn-border bg-warn-soft px-4 py-3 text-sm text-warn-strong">
           Klien sudah tersimpan, tetapi pekerjaannya gagal dibuat. Klik &quot;+ Pekerjaan baru&quot; untuk membuatnya lagi.
         </div>
       )}

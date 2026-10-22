@@ -42,7 +42,7 @@ export function DonutChart({ slices, centerLabel }: { slices: DonutSlice[]; cent
     <div className="flex flex-wrap items-center gap-5">
       <div className="relative mx-auto shrink-0" style={{ width: SIZE, height: SIZE }}>
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={`${centerLabel}: ${total}`} className="donut-spin">
-          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="#F2F4F7" strokeWidth={STROKE} />
+          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="rgb(var(--muted))" strokeWidth={STROKE} />
           {total > 0 &&
             arcs.map((a) => (
               <circle
@@ -83,7 +83,7 @@ export function DonutChart({ slices, centerLabel }: { slices: DonutSlice[]; cent
           const row = (
             <>
               <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: s.color }} />
-              <span className="min-w-0 flex-1 truncate text-[#344054]">{s.label}</span>
+              <span className="min-w-0 flex-1 truncate text-fg-2">{s.label}</span>
               <span className="font-bold tabular-nums text-foreground">{s.value}</span>
               <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{pct}%</span>
             </>

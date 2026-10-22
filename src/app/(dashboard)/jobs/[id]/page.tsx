@@ -311,7 +311,7 @@ export default async function JobDetailPage({
                         <span
                           className={
                             item.status === "COMPLETE"
-                              ? "flex h-4 w-4 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-white"
+                              ? "flex h-4 w-4 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-background"
                               : "h-4 w-4 rounded border border-border"
                           }
                         >
@@ -473,7 +473,7 @@ export default async function JobDetailPage({
                     <span
                       className={
                         task.status === "DONE"
-                          ? "flex h-4 w-4 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-white"
+                          ? "flex h-4 w-4 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-background"
                           : "h-4 w-4 rounded border border-border"
                       }
                     >
@@ -567,7 +567,7 @@ export default async function JobDetailPage({
                         <span
                           className={
                             done
-                              ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-white"
+                              ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-background"
                               : isNext
                                 ? "flex h-5 w-5 items-center justify-center rounded-full border-2 border-primary text-[11px] text-primary"
                                 : "flex h-5 w-5 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground"
@@ -724,7 +724,7 @@ export default async function JobDetailPage({
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">Pekerjaan ini diajukan untuk Anda periksa.</p>
                     <form action={approveJobReview.bind(null, job.id)}>
-                      <button type="submit" className="w-full rounded-md bg-status-on-track py-2 text-sm font-medium text-white hover:opacity-90">
+                      <button type="submit" className="w-full rounded-md bg-status-on-track py-2 text-sm font-medium text-background hover:opacity-90">
                         Setujui — siap ditandatangani
                       </button>
                     </form>

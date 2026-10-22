@@ -11,9 +11,9 @@ const TONE_LABEL: Record<StatusTone, string> = {
 };
 
 const TONE_CLASS: Record<StatusTone, string> = {
-  overdue: "bg-[#FEF3F2] text-status-overdue",
-  "due-today": "bg-[#FFFAEB] text-status-due-today",
-  "due-soon": "bg-[#FEF7E6] text-status-due-soon",
+  overdue: "bg-danger-soft text-status-overdue",
+  "due-today": "bg-warn-soft text-status-due-today",
+  "due-soon": "bg-warn-soft text-status-due-soon",
   "on-track": "bg-primary-soft text-status-on-track",
   archived: "bg-muted text-status-archived"
 };

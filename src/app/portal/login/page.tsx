@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 // Pesan untuk ?error=... yang dikirim requireClientAccount(). Sengaja tidak
 // membedakan "akun tidak ada" vs "password salah" saat login (anti enumerasi);
@@ -61,10 +61,11 @@ function PortalLoginForm() {
   return (
     <div className="login-enter w-full max-w-sm rounded-xl border border-border bg-background p-6 shadow-[0_12px_32px_rgba(16,24,40,.08)] sm:p-8">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <ShieldCheck className="h-[18px] w-[18px]" />
+        <img src="/brand/nexora-tile.png" alt="" className="h-11 w-11 rounded-md" />
+        <span className="leading-tight">
+          <span className="block text-base font-extrabold tracking-[0.14em] text-foreground">NEXORA</span>
+          <span className="block text-xs font-bold uppercase tracking-[0.08em] text-primary">Portal Klien</span>
         </span>
-        <span className="text-sm font-bold uppercase tracking-[0.06em] text-primary">Portal Klien</span>
       </div>
       <h1 className="mt-5 text-[22px] font-extrabold text-foreground">Masuk ke portal</h1>
       <p className="mt-1 text-sm text-muted-foreground">Pantau perkembangan pekerjaan Anda di kantor notaris.</p>

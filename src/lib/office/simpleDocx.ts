@@ -78,7 +78,7 @@ export function buildSimpleDocx(blocks: DocBlock[], opts: { title: string; lands
   const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
   const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${esc(opts.title)}</dc:title><dc:creator>Notary OS</dc:creator></cp:coreProperties>`;
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${esc(opts.title)}</dc:title><dc:creator>Nexora</dc:creator></cp:coreProperties>`;
   return zip([
     { name: "[Content_Types].xml", data: contentTypes },
     { name: "_rels/.rels", data: rels },

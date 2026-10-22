@@ -39,7 +39,7 @@ export async function createDatabaseBackup(userId: string | null, trigger: "manu
     files.push({ name: `tabel/${name}.json`, data: JSON.stringify(rows, (k, v) => (OMIT_COLUMNS.has(k) ? undefined : typeof v === "bigint" ? v.toString() : v), 1) });
   }
   const manifest = {
-    aplikasi: "Notary OS",
+    aplikasi: "Nexora",
     kantor: NOTARIS.namaSingkat,
     dibuat: new Date().toISOString(),
     pemicu: trigger,

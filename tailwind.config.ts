@@ -20,6 +20,8 @@ const config: Config = {
         primary: "#047857",
         "primary-foreground": "#FFFFFF",
         "primary-soft": "#ECFDF3",
+        // Warna merek Nexora (logo): hijau tua & emas.
+        brand: { deep: "#082A21", gold: "#D9B26F" },
         status: {
           overdue: "#B42318",
           "due-today": "#B54708",

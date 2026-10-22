@@ -38,7 +38,7 @@ function Pending({ children, className }: { children: React.ReactNode; className
 function TemporaryPasswordBox({ state }: { state: UserAdminState }) {
   const [copied, setCopied] = useState(false);
   if (!state.temporaryPassword) return null;
-  const text = `Akun Notary OS\nEmail: ${state.email}\nPassword sementara: ${state.temporaryPassword}\nSegera ganti password lewat ikon kunci di pojok kanan atas.`;
+  const text = `Akun Nexora\nEmail: ${state.email}\nPassword sementara: ${state.temporaryPassword}\nSegera ganti password lewat ikon kunci di pojok kanan atas.`;
   return (
     <div className="mt-3 rounded-md border border-status-due-today/40 bg-status-due-today/5 p-3 text-sm">
       <p className="text-foreground">{state.success}</p>

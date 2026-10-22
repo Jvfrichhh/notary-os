@@ -35,7 +35,7 @@ function Pending({ children, className }: { children: React.ReactNode; className
 function TemporaryPasswordBox({ state }: { state: PortalAccountActionState }) {
   const [copied, setCopied] = useState(false);
   if (!state.temporaryPassword) return null;
-  const text = `Akses Portal Klien Notary OS\nEmail: ${state.email}\nPassword sementara: ${state.temporaryPassword}\n(Wajib diganti saat login pertama)`;
+  const text = `Akses Portal Klien Nexora\nEmail: ${state.email}\nPassword sementara: ${state.temporaryPassword}\n(Wajib diganti saat login pertama)`;
   return (
     <div className="mt-3 rounded-md border border-status-due-today/40 bg-status-due-today/5 p-3 text-sm">
       <p className="text-foreground">{state.success}</p>

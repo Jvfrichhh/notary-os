@@ -55,7 +55,7 @@ export async function syncDraftToVault(
               fileType: DOCX_MIME,
               fileSize: upload.size,
               category,
-              description: `${label} ${template.title} — draft dari Notary OS ${tag}`,
+              description: `${label} ${template.title} — draft dari Nexora ${tag}`,
               storageKey: upload.storageKey,
               uploadedBy: userId
             }

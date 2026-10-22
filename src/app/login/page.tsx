@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { OfficeIllustration } from "@/components/motion/OfficeIllustration";
 
 // useSearchParams butuh Suspense agar halaman login tetap bisa dirender statis.
@@ -57,12 +57,13 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas lg:flex-row">
-      <section className="flex flex-col justify-between gap-6 bg-primary px-6 py-8 text-white sm:px-10 lg:w-1/2 lg:gap-8 lg:p-14">
+      <section className="flex flex-col justify-between gap-6 bg-brand-deep px-6 py-8 text-white sm:px-10 lg:w-1/2 lg:gap-8 lg:p-14">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/15">
-            <ShieldCheck className="h-5 w-5" />
+          <img src="/brand/nexora-mark.png" alt="" className="h-11 w-auto" />
+          <span>
+            <span className="block text-xl font-bold tracking-[0.28em] text-brand-gold">NEXORA</span>
+            <span className="block text-[10px] font-medium uppercase tracking-[0.22em] text-brand-gold/80">Smarter work. Seamless trust.</span>
           </span>
-          <span className="text-lg font-extrabold">Notary OS</span>
         </div>
         <OfficeIllustration className="mx-auto w-full max-w-[300px] sm:max-w-[420px] lg:max-w-[520px]" />
         <div className="max-w-md">

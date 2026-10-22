@@ -28,8 +28,7 @@ import {
   X,
   CalendarCheck,
   Database,
-  Map as MapIcon,
-  ShieldCheck
+  Map as MapIcon
 } from "lucide-react";
 
 // Pemetaan key ikon (string, aman dikirim server -> klien) ke komponen lucide.
@@ -105,11 +104,9 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
     <aside className="flex h-full w-64 flex-col border-r border-border bg-background">
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ShieldCheck className="h-[18px] w-[18px]" />
-          </span>
+          <img src="/brand/nexora-tile.png" alt="" className="h-10 w-10 rounded-md" />
           <span className="leading-tight">
-            <span className="block text-[15px] font-extrabold tracking-tight text-foreground">Notary OS</span>
+            <span className="block text-[15px] font-extrabold tracking-[0.14em] text-foreground">NEXORA</span>
             <span className="block text-xs text-muted-foreground">Kantor Notaris &amp; PPAT</span>
           </span>
         </Link>

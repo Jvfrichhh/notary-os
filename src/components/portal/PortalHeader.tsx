@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { Bell, KeyRound, LogOut, ShieldCheck } from "lucide-react";
+import { Bell, KeyRound, LogOut } from "lucide-react";
 
 export function PortalHeader({
   displayName,
@@ -17,10 +17,11 @@ export function PortalHeader({
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex h-16 max-w-4xl items-center justify-between gap-2 px-3 sm:px-6">
         <Link href="/portal" className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ShieldCheck className="h-4 w-4" />
+          <img src="/brand/nexora-tile.png" alt="" className="h-9 w-9 shrink-0 rounded-md" />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate text-[15px] font-extrabold tracking-[0.12em] text-foreground">NEXORA</span>
+            <span className="block truncate text-xs font-medium text-muted-foreground">Portal Klien</span>
           </span>
-          <span className="truncate text-[15px] font-extrabold tracking-tight text-foreground">Portal Klien</span>
         </Link>
         <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           <Link

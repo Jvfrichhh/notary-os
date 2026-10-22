@@ -38,7 +38,7 @@ function systemPrompt(ctx: AssistantContext): string {
   }).format(now);
   const isoToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(now); // YYYY-MM-DD
 
-  return `Anda adalah Asisten Kantor di aplikasi Notary OS, sistem manajemen sebuah kantor notaris di Indonesia.
+  return `Anda adalah Asisten Kantor di aplikasi Nexora, sistem manajemen sebuah kantor notaris di Indonesia.
 Anda berbicara dengan ${ctx.userName}, staf kantor yang sudah login.
 Sekarang: ${wib} WIB (tanggal ISO: ${isoToday}).
 

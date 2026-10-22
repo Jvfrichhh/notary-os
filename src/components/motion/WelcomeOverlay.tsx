@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Scale } from "lucide-react";
 
 /** Penanda dipasang halaman login tepat setelah berhasil masuk. */
 export const WELCOME_FLAG = "notaryos:welcome";
@@ -66,12 +65,10 @@ export function WelcomeOverlay({ name, subtitle }: { name: string; subtitle: str
       role="status"
       aria-live="polite"
       onClick={skip}
-      className={`welcome-overlay fixed inset-0 z-[70] flex cursor-pointer items-center justify-center bg-gradient-to-br from-primary via-primary to-[hsl(222_47%_12%)] text-primary-foreground ${leaving ? "welcome-leaving" : ""}`}
+      className={`welcome-overlay fixed inset-0 z-[70] flex cursor-pointer items-center justify-center bg-brand-deep text-primary-foreground ${leaving ? "welcome-leaving" : ""}`}
     >
       <div className="px-6 text-center">
-        <div className="welcome-mark mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
-          <Scale className="h-8 w-8" />
-        </div>
+        <img src="/brand/nexora-mark.png" alt="Nexora" className="welcome-mark mx-auto h-24 w-auto" />
         <p className="welcome-fade-1 mt-6 text-sm uppercase tracking-[0.2em] text-white/70">{text.hello}</p>
         <h1 className="welcome-fade-2 mt-2 text-3xl font-semibold sm:text-4xl">{first}</h1>
         <p className="welcome-fade-3 mt-2 text-sm text-white/70">

@@ -10,7 +10,7 @@ const sans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Notary OS — Sistem Manajemen Kantor Notaris",
+  title: "Nexora — Sistem Manajemen Kantor Notaris",
   description: "Internal management system untuk kantor notaris"
 };
 

@@ -140,7 +140,7 @@ html.welcome-pending::after {
   position: fixed;
   inset: 0;
   z-index: 69;
-  background: hsl(222 47% 20%);
+  background: #082a21;
 }
 
 /* Kartu login muncul lembut. */

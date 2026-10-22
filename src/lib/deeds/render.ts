@@ -53,7 +53,7 @@ export function renderDeed(
     // Halaman catatan penyusunan hanya untuk kantor (tidak untuk draft yang dibaca klien).
     variant === "minuta" && opts.notes !== false
       ? [
-          `Draft otomatis Notary OS — ${template.title}. Isi dan rumusan hukum WAJIB diperiksa Notaris sebelum dipakai.`,
+          `Draft otomatis Nexora — ${template.title}. Isi dan rumusan hukum WAJIB diperiksa Notaris sebelum dipakai.`,
           placeholders > 0
             ? `Masih ada ${placeholders} isian kosong yang tertulis [...] di badan akta; lengkapi di form lalu buat ulang.`
             : "Semua isian sudah terisi.",

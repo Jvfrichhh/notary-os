@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { DonutChart } from "@/components/charts/DonutChart";
 import { classifyDeadline, formatDate, formatStatusLabel, getJakartaToday } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
@@ -84,6 +85,26 @@ async function getUpcomingTasks() {
   });
 }
 
+/** Pekerjaan berjalan per status, urut sesuai alur kerja (warna mengikuti status, bukan peringkat). */
+const STATUS_SLICES = [
+  { status: "INBOX", label: "Baru masuk", color: "#2A78D6" },
+  { status: "IN_PROGRESS", label: "Sedang diproses", color: "#EB6834" },
+  { status: "WAITING_FOR_CLIENT", label: "Menunggu klien", color: "#1BAF7A" },
+  { status: "WAITING_FOR_DOCUMENT", label: "Menunggu dokumen", color: "#EDA100" },
+  { status: "REVIEW", label: "Menunggu persetujuan", color: "#E87BA4" },
+  { status: "READY_FOR_SIGNING", label: "Siap tanda tangan", color: "#6250D6" }
+] as const;
+
+async function getStatusBreakdown() {
+  const rows = await prisma.job.groupBy({
+    by: ["status"],
+    _count: { _all: true },
+    where: { recordStatus: "ACTIVE", status: { notIn: ["COMPLETED", "CANCELLED"] } }
+  });
+  const count = new Map(rows.map((r) => [r.status as string, r._count._all]));
+  return STATUS_SLICES.map((s) => ({ label: s.label, color: s.color, value: count.get(s.status) ?? 0, href: `/jobs?status=${s.status}` }));
+}
+
 const DEADLINE_TONE = {
   overdue: "bg-[#FEF3F2] text-status-overdue",
   "due-today": "bg-[#FFFAEB] text-status-due-today",
@@ -121,10 +142,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   // Setiap blok query hanya dijalankan kalau izinnya ada; tanpa izin -> null,
   // tidak ada query ke tabel tersebut sama sekali.
-  const [jobStats, recentJobs, upcoming] = await Promise.all([
+  const [jobStats, recentJobs, upcoming, statusSlices] = await Promise.all([
     canViewJobs ? getJobStats(user.id) : Promise.resolve(null),
     canViewJobs ? getRecentJobs() : Promise.resolve([]),
-    canViewJobs ? getUpcomingTasks() : Promise.resolve([])
+    canViewJobs ? getUpcomingTasks() : Promise.resolve([]),
+    canViewJobs ? getStatusBreakdown() : Promise.resolve([])
   ]);
   const { salam, tanggal } = greeting();
   const firstName = (user.name ?? "").trim().split(/\s+/)[0] || "";
@@ -275,7 +297,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             )}
           </section>
 
-          <section className="min-w-0 flex-[1_1_300px] rounded-xl border border-border bg-background p-5 shadow-card">
+          <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-5">
+          <section className="rounded-xl border border-border bg-background p-5 shadow-card">
+            <h2 className="mb-4 text-base font-bold text-foreground">Pekerjaan Berjalan per Status</h2>
+            <DonutChart slices={statusSlices} centerLabel="pekerjaan berjalan" />
+          </section>
+
+          <section className="rounded-xl border border-border bg-background p-5 shadow-card">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-bold text-foreground">Tenggat Terdekat</h2>
               <Link href="/deadlines" className="text-sm font-semibold text-primary hover:underline">
@@ -309,6 +337,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               </ul>
             )}
           </section>
+          </div>
         </div>
       )}
     </div>

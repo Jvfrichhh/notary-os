@@ -26,7 +26,7 @@ export type SearchResultGroup = {
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.revoked) {
+  if (!session?.user || session.user.kind === "client" || session.user.revoked) {
     return NextResponse.json({ error: "Anda harus login." }, { status: 401 });
   }
 

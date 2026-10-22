@@ -66,7 +66,9 @@ export async function anthropicCreateMessage(input: CreateMessageInput, model: s
     if (res.status === 401) throw new AiError("Kunci API AI ditolak. Periksa ANTHROPIC_API_KEY.", 401);
     if (res.status === 429) throw new AiError("Kuota layanan AI sedang penuh. Coba beberapa saat lagi.", 429);
     if (res.status === 529 || res.status >= 500) throw new AiError("Layanan AI sedang sibuk. Coba lagi.", res.status);
-    throw new AiError(`Permintaan AI ditolak (${res.status})${detail ? `: ${detail.slice(0, 200)}` : ""}.`, res.status);
+    // Rincian teknis hanya di log server, tidak ditampilkan ke pengguna.
+    console.error("[ai] permintaan ditolak", res.status, detail.slice(0, 500));
+    throw new AiError(`Permintaan AI ditolak (kode ${res.status}). Coba lagi atau hubungi admin.`, res.status);
   }
 
   return (await res.json()) as MessageResponse;

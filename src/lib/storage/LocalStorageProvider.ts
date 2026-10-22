@@ -68,6 +68,16 @@ export class LocalStorageProvider implements FileStorageService {
     }
   }
 
+  async copyObject(fromKey: string, toKey: string): Promise<void> {
+    const dst = path.resolve(this.basePath, toKey);
+    await fs.mkdir(path.dirname(dst), { recursive: true });
+    await fs.copyFile(path.resolve(this.basePath, fromKey), dst);
+  }
+
+  async listObjects(): Promise<{ key: string; lastModified: Date | null }[]> {
+    return []; // storage lokal tidak memakai unggahan langsung
+  }
+
   async readHead(storageKey: string, bytes: number): Promise<Buffer> {
     return (await this.getObjectBuffer(storageKey)).subarray(0, bytes);
   }

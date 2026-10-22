@@ -1,5 +1,6 @@
 "use server";
 
+import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { getUserPermissions } from "@/lib/permissions";
 import { PERMISSIONS } from "@/lib/permissionKeys";
@@ -25,6 +26,12 @@ export async function askAssistantAction(history: ChatTurn[], question: string):
   const permissions = await getUserPermissions(user.id);
   if (!permissions.has(PERMISSIONS.VIEW_JOBS)) return { error: "Anda tidak berhak memakai Asisten AI." };
   if (!isAiEnabled()) return { error: "Fitur AI belum diaktifkan di server." };
+
+  // Batas pemakaian per orang: 60 pertanyaan per jam (cegah biaya AI membengkak).
+  const asked = await prisma.auditLog.count({
+    where: { action: "ai_assistant_asked", userId: user.id, timestamp: { gte: new Date(Date.now() - 3600 * 1000) } }
+  });
+  if (asked >= 60) return { error: "Batas pertanyaan ke Asisten (60 per jam) tercapai. Coba lagi nanti." };
 
   const q = String(question ?? "").trim().slice(0, MAX_QUESTION);
   if (!q) return { error: "Pertanyaan kosong." };

@@ -15,7 +15,7 @@ export interface FileStorageService {
   upload(params: { buffer: Buffer; fileName: string; contentType: string; folder?: string }): Promise<UploadResult>;
 
   /** Ambil URL sementara (signed) untuk membuka/mengunduh file — tidak pernah expose path publik langsung. */
-  getSignedUrl(storageKey: string, expiresInSeconds?: number): Promise<string>;
+  getSignedUrl(storageKey: string, expiresInSeconds?: number, opts?: { contentType?: string }): Promise<string>;
 
   /** Hapus file fisik. Dipanggil hanya dari alur hard-delete admin, bukan soft delete biasa. */
   delete(storageKey: string): Promise<void>;
@@ -38,6 +38,10 @@ export interface FileStorageService {
   headObject(storageKey: string): Promise<{ size: number; contentType: string | null } | null>;
   /** Baca beberapa byte pertama file (untuk memeriksa isi sesuai ekstensi). */
   readHead(storageKey: string, bytes: number): Promise<Buffer>;
+  /** Salin objek di storage (dipakai memindahkan unggahan ke lokasi final). */
+  copyObject(fromKey: string, toKey: string): Promise<void>;
+  /** Daftar objek di bawah satu awalan (untuk membersihkan unggahan yang tidak jadi). */
+  listObjects(prefix: string): Promise<{ key: string; lastModified: Date | null }[]>;
 }
 
 /** Bentuk storageKey yang dipakai semua provider: "<folder>/<uuid>-<nama-aman>". */

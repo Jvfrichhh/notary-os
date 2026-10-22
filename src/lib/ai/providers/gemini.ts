@@ -201,7 +201,9 @@ export async function geminiCreateMessage(input: CreateMessageInput, model: stri
     if (res.status === 403) throw new AiError("Kunci API Gemini tidak berwenang. Periksa GEMINI_API_KEY.", 403);
     if (res.status === 429) throw new AiError(quotaMessage(json.error), 429);
     if (res.status >= 500) throw new AiError("Layanan AI sedang sibuk. Coba lagi.", res.status);
-    throw new AiError(`Permintaan AI ditolak (${res.status})${detail ? `: ${detail.slice(0, 200)}` : ""}.`, res.status);
+    // Rincian teknis hanya di log server, tidak ditampilkan ke pengguna.
+    console.error("[ai] permintaan ditolak", res.status, detail.slice(0, 500));
+    throw new AiError(`Permintaan AI ditolak (kode ${res.status}). Coba lagi atau hubungi admin.`, res.status);
   }
 
   const cand = json.candidates?.[0];

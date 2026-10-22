@@ -1,7 +1,6 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { hashPassword, validateNewPassword } from "@/lib/passwords";
@@ -22,11 +21,13 @@ export async function changeOwnPassword(_prev: ChangePasswordState, formData: Fo
   if (rule) return { error: rule };
   if (next === current) return { error: "Password baru harus berbeda dari password saat ini." };
 
-  const row = await prisma.user.findUnique({ where: { id: user.id }, select: { passwordHash: true } });
+  const row = await prisma.user.findUnique({ where: { id: user.id }, select: { passwordHash: true, email: true } });
   if (!row || !(await bcrypt.compare(current, row.passwordHash))) return { error: "Password saat ini salah." };
 
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(next) } });
+  // activeSessionId dikosongkan: semua sesi lama (termasuk yang mungkin dicuri)
+  // langsung gugur; form login ulang otomatis dengan password baru.
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(next), activeSessionId: null } });
   await writeAuditLog({ userId: user.id, action: "user_password_changed", entityType: "User", entityId: user.id });
 
-  redirect("/dashboard?password=changed");
+  return { relogin: { provider: "credentials", email: row.email, redirectTo: "/dashboard?password=changed" } };
 }

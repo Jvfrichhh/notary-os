@@ -1,4 +1,12 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  CopyObjectCommand,
+  ListObjectsV2Command
+} from "@aws-sdk/client-s3";
 import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
 import { buildStorageKey, type FileStorageService, type UploadResult } from "./FileStorageService";
@@ -51,8 +59,10 @@ export class S3StorageProvider implements FileStorageService {
     return { storageKey: key, size: params.buffer.length };
   }
 
-  async getSignedUrl(storageKey: string, expiresInSeconds = 300): Promise<string> {
-    const command = new GetObjectCommand({ Bucket: this.bucket, Key: storageKey });
+  async getSignedUrl(storageKey: string, expiresInSeconds = 300, opts: { contentType?: string } = {}): Promise<string> {
+    // Content-Type dipaksa dari daftar putih aplikasi (bukan dari yang tersimpan),
+    // supaya file tidak pernah tampil sebagai HTML/skrip di browser.
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: storageKey, ResponseContentType: opts.contentType });
     return awsGetSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
   }
 
@@ -86,6 +96,21 @@ export class S3StorageProvider implements FileStorageService {
     );
     if (!res.Body) return Buffer.alloc(0);
     return Buffer.from(await res.Body.transformToByteArray()).subarray(0, bytes);
+  }
+
+  async copyObject(fromKey: string, toKey: string): Promise<void> {
+    await this.client.send(new CopyObjectCommand({ Bucket: this.bucket, Key: toKey, CopySource: `${this.bucket}/${encodeURI(fromKey)}` }));
+  }
+
+  async listObjects(prefix: string): Promise<{ key: string; lastModified: Date | null }[]> {
+    const out: { key: string; lastModified: Date | null }[] = [];
+    let token: string | undefined;
+    do {
+      const res = await this.client.send(new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix, ContinuationToken: token, MaxKeys: 1000 }));
+      for (const o of res.Contents ?? []) if (o.Key) out.push({ key: o.Key, lastModified: o.LastModified ?? null });
+      token = res.IsTruncated ? res.NextContinuationToken : undefined;
+    } while (token && out.length < 20000);
+    return out;
   }
 
   async getObjectBuffer(storageKey: string): Promise<Buffer> {

@@ -4,6 +4,7 @@ import { formatDate, getJakartaToday } from "@/lib/format";
 import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, REPORT_KINDS, REPORT_LABEL, reportSentInfo } from "@/lib/compliance/monthly";
 import { createDatabaseBackup, lastBackupAt } from "@/lib/compliance/backup";
 import { stalledStages } from "@/lib/ppatStages";
+import { cleanupIncomingUploads } from "@/lib/upload/directUpload";
 
 /**
  * Pengecekan harian (dipanggil cron Vercel ~06.00 WIB):
@@ -82,5 +83,11 @@ export async function runDailyChecks() {
     backup = (await createDatabaseBackup(null, "otomatis")).storageKey;
   }
 
-  return { reminders, backup, tasksChecked: tasks.length };
+  // 4. Unggahan langsung yang tidak pernah dikirim formnya -> dihapus.
+  const cleanedUploads = await cleanupIncomingUploads().catch((err) => {
+    console.error("[cron] pembersihan unggahan gagal", err);
+    return 0;
+  });
+
+  return { reminders, backup, tasksChecked: tasks.length, cleanedUploads };
 }

@@ -50,6 +50,8 @@ export default async function DeedDraftPage({
   const template = draft ? getDeedTemplate(draft.templateKey) : null;
   if (!draft || !template) notFound();
   const finalized = !!draft.deed || !!draft.ppatDeed;
+  // Isi akta yang sudah disahkan = protokol notaris: hanya pemegang view_minuta.
+  if (finalized && !(await userHasPermission(user.id, PERMISSIONS.VIEW_MINUTA))) notFound();
   const isPpat = !!template.ppat;
   const labels = variantLabels(template);
   const canEdit = canEditJobs && !finalized;

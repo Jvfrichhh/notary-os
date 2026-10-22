@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { assertPermission } from "@/lib/permissions";
+import { assertPermission, userHasPermission } from "@/lib/permissions";
+import { isProtocolDocument } from "@/lib/protocolDocuments";
 import { PERMISSIONS } from "@/lib/permissionKeys";
 import { writeAuditLog } from "@/lib/audit";
 import { AiError, isAiEnabled } from "@/lib/ai/client";
@@ -35,6 +36,11 @@ export async function runDocumentAnalysis(
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
   if (!isAiEnabled()) return { error: "Fitur AI belum diaktifkan di server." };
+  if (!/^\/(documents|jobs|clients)\/[A-Za-z0-9_-]+$/.test(returnPath)) returnPath = "/documents";
+  // File akta resmi (minuta/salinan/dll.) tidak boleh dibaca lewat AI oleh yang tak berhak.
+  if ((await isProtocolDocument(documentId)) && !(await userHasPermission(user.id, PERMISSIONS.VIEW_MINUTA))) {
+    return { error: "Dokumen protokol akta hanya bisa dianalisis oleh Notaris." };
+  }
 
   try {
     const analysis = await analyzeDocument({ documentId, userId: user.id, expectedLabel });

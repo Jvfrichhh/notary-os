@@ -55,7 +55,9 @@ async function ktpOfClient(clientId: string, nik: string | null): Promise<Partia
   });
   for (const r of rows) {
     const f = (r.extractedFields ?? {}) as ExtractedFields;
-    if (nik && f.nik && f.nik !== nik.replace(/\D/g, "")) continue; // KTP orang lain
+    // Hanya KTP yang NIK-nya sama persis dengan NIK klien di database (data
+    // klien sendiri tidak dipakai untuk mengisi identitas akta tanpa cocok).
+    if (!nik || !f.nik || f.nik !== nik.replace(/\D/g, "")) continue;
     const sapaan = f.gender === "LAKI-LAKI" ? "Tuan" : f.gender === "PEREMPUAN" ? "Nyonya" : undefined;
     const p: Partial<Person> = {
       sapaan,
@@ -125,6 +127,14 @@ export async function createDeedDraft(jobId: string, formData: FormData) {
   redirect(`/jobs/${jobId}/deeds/${draft.id}`);
 }
 
+const CHANGED_DURING_FINALIZE = "Draft diubah orang lain saat sedang disahkan. Periksa isinya lalu sahkan lagi.";
+
+/** true bila draft tidak disimpan siapa pun sejak waktu `since` (cegah balapan simpan vs sahkan). */
+async function unchangedSince(draftId: string, since: Date): Promise<boolean> {
+  const now = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { updatedAt: true } });
+  return Boolean(now && now.updatedAt.getTime() === since.getTime());
+}
+
 /** Simpan isian draft (JSON dari form). */
 export async function saveDeedDraft(
   draftId: string,
@@ -149,10 +159,13 @@ export async function saveDeedDraft(
     const hasVault = await prisma.document.count({ where: { jobId: draft.jobId, description: { contains: `[draft-akta:${draftId}:` } } });
     if (hasVault > 0) return { ok: true, savedAt: draft.updatedAt.toISOString(), vaultFiles: 0 };
   }
-  const updated = await prisma.deedDraft.update({
-    where: { id: draftId },
+  // Hanya tersimpan bila draft belum disahkan (bersamaan dengan pengesahan -> ditolak).
+  const saved = await prisma.deedDraft.updateMany({
+    where: { id: draftId, deedId: null, ppatDeedId: null },
     data: { data: data as Prisma.InputJsonValue, updatedById: user.id }
   });
+  if (saved.count === 0) return { ok: false, error: "Draft sudah disahkan dan terkunci." };
+  const updated = await prisma.deedDraft.findUniqueOrThrow({ where: { id: draftId }, select: { updatedAt: true } });
   // Minuta & Salinan (.docx) ikut tersimpan di Document Vault sebagai Dokumen Kerja.
   const vault = await syncDraftToVault(draftId, user.id);
   revalidatePath(`/jobs/${draft.jobId}`);
@@ -222,8 +235,9 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
       return { error: `Nomor akta PPAT ${seq}/${year} sudah terdaftar.` };
     }
     const pdata = { ...((draft.data ?? {}) as Record<string, unknown>), nomorAkta: `${seq}/${year}`, tanggalAkta: tanggal };
-    await prisma.deedDraft.update({ where: { id: draftId }, data: { data: pdata as Prisma.InputJsonValue, updatedById: user.id } });
+    const plock = await prisma.deedDraft.update({ where: { id: draftId }, data: { data: pdata as Prisma.InputJsonValue, updatedById: user.id }, select: { updatedAt: true } });
     const pvault = await syncDraftToVault(draftId, user.id, { final: true });
+    if (!pvault.error && !(await unchangedSince(draftId, plock.updatedAt))) pvault.error = CHANGED_DURING_FINALIZE;
     if (pvault.error) {
       await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
       return { error: pvault.error };
@@ -264,7 +278,12 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
       const known = err instanceof Error && !(err instanceof Prisma.PrismaClientKnownRequestError) && !/prisma|invocation/i.test(err.message);
       return { error: known ? (err as Error).message : "Gagal mendaftarkan akta PPAT. Coba lagi atau hubungi admin." };
     }
-    await prisma.deedDraft.update({ where: { id: draftId }, data: { ppatDeedId: ppatId } });
+    const plocked = await prisma.deedDraft.updateMany({ where: { id: draftId, updatedAt: plock.updatedAt, ppatDeedId: null }, data: { ppatDeedId: ppatId } });
+    if (plocked.count === 0) {
+      // Seharusnya tidak terjadi (draft dikunci sebelum ini); catat untuk diperiksa.
+      console.error("[deeds] draft PPAT berubah saat disahkan", { draftId, ppatId });
+      await prisma.deedDraft.update({ where: { id: draftId }, data: { ppatDeedId: ppatId } });
+    }
     await writeAuditLog({ userId: user.id, action: "deed_draft_finalized", entityType: "PpatDeed", entityId: ppatId, newValue: { draftId, deedNumber: `${seq}/${year}` } });
     revalidatePath(`/jobs/${draft.job.id}`);
     revalidatePath("/ppat");
@@ -280,8 +299,9 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
 
   // 1. Kunci nomor & tanggal final ke isian draft, lalu buat file final.
   const data = { ...((draft.data ?? {}) as Record<string, unknown>), nomorAkta: String(Number(nomor)), tanggalAkta: tanggal };
-  await prisma.deedDraft.update({ where: { id: draftId }, data: { data: data as Prisma.InputJsonValue, updatedById: user.id } });
+  const lock = await prisma.deedDraft.update({ where: { id: draftId }, data: { data: data as Prisma.InputJsonValue, updatedById: user.id }, select: { updatedAt: true } });
   const vault = await syncDraftToVault(draftId, user.id, { final: true });
+  if (!vault.error && !(await unchangedSince(draftId, lock.updatedAt))) vault.error = CHANGED_DURING_FINALIZE;
   if (vault.error || !vault.documentIds.minuta) {
     await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
     return { error: vault.error ?? "Gagal menyimpan file akta. Coba lagi." };
@@ -331,12 +351,15 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
       if (vault.documentIds.salinan) {
         await tx.salinan.create({ data: { deedId: deed.id, jobId: draft.job.id, documentId: vault.documentIds.salinan, createdBy: user.id } });
       }
-      await tx.deedDraft.update({ where: { id: draftId }, data: { deedId: deed.id } });
+      // Kunci draft hanya bila isinya tidak berubah sejak file final dibuat.
+      const locked = await tx.deedDraft.updateMany({ where: { id: draftId, updatedAt: lock.updatedAt, deedId: null }, data: { deedId: deed.id } });
+      if (locked.count === 0) throw new Error(CHANGED_DURING_FINALIZE);
       return deed.id;
     });
   } catch (err) {
     console.error("[akta] gagal mengesahkan draft", err);
     await prisma.deedDraft.update({ where: { id: draftId }, data: { data: (draft.data ?? {}) as Prisma.InputJsonValue } }).catch(() => undefined);
+    if (err instanceof Error && err.message === CHANGED_DURING_FINALIZE) return { error: CHANGED_DURING_FINALIZE };
     return { error: "Gagal mendaftarkan akta. Periksa apakah nomor akta sudah dipakai, lalu coba lagi." };
   }
 

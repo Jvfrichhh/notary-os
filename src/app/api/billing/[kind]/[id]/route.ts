@@ -37,7 +37,9 @@ export async function GET(_req: NextRequest, { params }: { params: { kind: strin
       portal.ok &&
       !portal.principal.mustChangePassword &&
       portal.principal.clientId === doc.clientId &&
-      !!(await prisma.payment.findFirst({ where: { id: paymentId!, clientId: doc.clientId, recordStatus: "ACTIVE" }, select: { id: true } }));
+      !!(await prisma.payment.findFirst({ where: { id: paymentId!, clientId: doc.clientId, recordStatus: "ACTIVE" }, select: { id: true } })) &&
+      // Kuitansi yang sudah dibatalkan tidak bisa diunduh klien.
+      !(receipt && receipt.voidedAt);
   } else {
     allowed = await userHasPermission(session.user.id, PERMISSIONS.VIEW_FINANCE);
   }

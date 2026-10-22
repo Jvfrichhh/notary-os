@@ -43,7 +43,7 @@ function actorLabel(userName: string | null | undefined, action: string): string
 export default async function AdminAuditLogPage({ searchParams }: PageProps) {
   await requirePermission(PERMISSIONS.VIEW_AUDIT_LOG);
 
-  const page = Math.max(1, Number(searchParams.page) || 1);
+  const page = Math.min(10000, Math.max(1, Math.floor(Number(searchParams.page)) || 1));
   const entity = searchParams.entity?.trim() || "";
   const action = searchParams.action?.trim() || "";
   const q = searchParams.q?.trim() || "";

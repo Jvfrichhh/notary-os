@@ -27,6 +27,20 @@ const TICKET_TTL_SECONDS = 30 * 60;
 
 const isPortal = (principal: string) => principal.startsWith("client:");
 
+/** Awalan lokasi sementara unggahan langsung (dibersihkan cron harian). */
+export const INCOMING_PREFIX = "incoming/";
+const MAX_PORTAL_TICKETS_PER_HOUR = 40;
+
+/** Hapus unggahan langsung yang tidak pernah dikirim (lebih tua dari 6 jam). */
+export async function cleanupIncomingUploads(): Promise<number> {
+  const storage = getFileStorage();
+  if (!storage.supportsDirectUpload()) return 0;
+  const cutoff = Date.now() - 6 * 3600 * 1000;
+  const stale = (await storage.listObjects(INCOMING_PREFIX)).filter((o) => o.lastModified && o.lastModified.getTime() < cutoff);
+  for (const o of stale) await storage.delete(o.key).catch(() => undefined);
+  return stale.length;
+}
+
 export interface ResolvedUpload {
   storageKey: string;
   fileName: string;
@@ -97,7 +111,19 @@ export async function issueUploadTicket(params: {
   const storage = getFileStorage();
   if (!storage.supportsDirectUpload()) return { mode: "form" };
 
-  const key = buildStorageKey(params.folder, params.fileName, randomUUID());
+  // Batas tiket per akun portal (cegah penuhnya storage oleh unggahan berulang).
+  if (isPortal(params.principal)) {
+    const since = new Date(Date.now() - 3600 * 1000);
+    const issued = await prisma.auditLog.count({
+      where: { action: "upload_ticket_issued", entityType: "UploadTicket", entityId: params.principal, timestamp: { gte: since } }
+    });
+    if (issued >= MAX_PORTAL_TICKETS_PER_HOUR) return { mode: "error", error: "Terlalu banyak unggahan dalam satu jam. Coba lagi nanti." };
+    await prisma.auditLog.create({ data: { action: "upload_ticket_issued", entityType: "UploadTicket", entityId: params.principal, newValue: { size: params.fileSize } } });
+  }
+
+  // File mendarat dulu di "incoming/"; setelah diperiksa server menyalinnya ke
+  // lokasi final yang tidak pernah diketahui browser (isi tidak bisa ditukar).
+  const key = buildStorageKey(`${INCOMING_PREFIX}${params.folder}`, params.fileName, randomUUID());
   const url = await storage.getSignedPutUrl(key, contentType, PUT_URL_TTL_SECONDS);
   const ticket = encodeTicket({
     k: key,
@@ -127,22 +153,24 @@ export async function resolveUploadFromForm(
     if (t.p !== expected.principal || t.f !== expected.folder) {
       return { ok: false, error: "Tiket unggah tidak cocok dengan tujuan dokumen ini." };
     }
-    // Satu tiket = satu dokumen: tiket yang sudah dipakai tidak bisa dipakai lagi.
-    const [usedDoc, usedVer] = await Promise.all([
-      prisma.document.count({ where: { storageKey: t.k } }),
-      prisma.documentVersion.count({ where: { storageKey: t.k } })
-    ]);
-    if (usedDoc + usedVer > 0) return { ok: false, error: "Tiket unggah sudah dipakai. Pilih file lagi lalu kirim ulang." };
+    if (!t.k.startsWith(`${INCOMING_PREFIX}${t.f}/`)) return { ok: false, error: "Tiket unggah tidak valid. Muat ulang halaman lalu coba lagi." };
     const storage = getFileStorage();
-    const head = await storage.headObject(t.k);
+    // Satu tiket = satu dokumen: file "incoming" dihapus setelah dipindah,
+    // jadi tiket yang sama tidak bisa dipakai lagi.
+    if (!(await storage.headObject(t.k))) return { ok: false, error: "File belum sampai di penyimpanan, atau tiket sudah dipakai. Coba unggah lagi." };
+    const finalKey = buildStorageKey(t.f, t.n, randomUUID());
+    await storage.copyObject(t.k, finalKey);
+    await storage.delete(t.k).catch(() => undefined);
+    // Semua pemeriksaan dilakukan pada salinan final (tidak bisa diubah browser lagi).
+    const head = await storage.headObject(finalKey);
     if (!head) return { ok: false, error: "File belum sampai di penyimpanan. Coba unggah lagi." };
     let check = validateUploadMeta({ name: t.n, type: t.t, size: head.size }, { portal: isPortal(t.p) });
-    if (check.ok) check = validateFileSignature(t.n, await storage.readHead(t.k, MAGIC_BYTES_NEEDED));
+    if (check.ok) check = validateFileSignature(t.n, await storage.readHead(finalKey, MAGIC_BYTES_NEEDED));
     if (!check.ok) {
-      await storage.delete(t.k).catch(() => undefined);
+      await storage.delete(finalKey).catch(() => undefined);
       return { ok: false, error: check.message };
     }
-    return { ok: true, file: { storageKey: t.k, fileName: t.n, fileType: t.t, size: head.size } };
+    return { ok: true, file: { storageKey: finalKey, fileName: t.n, fileType: t.t, size: head.size } };
   }
 
   const file = formData.get("file");

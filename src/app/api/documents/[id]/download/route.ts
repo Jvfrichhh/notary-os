@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { userHasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getFileStorage } from "@/lib/storage";
 import { isProtocolDocument } from "@/lib/protocolDocuments";
+import { safeContentType } from "@/lib/uploadValidation";
 
 /**
  * Satu-satunya pintu masuk untuk membuka/mengunduh dokumen. Route ini yang
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const versionParam = req.nextUrl.searchParams.get("version");
   let storageKey = document.storageKey;
+  let fileName = document.fileName;
 
   if (versionParam) {
     const versionNumber = parseInt(versionParam, 10);
@@ -46,8 +48,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Versi dokumen tidak ditemukan." }, { status: 404 });
     }
     storageKey = version.storageKey;
+    fileName = version.fileName;
   }
 
-  const signedUrl = await getFileStorage().getSignedUrl(storageKey, 300);
+  const signedUrl = await getFileStorage().getSignedUrl(storageKey, 300, { contentType: safeContentType(fileName) });
   return NextResponse.redirect(new URL(signedUrl, req.url));
 }

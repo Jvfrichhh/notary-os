@@ -53,6 +53,11 @@ const MAGIC: Record<string, number[][]> = {
   png: [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]]
 };
 
+/** Content-Type aman untuk menyajikan file (dari ekstensi, bukan dari data tersimpan). */
+export function safeContentType(fileName: string): string {
+  return ALLOWED_EXTENSIONS[getExtension(fileName)]?.[0] ?? "application/octet-stream";
+}
+
 /** Jumlah byte awal yang perlu dibaca untuk memeriksa isi file. */
 export const MAGIC_BYTES_NEEDED = 1024;
 

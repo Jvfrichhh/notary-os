@@ -141,6 +141,8 @@ export async function changeInternalUserRole(userId: string, formData: FormData)
     prisma.role.findUnique({ where: { id: roleId }, select: { id: true, name: true } })
   ]);
   if (!user || !role || user.roleId === role.id) return;
+  // Akun Notaris lain tidak bisa diturunkan perannya dari sini (cegah ambil alih akun).
+  if (user.role.name === "NOTARY" && user.id !== admin.id) return;
   // Menurunkan NOTARY aktif terakhir ke role lain -> tolak.
   if (user.role.name === "NOTARY" && role.name !== "NOTARY" && user.isActive && (await countActiveNotaries(user.id)) === 0) return;
 

@@ -13,5 +13,12 @@ export async function isProtocolDocument(documentId: string): Promise<boolean> {
     prisma.grosse.count({ where }),
     prisma.kutipan.count({ where })
   ]);
-  return m + s + g + k > 0;
+  if (m + s + g + k > 0) return true;
+  // File Word dari draft akta yang sudah disahkan (akta notaris maupun akta
+  // PPAT) ditandai "[draft-akta:<id>:minuta|salinan]" di deskripsinya.
+  const doc = await prisma.document.findUnique({ where: { id: documentId }, select: { description: true } });
+  const draftId = doc?.description?.match(/\[draft-akta:([A-Za-z0-9_-]+):/)?.[1];
+  if (!draftId) return false;
+  const draft = await prisma.deedDraft.findUnique({ where: { id: draftId }, select: { deedId: true, ppatDeedId: true } });
+  return Boolean(draft?.deedId || draft?.ppatDeedId);
 }

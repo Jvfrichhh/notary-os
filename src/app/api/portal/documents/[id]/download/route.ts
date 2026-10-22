@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPortalPrincipal } from "@/lib/portalSession";
 import { getFileStorage } from "@/lib/storage";
+import { safeContentType } from "@/lib/uploadValidation";
 
 /**
  * Unduh dokumen oleh KLIEN. Hanya dokumen yang:
@@ -36,11 +37,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         { checklistItems: { some: { checklist: { job: { clientId } } } } }
       ]
     },
-    select: { storageKey: true }
+    select: { storageKey: true, fileName: true }
   });
   // 404 untuk "tidak ada" maupun "bukan milik Anda" -- sengaja sama.
   if (!document) return NextResponse.json({ error: "Dokumen tidak ditemukan." }, { status: 404 });
 
-  const signedUrl = await getFileStorage().getSignedUrl(document.storageKey, 300);
+  const signedUrl = await getFileStorage().getSignedUrl(document.storageKey, 300, { contentType: safeContentType(document.fileName) });
   return NextResponse.redirect(new URL(signedUrl, req.url));
 }

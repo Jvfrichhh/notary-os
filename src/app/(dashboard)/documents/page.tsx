@@ -41,7 +41,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
   const q = searchParams.q?.trim() ?? "";
   const statusFilter = searchParams.status === "ARCHIVED" ? "ARCHIVED" : "ACTIVE";
   const category = CATEGORIES.includes(searchParams.category as never) ? searchParams.category : undefined;
-  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
+  const page = Math.min(10000, Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1));
   const clientId = searchParams.clientId || undefined;
   const view: "folders" | "files" | "client" = clientId ? "client" : searchParams.view === "files" || searchParams.jobId ? "files" : "folders";
 

@@ -64,7 +64,7 @@ function LoginForm() {
           </span>
           <span className="text-lg font-extrabold">Notary OS</span>
         </div>
-        <OfficeIllustration className="mx-auto w-full max-w-[300px] sm:max-w-[420px] lg:max-w-[520px]" />
+        <OfficeIllustration className="mx-auto w-full max-w-[260px] sm:max-w-[380px] lg:max-w-[480px]" />
         <div className="max-w-md">
           <p className="text-xl font-extrabold leading-tight tracking-tight sm:text-3xl">
             Semua pekerjaan kantor notaris, rapi di satu tempat.

@@ -31,7 +31,7 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"]
+        sans: ["\"Plus Jakarta Sans\"", "system-ui", "-apple-system", "sans-serif"]
       },
       boxShadow: {
         card: "0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.03)"

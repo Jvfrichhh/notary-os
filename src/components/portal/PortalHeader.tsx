@@ -14,16 +14,16 @@ export function PortalHeader({
   unreadCount: number;
 }) {
   return (
-    <header className="border-b border-border bg-background">
-      <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6">
-        <Link href="/portal" className="flex items-baseline gap-2">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-2 px-3 sm:px-6">
+        <Link href="/portal" className="flex min-w-0 items-baseline gap-2">
           <span className="text-sm font-semibold tracking-tight text-foreground">Notary OS</span>
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Portal Klien</span>
+          <span className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">Portal Klien</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           <Link
             href="/portal/notifications"
-            className="relative rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="relative rounded-md p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground sm:p-2"
             aria-label={`Notifikasi${unreadCount > 0 ? ` (${unreadCount} belum dibaca)` : ""}`}
           >
             <Bell className="h-4 w-4" />
@@ -35,19 +35,19 @@ export function PortalHeader({
           </Link>
           <Link
             href="/portal/account/password"
-            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-md p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground sm:p-2"
             aria-label="Ganti password"
             title="Ganti password"
           >
             <KeyRound className="h-4 w-4" />
           </Link>
-          <div className="text-right">
-            <p className="text-sm font-medium leading-none text-foreground">{displayName}</p>
+          <div className="hidden max-w-[12rem] text-right sm:block">
+            <p className="truncate text-sm font-medium leading-none text-foreground">{displayName}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{clientNumber}</p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: `${window.location.origin}/portal/login` })}
-            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-md p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground sm:p-2"
             title="Keluar"
             aria-label="Keluar"
           >

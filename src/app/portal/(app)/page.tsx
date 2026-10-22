@@ -59,11 +59,11 @@ export default async function PortalDashboardPage({ searchParams }: { searchPara
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         {cards.map((c) => (
-          <Card key={c.label} className={c.highlight ? "border-status-due-today/50" : undefined}>
-            <p className="text-2xl font-semibold text-foreground">{c.value}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{c.label}</p>
+          <Card key={c.label} className={`!p-3 sm:!p-5 ${c.highlight ? "border-status-due-today/50" : ""}`}>
+            <p className="text-xl font-semibold text-foreground sm:text-2xl">{c.value}</p>
+            <p className="mt-1 text-[11px] leading-tight text-muted-foreground sm:text-xs">{c.label}</p>
           </Card>
         ))}
       </div>
@@ -78,7 +78,7 @@ export default async function PortalDashboardPage({ searchParams }: { searchPara
               <Link
                 key={job.id}
                 href={`/portal/jobs/${job.id}`}
-                className="flex flex-col gap-2 py-3 text-sm hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
+                className="-mx-2 flex flex-col gap-2 rounded-md px-2 py-3 text-sm hover:bg-muted/50 active:bg-muted sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <p className="font-medium text-foreground">

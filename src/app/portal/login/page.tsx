@@ -54,7 +54,7 @@ function PortalLoginForm() {
   }
 
   return (
-    <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
+    <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm sm:p-8">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Portal Klien</p>
       <h1 className="mt-1 text-lg font-semibold text-foreground">Notary Operating System</h1>
       <p className="mt-1 text-sm text-muted-foreground">Pantau perkembangan pekerjaan Anda di kantor notaris</p>
@@ -134,7 +134,7 @@ function PortalLoginForm() {
 
 export default function PortalLoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
       {/* useSearchParams butuh Suspense boundary saat prerender. */}
       <Suspense fallback={null}>
         <PortalLoginForm />

@@ -51,8 +51,8 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
+      <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm sm:p-8">
         <h1 className="text-lg font-semibold text-foreground">Notary Operating System</h1>
         <p className="mt-1 text-sm text-muted-foreground">Masuk ke sistem manajemen kantor notaris</p>
 

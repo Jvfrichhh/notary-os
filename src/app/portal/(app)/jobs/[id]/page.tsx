@@ -134,141 +134,59 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
         <p className="mt-1 text-sm text-muted-foreground">{statusInfo.hint}</p>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Informasi</h2>
-          <dl className="space-y-2 text-sm">
-            <Row label="Target selesai" value={job.deadline ? formatDate(job.deadline) : "Belum ditentukan"} />
-            <Row label="Mulai dikerjakan" value={job.startDate ? formatDate(job.startDate) : "—"} />
-            <Row label="Selesai" value={job.completionDate ? formatDate(job.completionDate) : "—"} />
-            <Row label="Penanggung jawab" value={job.pic?.name ?? "—"} />
-          </dl>
-        </Card>
-
-        {ppatDefs.length > 0 && (
-          <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Tahapan Proses</h2>
-            <ol className="space-y-2 text-sm">
-              {ppatDefs.map((d, i) => {
-                const at = ppatDone.get(d.key);
-                return (
-                  <li key={d.key} className="flex items-center gap-2">
-                    <span
-                      className={
-                        at
-                          ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-white"
-                          : "flex h-5 w-5 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground"
-                      }
-                    >
-                      {at ? "✓" : i + 1}
-                    </span>
-                    <span className={at ? "text-foreground" : "text-muted-foreground"}>{d.clientLabel}</span>
-                    {at && <span className="text-xs text-muted-foreground">{formatDateJakarta(at)}</span>}
-                  </li>
-                );
-              })}
-            </ol>
-          </Card>
-        )}
-
-        {job.deedDrafts.map((d) => {
-          const r = d.reviews[0];
-          const state = reviewState(r, draftHash(d.data));
-          return (
-            <Card key={d.id}>
-              <h2 className="mb-1 text-sm font-semibold text-foreground">Draft {d.title ?? "akta"} untuk Anda periksa</h2>
-              {state === "outdated" ? (
-                <p className="text-sm text-muted-foreground">Kantor sedang memperbarui draft ini. Anda akan diberi tahu bila versi baru siap.</p>
-              ) : (
-                <>
-                  <p className="mb-2 text-xs text-muted-foreground">
-                    Periksa nama, NIK, alamat, objek, dan angka. Draft belum berlaku sampai ditandatangani di hadapan Notaris.
+      {/* Yang perlu dilakukan klien tampil paling atas (penting di HP). */}
+      {job.deedDrafts.map((d) => {
+        const r = d.reviews[0];
+        const state = reviewState(r, draftHash(d.data));
+        return (
+          <Card key={d.id}>
+            <h2 className="mb-1 text-sm font-semibold text-foreground">Draft {d.title ?? "akta"} untuk Anda periksa</h2>
+            {state === "outdated" ? (
+              <p className="text-sm text-muted-foreground">Kantor sedang memperbarui draft ini. Anda akan diberi tahu bila versi baru siap.</p>
+            ) : (
+              <>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Periksa nama, NIK, alamat, objek, dan angka. Draft belum berlaku sampai ditandatangani di hadapan Notaris.
+                </p>
+                <a
+                  href={`/api/portal/deeds/${r.id}`}
+                  className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                >
+                  <Download className="h-4 w-4" /> Unduh draft (Word)
+                </a>
+                {state === "approved" && <p className="text-sm text-status-on-track">Anda sudah menyetujui draft ini ({formatDateTime(r.decidedAt)}).</p>}
+                {state === "changes" && (
+                  <p className="text-sm text-foreground">
+                    Koreksi Anda sudah dikirim: <span className="text-muted-foreground">{r.note}</span>. Kantor akan membagikan versi perbaikan.
                   </p>
-                  <a
-                    href={`/api/portal/deeds/${r.id}`}
-                    className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                  >
-                    <Download className="h-4 w-4" /> Unduh draft (Word)
-                  </a>
-                  {state === "approved" && <p className="text-sm text-status-on-track">Anda sudah menyetujui draft ini ({formatDateTime(r.decidedAt)}).</p>}
-                  {state === "changes" && (
-                    <p className="text-sm text-foreground">
-                      Koreksi Anda sudah dikirim: <span className="text-muted-foreground">{r.note}</span>. Kantor akan membagikan versi perbaikan.
-                    </p>
-                  )}
-                  {state === "waiting" && (
-                    <div className="space-y-2">
-                      <form action={respondDraftReview.bind(null, r.id, "APPROVED")}>
-                        <button type="submit" className="w-full rounded-md bg-status-on-track py-2 text-sm font-medium text-white hover:opacity-90">
-                          Saya sudah membaca dan setuju
-                        </button>
-                      </form>
-                      <form action={respondDraftReview.bind(null, r.id, "CHANGES")} className="space-y-2">
-                        <textarea
-                          name="note"
-                          required
-                          minLength={3}
-                          rows={3}
-                          placeholder="Tulis yang perlu dikoreksi (mis. ejaan nama, alamat, luas tanah)"
-                          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                        />
-                        <button type="submit" className="w-full rounded-md border border-border py-2 text-sm font-medium hover:bg-muted">
-                          Kirim koreksi
-                        </button>
-                      </form>
-                    </div>
-                  )}
-                </>
-              )}
-            </Card>
-          );
-        })}
-
-        {job.payments.map((p) => (
-          <Card key={p.id}>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Tagihan {p.invoiceNumber ?? ""}</h2>
-              <a href={`/api/portal/billing/tagihan/${p.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                <Download className="h-3.5 w-3.5" /> Unduh tagihan
-              </a>
-            </div>
-            <dl className="space-y-1 text-sm">
-              <Row label="Total biaya" value={formatCurrency(p.totalAmount)} />
-              <Row label="Sudah dibayar" value={formatCurrency(p.paidAmount)} />
-              <Row label="Sisa" value={Number(p.remainingAmount) > 0 ? formatCurrency(p.remainingAmount) : "Lunas"} />
-            </dl>
-            {p.receipts.length > 0 && (
-              <ul className="mt-3 space-y-1 border-t border-border pt-2 text-xs">
-                {p.receipts.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">
-                      {formatDate(r.paidAt)} · {formatCurrency(r.amount)}
-                    </span>
-                    <a href={`/api/portal/billing/kuitansi/${r.id}`} className="font-medium text-primary hover:underline">
-                      Kuitansi {r.receiptNumber}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+                )}
+                {state === "waiting" && (
+                  <div className="space-y-2">
+                    <form action={respondDraftReview.bind(null, r.id, "APPROVED")}>
+                      <button type="submit" className="w-full rounded-md bg-status-on-track py-2.5 text-sm font-medium text-white hover:opacity-90">
+                        Saya sudah membaca dan setuju
+                      </button>
+                    </form>
+                    <form action={respondDraftReview.bind(null, r.id, "CHANGES")} className="space-y-2">
+                      <textarea
+                        name="note"
+                        required
+                        minLength={3}
+                        rows={3}
+                        placeholder="Tulis yang perlu dikoreksi (mis. ejaan nama, alamat, luas tanah)"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      />
+                      <button type="submit" className="w-full rounded-md border border-border py-2.5 text-sm font-medium hover:bg-muted">
+                        Kirim koreksi
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </>
             )}
           </Card>
-        ))}
-
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Riwayat</h2>
-          <ol className="space-y-3 text-sm">
-            {timeline.map((t) => (
-              <li key={t.id} className="flex gap-3">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                <div>
-                  <p className="text-foreground">{t.title}</p>
-                  <p className="text-xs text-muted-foreground">{formatDateTime(t.at)}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      </div>
+        );
+      })}
 
       <Card>
         <div className="mb-3 flex items-center justify-between">
@@ -310,7 +228,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
                       {doc && (doc.uploadedByClientAccountId || accepted) && (
                         <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span>
-                            File: <span className="text-foreground">{doc.fileName}</span> · {formatDateTime(doc.uploadedAt)}
+                            File: <span className="break-all text-foreground">{doc.fileName}</span> · {formatDateTime(doc.uploadedAt)}
                           </span>
                           {doc.uploadedByClientAccountId && (
                             <a
@@ -344,6 +262,89 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
           <p className="mt-3 text-xs text-muted-foreground">Pekerjaan sudah ditutup; unggah dokumen tidak tersedia.</p>
         )}
       </Card>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Card>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Informasi</h2>
+          <dl className="space-y-2 text-sm">
+            <Row label="Target selesai" value={job.deadline ? formatDate(job.deadline) : "Belum ditentukan"} />
+            <Row label="Mulai dikerjakan" value={job.startDate ? formatDate(job.startDate) : "—"} />
+            <Row label="Selesai" value={job.completionDate ? formatDate(job.completionDate) : "—"} />
+            <Row label="Penanggung jawab" value={job.pic?.name ?? "—"} />
+          </dl>
+        </Card>
+
+        {ppatDefs.length > 0 && (
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">Tahapan Proses</h2>
+            <ol className="space-y-2 text-sm">
+              {ppatDefs.map((d, i) => {
+                const at = ppatDone.get(d.key);
+                return (
+                  <li key={d.key} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span
+                      className={
+                        at
+                          ? "flex h-5 w-5 items-center justify-center rounded-full bg-status-on-track text-[11px] text-white"
+                          : "flex h-5 w-5 items-center justify-center rounded-full border border-border text-[11px] text-muted-foreground"
+                      }
+                    >
+                      {at ? "✓" : i + 1}
+                    </span>
+                    <span className={at ? "text-foreground" : "text-muted-foreground"}>{d.clientLabel}</span>
+                    {at && <span className="text-xs text-muted-foreground">{formatDateJakarta(at)}</span>}
+                  </li>
+                );
+              })}
+            </ol>
+          </Card>
+        )}
+
+        {job.payments.map((p) => (
+          <Card key={p.id}>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">Tagihan {p.invoiceNumber ?? ""}</h2>
+              <a href={`/api/portal/billing/tagihan/${p.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                <Download className="h-3.5 w-3.5" /> Unduh tagihan
+              </a>
+            </div>
+            <dl className="space-y-1 text-sm">
+              <Row label="Total biaya" value={formatCurrency(p.totalAmount)} />
+              <Row label="Sudah dibayar" value={formatCurrency(p.paidAmount)} />
+              <Row label="Sisa" value={Number(p.remainingAmount) > 0 ? formatCurrency(p.remainingAmount) : "Lunas"} />
+            </dl>
+            {p.receipts.length > 0 && (
+              <ul className="mt-3 space-y-1 border-t border-border pt-2 text-xs">
+                {p.receipts.map((r) => (
+                  <li key={r.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                    <span className="text-muted-foreground">
+                      {formatDate(r.paidAt)} · {formatCurrency(r.amount)}
+                    </span>
+                    <a href={`/api/portal/billing/kuitansi/${r.id}`} className="font-medium text-primary hover:underline">
+                      Kuitansi {r.receiptNumber}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        ))}
+
+        <Card>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Riwayat</h2>
+          <ol className="space-y-3 text-sm">
+            {timeline.map((t) => (
+              <li key={t.id} className="flex gap-3">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <div>
+                  <p className="text-foreground">{t.title}</p>
+                  <p className="text-xs text-muted-foreground">{formatDateTime(t.at)}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      </div>
     </div>
   );
 }

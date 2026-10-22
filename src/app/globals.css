@@ -153,3 +153,17 @@ html.welcome-pending::after {
     animation: none;
   }
 }
+
+/* HP: isian minimal 16px supaya Safari iPhone tidak memperbesar layar saat mengetik. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+/* Ketuk di HP terasa responsif tanpa kotak abu-abu bawaan. */
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}

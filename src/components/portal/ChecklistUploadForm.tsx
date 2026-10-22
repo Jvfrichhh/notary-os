@@ -38,12 +38,12 @@ export function ChecklistUploadForm({
           name="file"
           required
           accept={accept}
-          className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-muted"
+          className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-muted sm:text-xs sm:file:py-1.5 sm:file:text-xs"
         />
         <button
           type="submit"
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60 sm:w-auto sm:py-1.5 sm:text-xs"
         >
           <Upload className="h-3.5 w-3.5" />
           {uploading ? "Mengunggah..." : busy ? "Menyimpan..." : replace ? "Kirim ulang" : "Unggah"}

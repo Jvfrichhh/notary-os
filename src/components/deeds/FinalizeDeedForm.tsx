@@ -50,7 +50,7 @@ export function FinalizeDeedForm({
   return (
     <form action={action} className="space-y-4 rounded-lg border border-primary/40 bg-primary/5 p-5">
       <div>
-        <h2 className="text-sm font-semibold text-foreground">Sahkan & Daftarkan</h2>
+        <h2 className="text-base font-bold text-foreground">Sahkan & Daftarkan</h2>
         <p className="text-xs text-muted-foreground">
           {ppat
             ? "Setelah akta ditandatangani: sistem mendaftarkannya di Buku Daftar Akta PPAT (nomor urut tahun berjalan), menyimpan Lembar Pertama & Kedua (Word final), membuat tugas penyampaian ke Kantor Pertanahan (7 hari kerja), mengunci draft, dan menyelesaikan pekerjaan."

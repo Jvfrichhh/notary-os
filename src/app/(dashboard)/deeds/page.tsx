@@ -86,7 +86,7 @@ export default async function DeedsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Draft Akta</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Draft Akta</h1>
         <p className="text-sm text-muted-foreground">
           Buat draft akta dari template, isi datanya, lalu unduh Minuta (garis hitam) dan Salinan (garis merah) dalam format Word.
         </p>
@@ -94,7 +94,7 @@ export default async function DeedsPage() {
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Job Baru Menunggu Draft Akta ({waiting.length})</h2>
+          <h2 className="text-base font-bold text-foreground">Job Baru Menunggu Draft Akta ({waiting.length})</h2>
           <p className="text-xs text-muted-foreground">Perintah dari Notaris yang belum dibuatkan draft. Tugas Anda ditandai.</p>
         </div>
         {waiting.length === 0 ? (
@@ -141,7 +141,7 @@ export default async function DeedsPage() {
 
       {canEdit && (
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Buat Draft Akta (pilih pekerjaan & jenis akta)</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">Buat Draft Akta (pilih pekerjaan & jenis akta)</h2>
           {jobs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Belum ada job aktif. Draft akta selalu terkait dengan satu job;
@@ -183,7 +183,7 @@ export default async function DeedsPage() {
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Semua Draft Akta</h2>
+          <h2 className="text-base font-bold text-foreground">Semua Draft Akta</h2>
         </div>
         {drafts.length === 0 ? (
           <div className="p-5">

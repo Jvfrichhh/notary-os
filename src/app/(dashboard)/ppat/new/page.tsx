@@ -35,7 +35,7 @@ export default async function NewPpatPage({ searchParams }: { searchParams: { jo
         <Link href={job ? `/jobs/${job.id}` : "/ppat"} className="text-xs text-muted-foreground hover:text-foreground">
           ← {job ? `${job.jobNumber} · ${job.client.fullName}` : "Buku Daftar Akta PPAT"}
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">Daftarkan Akta PPAT</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Daftarkan Akta PPAT</h1>
         <p className="text-sm text-muted-foreground">
           Setelah akta ditandatangani. Sistem memberi nomor urut tahun berjalan, membuat tugas penyampaian ke Kantor Pertanahan (7 hari kerja)
           {job ? ", dan menyelesaikan pekerjaan ini" : ""}.

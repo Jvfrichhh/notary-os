@@ -29,7 +29,7 @@ export default async function PpatRegisterPage({ searchParams }: { searchParams:
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Buku Daftar Akta PPAT</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Buku Daftar Akta PPAT</h1>
           <p className="text-sm text-muted-foreground">
             Nomor akta PPAT berurut per tahun, terpisah dari repertorium notaris. Laporan bulanannya ada di menu Laporan Bulanan.
           </p>

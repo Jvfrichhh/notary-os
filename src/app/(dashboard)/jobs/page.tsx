@@ -59,7 +59,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Daftar Pekerjaan</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Daftar Pekerjaan</h1>
           <p className="text-sm text-muted-foreground">Seluruh pekerjaan aktif kantor</p>
         </div>
         {canCreate && (

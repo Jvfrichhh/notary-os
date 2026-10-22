@@ -86,7 +86,7 @@ export default async function AdminAuditLogPage({ searchParams }: PageProps) {
         <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">
           ← Admin
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">Audit Log</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Audit Log</h1>
         <p className="text-sm text-muted-foreground">Catatan append-only: tidak bisa diubah atau dihapus dari aplikasi. {total} catatan cocok.</p>
       </div>
 

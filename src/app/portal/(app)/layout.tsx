@@ -19,7 +19,7 @@ export default async function PortalLayout({ children }: { children: React.React
   });
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen bg-canvas">
       <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
       <WelcomeOverlay name={principal.displayName} subtitle="Portal Klien" />
       <Suspense>

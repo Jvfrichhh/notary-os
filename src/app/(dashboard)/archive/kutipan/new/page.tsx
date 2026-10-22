@@ -21,7 +21,7 @@ export default async function NewKutipanPage({ searchParams }: { searchParams: {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Kutipan Baru</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Kutipan Baru</h1>
         <p className="text-sm text-muted-foreground">Akta {deed.deedNumber}</p>
       </div>
       <Card>

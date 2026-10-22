@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 // Pesan untuk ?error=... yang dikirim requireClientAccount(). Sengaja tidak
 // membedakan "akun tidak ada" vs "password salah" saat login (anti enumerasi);
@@ -59,10 +59,15 @@ function PortalLoginForm() {
   }
 
   return (
-    <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm sm:p-8">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Portal Klien</p>
-      <h1 className="mt-1 text-lg font-semibold text-foreground">Notary Operating System</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Pantau perkembangan pekerjaan Anda di kantor notaris</p>
+    <div className="login-enter w-full max-w-sm rounded-xl border border-border bg-background p-6 shadow-[0_12px_32px_rgba(16,24,40,.08)] sm:p-8">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <ShieldCheck className="h-[18px] w-[18px]" />
+        </span>
+        <span className="text-sm font-bold uppercase tracking-[0.06em] text-primary">Portal Klien</span>
+      </div>
+      <h1 className="mt-5 text-[22px] font-extrabold text-foreground">Masuk ke portal</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Pantau perkembangan pekerjaan Anda di kantor notaris.</p>
 
       {deniedMessage && (
         <div className="mt-4 rounded-md border border-status-overdue/40 bg-status-overdue/10 px-3 py-2 text-sm text-foreground">
@@ -79,7 +84,7 @@ function PortalLoginForm() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-foreground">Email</label>
+          <label className="block text-sm font-semibold text-[#344054]">Email</label>
           <input
             type="email"
             name="email"
@@ -87,14 +92,14 @@ function PortalLoginForm() {
             autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="mt-1.5 h-12 w-full rounded-md border border-[#D0D5DD] px-3.5 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
             placeholder="Email yang didaftarkan kantor"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground">Password</label>
-          <div className="relative mt-1">
+          <label className="block text-sm font-semibold text-[#344054]">Password</label>
+          <div className="relative mt-1.5">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -102,7 +107,7 @@ function PortalLoginForm() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-border px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-12 w-full rounded-md border border-[#D0D5DD] px-3.5 pr-11 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
               placeholder="Masukkan Password"
             />
             <button
@@ -123,7 +128,7 @@ function PortalLoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          className="h-12 w-full rounded-md bg-primary text-base font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60"
         >
           {loading ? "Memproses..." : "Masuk ke Portal"}
         </button>

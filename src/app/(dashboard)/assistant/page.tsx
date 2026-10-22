@@ -26,7 +26,7 @@ export default async function AssistantPage() {
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Asisten AI</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Asisten AI</h1>
         <p className="text-sm text-muted-foreground">
           Tanya apa saja tentang data kantor. Asisten hanya membaca data yang memang boleh Anda lihat dan tidak pernah mengubah apa pun.
         </p>

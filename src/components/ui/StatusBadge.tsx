@@ -3,24 +3,25 @@ import { cn } from "@/lib/utils";
 type StatusTone = "overdue" | "due-today" | "due-soon" | "on-track" | "archived";
 
 const TONE_LABEL: Record<StatusTone, string> = {
-  overdue: "🔴 Terlambat",
-  "due-today": "🟠 Hari ini",
-  "due-soon": "🟡 Segera",
-  "on-track": "🟢 Sesuai jadwal",
+  overdue: "Terlambat",
+  "due-today": "Hari ini",
+  "due-soon": "Segera",
+  "on-track": "Sesuai jadwal",
   archived: "Arsip"
 };
 
 const TONE_CLASS: Record<StatusTone, string> = {
-  overdue: "bg-status-overdue/10 text-status-overdue",
-  "due-today": "bg-status-due-today/10 text-status-due-today",
-  "due-soon": "bg-status-due-soon/10 text-status-due-soon",
-  "on-track": "bg-status-on-track/10 text-status-on-track",
-  archived: "bg-status-archived/10 text-status-archived"
+  overdue: "bg-[#FEF3F2] text-status-overdue",
+  "due-today": "bg-[#FFFAEB] text-status-due-today",
+  "due-soon": "bg-[#FEF7E6] text-status-due-soon",
+  "on-track": "bg-primary-soft text-status-on-track",
+  archived: "bg-muted text-status-archived"
 };
 
 export function StatusBadge({ tone, label }: { tone: StatusTone; label?: string }) {
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", TONE_CLASS[tone])}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", TONE_CLASS[tone])}>
+      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
       {label ?? TONE_LABEL[tone]}
     </span>
   );

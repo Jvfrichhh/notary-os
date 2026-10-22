@@ -64,7 +64,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
   const header = (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Document Vault</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Document Vault</h1>
         <p className="text-sm text-muted-foreground">Dokumen tersusun dalam folder per klien</p>
       </div>
       {canUpload && (

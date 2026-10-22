@@ -24,7 +24,7 @@ export default async function LegalisasiDetailPage({ params }: { params: { id: s
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Legalisasi</p>
-          <h1 className="text-xl font-semibold text-foreground">{record.number}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{record.number}</h1>
           <p className="text-sm text-muted-foreground">{formatDate(record.date)}</p>
         </div>
         <div className="flex items-center gap-2">

@@ -23,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const sections = filterNavSections(NAV_SECTIONS, permissions, { aiEnabled: isAiEnabled() });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-muted">
+    <div className="flex h-screen overflow-hidden bg-canvas">
       <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
       <WelcomeOverlay name={user.name ?? "Pengguna"} subtitle={user.role === "NOTARY" ? "Notaris & PPAT" : "Staf Kantor Notaris"} />
       <Suspense>

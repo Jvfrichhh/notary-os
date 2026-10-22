@@ -50,7 +50,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Akta</p>
-          <h1 className="text-xl font-semibold text-foreground">{deed.deedNumber}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {deed.deedType} · {formatDate(deed.deedDate)}
           </p>
@@ -80,7 +80,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
         <div className="space-y-6 lg:col-span-2">
           {/* Info */}
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Informasi Akta</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">Informasi Akta</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
               <div>
                 <dt className="text-xs text-muted-foreground">Klien</dt>
@@ -112,7 +112,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
           {/* Repertorium -- one-to-one dengan Akta */}
           <Card>
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Repertorium</h2>
+              <h2 className="text-base font-bold text-foreground">Repertorium</h2>
               {canEdit && !deed.repertorium && (
                 <Link href={`/notary-record/new?deedId=${deed.id}`} className="text-xs font-medium text-primary hover:underline">
                   + Catat Repertorium
@@ -202,7 +202,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
 
         <div className="space-y-6">
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Ubah Status Akta</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">Ubah Status Akta</h2>
             {canEdit ? (
               <form action={updateDeedStatus.bind(null, deed.id)} className="space-y-2">
                 <select
@@ -227,7 +227,7 @@ export default async function DeedDetailPage({ params }: { params: { id: string 
 
           {canEdit && (
             <Card>
-              <h2 className="mb-2 text-sm font-semibold text-foreground">Arsip</h2>
+              <h2 className="mb-2 text-base font-bold text-foreground">Arsip</h2>
               {deed.recordStatus === "ACTIVE" ? (
                 <form action={archiveDeed.bind(null, deed.id)}>
                   <button type="submit" className="w-full rounded-md border border-border py-2 text-sm font-medium text-foreground hover:bg-muted">
@@ -265,7 +265,7 @@ function ArchiveSection({
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-foreground">
+        <h2 className="text-base font-bold text-foreground">
           {title} ({count})
         </h2>
         {canEdit && (

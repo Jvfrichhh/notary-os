@@ -49,7 +49,7 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Pembayaran</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Pembayaran</h1>
           <p className="text-sm text-muted-foreground">
             Tagihan per pekerjaan; setiap uang masuk dibuatkan kuitansi bernomor. Piutang berjalan:{" "}
             <span className="font-medium text-foreground">{formatCurrency(piutang._sum.remainingAmount ?? 0)}</span>

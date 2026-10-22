@@ -15,10 +15,11 @@ export async function NotificationBell() {
   });
 
   return (
-    <Link href="/notifications" className="relative rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
+    <Link href="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+      aria-label="Notifikasi">
       <Bell className="h-4 w-4" />
       {unreadCount > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-status-overdue text-[10px] font-medium text-white">
+        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full bg-status-overdue text-[10px] font-medium text-white">
           {unreadCount > 9 ? "9+" : unreadCount}
         </span>
       )}

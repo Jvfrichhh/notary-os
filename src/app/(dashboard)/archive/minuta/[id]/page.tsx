@@ -36,7 +36,7 @@ export default async function MinutaDetailPage({ params }: { params: { id: strin
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Minuta</p>
-          <h1 className="text-xl font-semibold text-foreground">Akta {minuta.deed.deedNumber}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Akta {minuta.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {minuta.deed.deedType} · {formatDate(minuta.deed.deedDate)}
           </p>
@@ -63,7 +63,7 @@ export default async function MinutaDetailPage({ params }: { params: { id: strin
       </div>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Metadata</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">Metadata</h2>
         {canEdit ? (
           <form action={updateMinuta.bind(null, minuta.id)} className="space-y-4">
             <div>
@@ -151,7 +151,7 @@ export default async function MinutaDetailPage({ params }: { params: { id: strin
 
       {canEdit && (
         <Card>
-          <h2 className="mb-2 text-sm font-semibold text-foreground">Arsip</h2>
+          <h2 className="mb-2 text-base font-bold text-foreground">Arsip</h2>
           {minuta.recordStatus === "ACTIVE" ? (
             <form action={archiveMinuta.bind(null, minuta.id)}>
               <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">

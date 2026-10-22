@@ -35,7 +35,7 @@ export default async function PpatDetailPage({ params, searchParams }: { params:
         <Link href="/ppat" className="text-xs text-muted-foreground hover:text-foreground">
           ← Buku Daftar Akta PPAT
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
           Akta PPAT No. {d.deedNumber} — {d.deedType}
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -60,7 +60,7 @@ export default async function PpatDetailPage({ params, searchParams }: { params:
       )}
 
       <Card>
-        <h2 className="mb-1 text-sm font-semibold text-foreground">{duty.title}</h2>
+        <h2 className="mb-1 text-base font-bold text-foreground">{duty.title}</h2>
         <p className="mb-3 text-xs text-muted-foreground">Dasar: {duty.basis}. Hari kerja dihitung Senin–Jumat; periksa hari libur nasional.</p>
         {d.submittedToBpnAt ? (
           <p className="text-sm text-status-on-track">
@@ -82,7 +82,7 @@ export default async function PpatDetailPage({ params, searchParams }: { params:
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Data akta</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">Data akta</h2>
         {canEdit ? (
           <PpatForm
             action={updatePpatDeed.bind(null, d.id)}

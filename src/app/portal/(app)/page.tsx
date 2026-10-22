@@ -47,7 +47,7 @@ export default async function PortalDashboardPage({ searchParams }: { searchPara
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Halo, {client.fullName}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Halo, {client.fullName}</h1>
         <p className="text-sm text-muted-foreground">
           Ringkasan pekerjaan Anda di kantor notaris{client.companyName ? ` · ${client.companyName}` : ""}
         </p>
@@ -69,7 +69,7 @@ export default async function PortalDashboardPage({ searchParams }: { searchPara
       </div>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Daftar Pekerjaan</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">Daftar Pekerjaan</h2>
         {jobs.length === 0 ? (
           <EmptyState title="Belum ada pekerjaan yang terdaftar atas nama Anda." />
         ) : (

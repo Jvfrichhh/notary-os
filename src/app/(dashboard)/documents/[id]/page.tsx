@@ -134,7 +134,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
       )}
 
       <Card>
-        <h2 className="mb-4 text-sm font-semibold text-foreground">Metadata</h2>
+        <h2 className="mb-4 text-base font-bold text-foreground">Metadata</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <InfoRow label="Tipe File" value={document.fileType} />
           <InfoRow label="Ukuran" value={formatFileSize(document.fileSize)} />
@@ -177,7 +177,7 @@ export default async function DocumentDetailPage({ params }: { params: { id: str
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Riwayat Versi</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">Riwayat Versi</h2>
         <div className="divide-y divide-border">
           {versions.map((v) => (
             <div key={v.id} className="flex items-center justify-between py-2.5 text-sm">

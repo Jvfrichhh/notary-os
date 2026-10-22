@@ -18,7 +18,7 @@ export default async function EditClientPage({ params }: { params: { id: string 
     <div className="max-w-2xl space-y-6">
       <div>
         <p className="text-xs font-medium text-muted-foreground">{client.clientNumber}</p>
-        <h1 className="text-xl font-semibold text-foreground">Edit {client.fullName}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Edit {client.fullName}</h1>
       </div>
 
       <Card>

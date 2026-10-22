@@ -21,7 +21,7 @@ export default async function NewWasiatPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold text-foreground">Catat Wasiat</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Catat Wasiat</h1>
       <Card>
         <WasiatForm action={createWasiat} clients={clients} jobs={jobs} documents={documents} cancelHref="/wasiat" />
       </Card>

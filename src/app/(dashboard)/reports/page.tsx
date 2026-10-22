@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
+import { LineChart } from "@/components/charts/LineChart";
 import { formatCurrency, getJakartaToday } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -15,20 +16,41 @@ function bucketByMonth(dates: Date[]): number[] {
   return buckets;
 }
 
-function BarList({ data, max }: { data: { label: string; value: number }[]; max?: number }) {
-  const maxValue = max ?? Math.max(1, ...data.map((d) => d.value));
+/** Bar horizontal untuk perbandingan antar kategori (jenis layanan, PIC). */
+function BarList({ data }: { data: { label: string; value: number }[] }) {
+  const maxValue = Math.max(1, ...data.map((d) => d.value));
   return (
-    <div className="space-y-1.5">
+    <ul className="space-y-3">
       {data.map((d) => (
-        <div key={d.label} className="flex items-center gap-2 text-xs">
-          <span className="w-16 shrink-0 text-muted-foreground">{d.label}</span>
-          <div className="h-2 flex-1 rounded-full bg-muted">
-            <div className="h-2 rounded-full bg-primary" style={{ width: `${Math.min(100, (d.value / maxValue) * 100)}%` }} />
+        <li key={d.label} title={`${d.label}: ${d.value}`} className="group">
+          <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
+            <span className="truncate font-medium text-[#344054]">{d.label}</span>
+            <span className="shrink-0 font-bold tabular-nums text-foreground">{d.value}</span>
           </div>
-          <span className="w-8 shrink-0 text-right font-medium text-foreground">{d.value}</span>
-        </div>
+          <div className="h-2 rounded-full bg-muted">
+            <div
+              className="h-2 rounded-full bg-primary transition-opacity group-hover:opacity-80"
+              style={{ width: `${Math.max(2, (d.value / maxValue) * 100)}%` }}
+            />
+          </div>
+        </li>
       ))}
-    </div>
+    </ul>
+  );
+}
+
+function Delta({ now, before, year }: { now: number; before: number; year: number }) {
+  if (before === 0 && now === 0) return <span className="text-xs text-muted-foreground">Belum ada data</span>;
+  if (before === 0) return <span className="text-xs text-muted-foreground">Tahun {year - 1}: 0</span>;
+  const pct = Math.round(((now - before) / before) * 100);
+  const up = pct >= 0;
+  return (
+    <span className="text-xs text-muted-foreground">
+      <span className={up ? "font-bold text-status-on-track" : "font-bold text-status-overdue"}>
+        {up ? "▲" : "▼"} {Math.abs(pct)}%
+      </span>{" "}
+      vs {year - 1}
+    </span>
   );
 }
 
@@ -46,6 +68,10 @@ export default async function ReportsPage({ searchParams }: PageProps) {
   const yearStart = new Date(Date.UTC(year, 0, 1));
   const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
   const yearOptions = Array.from({ length: 5 }, (_, i) => todayYear - i);
+  const prevStart = new Date(Date.UTC(year - 1, 0, 1));
+  const prevEnd = new Date(Date.UTC(year - 1, 11, 31, 23, 59, 59, 999));
+  // Tahun berjalan: bulan yang belum tiba tidak digambar (bukan nol).
+  const lastMonth = year === todayYear ? jakartaToday.getUTCMonth() : year > todayYear ? -1 : 11;
 
   // Semua query di bawah cuma select kolom minimal yang dibutuhkan (bukan
   // seluruh row) supaya ringan -- lalu di-bucket per bulan di JS, dihindari
@@ -59,7 +85,11 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     clientsThisYear,
     deedsThisYear,
     serviceTypes,
-    users
+    users,
+    jobsPrev,
+    clientsPrev,
+    deedsPrev,
+    completedPrev
   ] = await Promise.all([
     prisma.job.findMany({ where: { createdAt: { gte: yearStart, lte: yearEnd } }, select: { createdAt: true } }),
     prisma.job.groupBy({ by: ["serviceTypeId"], _count: { _all: true }, where: { createdAt: { gte: yearStart, lte: yearEnd } } }),
@@ -78,8 +108,13 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     prisma.client.findMany({ where: { createdAt: { gte: yearStart, lte: yearEnd } }, select: { createdAt: true } }),
     prisma.deed.findMany({ where: { deedDate: { gte: yearStart, lte: yearEnd } }, select: { deedDate: true } }),
     prisma.serviceType.findMany({ select: { id: true, name: true } }),
-    prisma.user.findMany({ select: { id: true, name: true } })
+    prisma.user.findMany({ select: { id: true, name: true } }),
+    prisma.job.count({ where: { createdAt: { gte: prevStart, lte: prevEnd } } }),
+    prisma.client.count({ where: { createdAt: { gte: prevStart, lte: prevEnd } } }),
+    prisma.deed.count({ where: { deedDate: { gte: prevStart, lte: prevEnd } } }),
+    prisma.job.count({ where: { status: "COMPLETED", completionDate: { gte: prevStart, lte: prevEnd } } })
   ]);
+  const upTo = (arr: number[]) => arr.map((v, i) => (i <= lastMonth ? v : null));
 
   const serviceTypeName = new Map(serviceTypes.map((s) => [s.id, s.name]));
   const userName = new Map(users.map((u) => [u.id, u.name]));
@@ -98,6 +133,8 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     .sort((a, b) => b.value - a.value);
 
   let paymentSummary: { totalInvoiced: number; totalPaid: number; totalOutstanding: number } | null = null;
+  let invoicedPerMonth: number[] = new Array(12).fill(0);
+  let receivedPerMonth: number[] = new Array(12).fill(0);
   let outstandingTop: { clientName: string; jobNumber: string | null; remaining: string }[] = [];
 
   if (canViewFinance) {
@@ -110,6 +147,21 @@ export default async function ReportsPage({ searchParams }: PageProps) {
       totalPaid: Number(agg._sum.paidAmount ?? 0),
       totalOutstanding: Number(agg._sum.remainingAmount ?? 0)
     };
+
+    const [invoices, receipts] = await Promise.all([
+      prisma.payment.findMany({
+        where: { recordStatus: "ACTIVE", createdAt: { gte: yearStart, lte: yearEnd } },
+        select: { createdAt: true, totalAmount: true }
+      }),
+      prisma.paymentReceipt.findMany({
+        where: { voidedAt: null, paidAt: { gte: yearStart, lte: yearEnd }, payment: { recordStatus: "ACTIVE" } },
+        select: { paidAt: true, amount: true }
+      })
+    ]);
+    invoicedPerMonth = new Array(12).fill(0);
+    receivedPerMonth = new Array(12).fill(0);
+    for (const p of invoices) invoicedPerMonth[p.createdAt.getUTCMonth()] += Number(p.totalAmount);
+    for (const r of receipts) receivedPerMonth[r.paidAt.getUTCMonth()] += Number(r.amount);
 
     const topOutstanding = await prisma.payment.findMany({
       where: { recordStatus: "ACTIVE", status: { in: ["UNPAID", "PARTIALLY_PAID"] } },
@@ -124,34 +176,77 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     }));
   }
 
+  const totalJobs = jobsThisYear.length;
+  const totalClients = clientsThisYear.length;
+  const totalDeeds = deedsThisYear.length;
+  const kpis = [
+    { label: "Pekerjaan masuk", value: totalJobs, prev: jobsPrev },
+    { label: "Pekerjaan selesai", value: completedCount, prev: completedPrev },
+    { label: "Klien baru", value: totalClients, prev: clientsPrev },
+    { label: "Akta dibuat", value: totalDeeds, prev: deedsPrev }
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-[1200px] space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Laporan</h1>
-          <p className="text-sm text-muted-foreground">Ringkasan operasional kantor.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Laporan</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Ringkasan operasional kantor sepanjang {year}.</p>
         </div>
-        <div className="flex gap-1 rounded-md bg-muted p-1 text-sm">
+        <nav aria-label="Pilih tahun" className="flex gap-1 rounded-md border border-border bg-background p-1 text-sm shadow-card">
           {yearOptions.map((y) => (
             <Link
               key={y}
               href={`/reports?year=${y}`}
-              className={`rounded px-3 py-1 ${y === year ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
+              aria-current={y === year ? "page" : undefined}
+              className={`rounded-sm px-3.5 py-1.5 font-semibold ${y === year ? "bg-primary text-primary-foreground" : "text-[#475467] hover:bg-muted"}`}
             >
               {y}
             </Link>
           ))}
+        </nav>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        {kpis.map((k) => (
+          <div key={k.label} className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 shadow-card">
+            <span className="text-[13px] font-semibold text-[#475467]">{k.label}</span>
+            <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">{k.value.toLocaleString("id-ID")}</span>
+            <Delta now={k.value} before={k.prev} year={year} />
+          </div>
+        ))}
+        <div className="col-span-2 flex flex-col gap-2 rounded-xl border border-[#FECDCA] bg-[#FEF3F2] p-4 lg:col-span-1">
+          <span className="text-[13px] font-semibold text-[#912018]">Terlambat saat ini</span>
+          <span className="text-3xl font-extrabold leading-none tracking-tight text-status-overdue">{overdueCount}</span>
+          <Link href="/deadlines" className="text-xs font-bold text-status-overdue hover:underline">
+            Lihat daftar →
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Jobs per Bulan ({year})</h2>
-          <BarList data={MONTH_LABELS.map((label, i) => ({ label, value: jobsPerMonth[i] }))} />
-        </Card>
+      <Card>
+        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-base font-bold text-foreground">Tren per bulan ({year})</h2>
+          <p className="text-xs text-muted-foreground">Arahkan kursor ke grafik untuk melihat angka tiap bulan</p>
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">
+          {totalJobs.toLocaleString("id-ID")} pekerjaan masuk, {totalClients.toLocaleString("id-ID")} klien baru, dan{" "}
+          {totalDeeds.toLocaleString("id-ID")} akta sepanjang tahun ini.
+        </p>
+        <LineChart
+          ariaLabel={`Grafik garis pekerjaan masuk, klien baru, dan akta per bulan tahun ${year}`}
+          labels={MONTH_LABELS}
+          series={[
+            { name: "Pekerjaan masuk", color: "#047857", values: upTo(jobsPerMonth) },
+            { name: "Klien baru", color: "#EB6834", values: upTo(clientsPerMonth) },
+            { name: "Akta", color: "#2A78D6", values: upTo(deedsPerMonth) }
+          ]}
+        />
+      </Card>
 
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Jobs per Jenis Layanan ({year})</h2>
+          <h2 className="mb-4 text-base font-bold text-foreground">Pekerjaan per jenis layanan ({year})</h2>
           {jobsByService.length === 0 ? (
             <p className="text-sm text-muted-foreground">Belum ada data.</p>
           ) : (
@@ -160,79 +255,67 @@ export default async function ReportsPage({ searchParams }: PageProps) {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Selesai vs Terlambat</h2>
-          <dl className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt className="text-xs text-muted-foreground">Completed ({year})</dt>
-              <dd className="text-2xl font-semibold text-status-on-track">{completedCount}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Terlambat (saat ini)</dt>
-              <dd className="text-2xl font-semibold text-status-overdue">{overdueCount}</dd>
-            </div>
-          </dl>
-        </Card>
-
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Beban kerja per PIC (pekerjaan aktif)</h2>
+          <h2 className="mb-4 text-base font-bold text-foreground">Beban kerja per PIC (pekerjaan aktif)</h2>
           {workloadPic.length === 0 ? (
             <p className="text-sm text-muted-foreground">Belum ada pekerjaan aktif.</p>
           ) : (
             <BarList data={workloadPic} />
           )}
         </Card>
+      </div>
 
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Clients Baru per Bulan ({year})</h2>
-          <BarList data={MONTH_LABELS.map((label, i) => ({ label, value: clientsPerMonth[i] }))} />
-        </Card>
-
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Deeds per Bulan ({year})</h2>
-          <BarList data={MONTH_LABELS.map((label, i) => ({ label, value: deedsPerMonth[i] }))} />
-        </Card>
-
-        {canViewFinance && paymentSummary && (
-          <>
-            <Card>
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Payment Summary ({year})</h2>
-              <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Total Ditagihkan</dt>
-                  <dd className="font-medium text-foreground">{formatCurrency(paymentSummary.totalInvoiced)}</dd>
+      {canViewFinance && paymentSummary && (
+        <>
+          <Card>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+              <h2 className="text-base font-bold text-foreground">Keuangan per bulan ({year})</h2>
+              <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+                <div>
+                  <dt className="text-xs font-semibold text-muted-foreground">Total ditagihkan</dt>
+                  <dd className="text-lg font-extrabold text-foreground">{formatCurrency(paymentSummary.totalInvoiced)}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Total Dibayar</dt>
-                  <dd className="font-medium text-status-on-track">{formatCurrency(paymentSummary.totalPaid)}</dd>
+                <div>
+                  <dt className="text-xs font-semibold text-muted-foreground">Total dibayar</dt>
+                  <dd className="text-lg font-extrabold text-status-on-track">{formatCurrency(paymentSummary.totalPaid)}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Belum dibayar</dt>
-                  <dd className="font-medium text-status-overdue">{formatCurrency(paymentSummary.totalOutstanding)}</dd>
+                <div>
+                  <dt className="text-xs font-semibold text-muted-foreground">Belum dibayar</dt>
+                  <dd className="text-lg font-extrabold text-status-overdue">{formatCurrency(paymentSummary.totalOutstanding)}</dd>
                 </div>
               </dl>
-            </Card>
+            </div>
+            <LineChart
+              ariaLabel={`Grafik garis tagihan dan pembayaran diterima per bulan tahun ${year}`}
+              labels={MONTH_LABELS}
+              format="rupiah"
+              height={240}
+              series={[
+                { name: "Ditagihkan", color: "#2A78D6", values: upTo(invoicedPerMonth) },
+                { name: "Diterima", color: "#047857", values: upTo(receivedPerMonth) }
+              ]}
+            />
+          </Card>
 
-            <Card>
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Tagihan Belum Lunas Terbesar</h2>
-              {outstandingTop.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Tidak ada payment outstanding.</p>
-              ) : (
-                <div className="divide-y divide-border text-sm">
-                  {outstandingTop.map((o, i) => (
-                    <div key={i} className="flex items-center justify-between py-2">
-                      <div>
-                        <p className="font-medium text-foreground">{o.clientName}</p>
-                        {o.jobNumber && <p className="text-xs text-muted-foreground">{o.jobNumber}</p>}
-                      </div>
-                      <span className="font-medium text-status-overdue">{o.remaining}</span>
+          <Card>
+            <h2 className="mb-3 text-base font-bold text-foreground">Tagihan belum lunas terbesar</h2>
+            {outstandingTop.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Tidak ada tagihan yang belum lunas.</p>
+            ) : (
+              <div className="divide-y divide-muted text-sm">
+                {outstandingTop.map((o, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-foreground">{o.clientName}</p>
+                      {o.jobNumber && <p className="text-xs text-muted-foreground">{o.jobNumber}</p>}
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </>
-        )}
-      </div>
+                    <span className="shrink-0 font-bold tabular-nums text-status-overdue">{o.remaining}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </>
+      )}
     </div>
   );
 }

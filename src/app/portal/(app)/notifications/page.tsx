@@ -21,7 +21,7 @@ export default async function PortalNotificationsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Notifikasi</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Notifikasi</h1>
           <p className="text-sm text-muted-foreground">{unread > 0 ? `${unread} belum dibaca` : "Semua sudah dibaca"}</p>
         </div>
         {unread > 0 && (

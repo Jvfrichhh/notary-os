@@ -68,7 +68,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{client.clientNumber}</p>
-          <h1 className="text-xl font-semibold text-foreground">{client.fullName}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{client.fullName}</h1>
           {client.status === "ARCHIVED" && (
             <span className="mt-1 inline-block rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">
               Diarsipkan
@@ -111,7 +111,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
       </div>
 
       <Card>
-        <h2 className="mb-4 text-sm font-semibold text-foreground">Informasi Klien</h2>
+        <h2 className="mb-4 text-base font-bold text-foreground">Informasi Klien</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <InfoRow label="Tipe" value={client.clientType} />
           <InfoRow label="NIK" value={client.nik} />
@@ -153,14 +153,14 @@ export default async function ClientDetailPage({ params, searchParams }: { param
       <div className={showNewJob ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "grid grid-cols-1 gap-4"}>
         {showNewJob && (
           <Card>
-            <h2 className="mb-1 text-sm font-semibold text-foreground">+ Pekerjaan baru</h2>
+            <h2 className="mb-1 text-base font-bold text-foreground">+ Pekerjaan baru</h2>
             <p className="mb-3 text-xs text-muted-foreground">Klien lama datang lagi? Buat pekerjaan baru di sini tanpa menambah data klien.</p>
             <ClientNewJobForm action={createJobForClient.bind(null, client.id)} services={services} staff={staff} withBilling={canBill} />
           </Card>
         )}
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Pekerjaan Terkait</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">Pekerjaan Terkait</h2>
           {client.jobs.length === 0 ? (
             <EmptyState title="Belum ada pekerjaan." />
           ) : (
@@ -185,7 +185,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
       {canViewDocuments && (
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Dokumen Terkait</h2>
+            <h2 className="text-base font-bold text-foreground">Dokumen Terkait</h2>
             {canUploadDocuments && (
               <Link href={`/documents/new?clientId=${client.id}`} className="text-xs font-medium text-primary hover:underline">
                 + Unggah Dokumen
@@ -211,7 +211,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
           tombol buat/reset/nonaktif hanya untuk pemilik edit_clients. */}
       <Card>
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Akses Portal Klien</h2>
+          <h2 className="text-base font-bold text-foreground">Akses Portal Klien</h2>
           <p className="text-xs text-muted-foreground">
             Akun login klien di portal. Kantor membuatkan akun dan menyampaikan password sementara; klien wajib
             menggantinya saat login pertama.

@@ -65,7 +65,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Laporan Bulanan</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Laporan Bulanan</h1>
           <p className="text-sm text-muted-foreground">
             Laporan wajib dibuat otomatis dari Repertorium, Legalisasi, Waarmerking, Wasiat, dan Buku Akta PPAT. Unduh, tanda tangani, kirim, lalu tandai terkirim.
           </p>
@@ -95,7 +95,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
             <Card key={kind}>
               <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h2 className="text-sm font-semibold text-foreground">{REPORT_LABEL[kind]}</h2>
+                  <h2 className="text-base font-bold text-foreground">{REPORT_LABEL[kind]}</h2>
                   <p className="text-xs text-muted-foreground">
                     Bulan {monthLabel(ym)} · tenggat {formatDate(due)}
                   </p>
@@ -136,7 +136,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
       </div>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Status laporan MPD 6 bulan terakhir</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">Status laporan MPD 6 bulan terakhir</h2>
         <div className="flex flex-wrap gap-2">
           {history.map(({ m, s }) => (
             <Link
@@ -154,7 +154,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: {
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Tenggat Hukum & Tugas Bertenggat ({tasks.length})</h2>
+          <h2 className="text-base font-bold text-foreground">Tenggat Hukum & Tugas Bertenggat ({tasks.length})</h2>
           <p className="text-xs text-muted-foreground">
             Termasuk kewajiban setelah akta yang dibuat otomatis saat Sahkan (fidusia 30 hari, pengesahan PT 60 hari, perubahan PT 30 hari).
             Pengingat dikirim otomatis setiap pagi.

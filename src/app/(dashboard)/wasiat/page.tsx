@@ -46,7 +46,7 @@ export default async function WasiatPage({ searchParams }: PageProps) {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Wasiat</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Wasiat</h1>
           <p className="text-sm text-muted-foreground">Pelacakan internal pencatatan wasiat.</p>
         </div>
         {canEdit && (

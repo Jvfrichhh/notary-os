@@ -43,7 +43,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Klien</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Klien</h1>
           <p className="text-sm text-muted-foreground">Daftar klien kantor notaris</p>
         </div>
         {canCreate && (

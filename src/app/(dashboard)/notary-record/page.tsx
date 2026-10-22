@@ -85,7 +85,7 @@ export default async function NotaryRecordPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Repertorium & Klapper</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Repertorium & Klapper</h1>
           <p className="text-sm text-muted-foreground">Repertorium dan Klapper — dua tampilan dari data yang sama</p>
         </div>
         {canCreate && (
@@ -179,7 +179,7 @@ export default async function NotaryRecordPage({ searchParams }: PageProps) {
         <div className="space-y-5">
           {klapperLetters.map((letter) => (
             <div key={letter}>
-              <h2 className="mb-2 text-sm font-semibold text-foreground">{letter}</h2>
+              <h2 className="mb-2 text-base font-bold text-foreground">{letter}</h2>
               <Card className="!p-0">
                 <div className="divide-y divide-border">
                   {klapperGroups.get(letter)!.map((entry) => (

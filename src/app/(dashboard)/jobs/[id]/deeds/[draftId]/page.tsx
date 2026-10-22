@@ -75,7 +75,7 @@ export default async function DeedDraftPage({
           <Link href={`/jobs/${draft.job.id}`} className="text-xs text-muted-foreground hover:text-foreground">
             ← {draft.job.jobNumber} · {draft.job.client.fullName}
           </Link>
-          <h1 className="text-xl font-semibold text-foreground">Draft {template.title}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Draft {template.title}</h1>
           <p className="text-sm text-muted-foreground">
             {isPpat
               ? "Akta PPAT: isi data lalu unduh Lembar Pertama (disimpan PPAT) dan Lembar Kedua (untuk Kantor Pertanahan). Bagian yang kosong tertulis [...] di akta."
@@ -140,7 +140,7 @@ export default async function DeedDraftPage({
         <div className="rounded-lg border border-border bg-background p-4 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-foreground">Pemeriksaan oleh klien</h2>
+              <h2 className="text-base font-bold text-foreground">Pemeriksaan oleh klien</h2>
               <p className="text-sm text-foreground">
                 {review === "none" && "Belum dibagikan ke klien."}
                 {review === "waiting" && `Menunggu klien membaca (dibagikan ${formatDateTime(latestReview!.sharedAt)}).`}

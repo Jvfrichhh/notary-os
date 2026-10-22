@@ -28,7 +28,8 @@ import {
   X,
   CalendarCheck,
   Database,
-  Map as MapIcon
+  Map as MapIcon,
+  ShieldCheck
 } from "lucide-react";
 
 // Pemetaan key ikon (string, aman dikirim server -> klien) ke komponen lucide.
@@ -102,20 +103,28 @@ export function Sidebar({ sections }: SidebarProps) {
 function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionConfig[]; pathname: string | null; onClose?: () => void }) {
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-background">
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <span className="text-sm font-semibold tracking-tight text-foreground">Notary OS</span>
+      <div className="flex h-16 items-center justify-between px-4">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <ShieldCheck className="h-[18px] w-[18px]" />
+          </span>
+          <span className="leading-tight">
+            <span className="block text-[15px] font-extrabold tracking-tight text-foreground">Notary OS</span>
+            <span className="block text-xs text-muted-foreground">Kantor Notaris &amp; PPAT</span>
+          </span>
+        </Link>
         {onClose && (
-          <button type="button" aria-label="Tutup menu" onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+          <button type="button" aria-label="Tutup menu" onClick={onClose} className="rounded-md p-2 text-muted-foreground hover:bg-muted">
             <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-6 pt-2">
         {sections.map((section, idx) => (
           <div key={section.title ?? `section-${idx}`}>
             {section.title && (
-              <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
                 {section.title}
               </p>
             )}
@@ -127,14 +136,15 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
                   <Link
                     key={item.href}
                     href={item.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                       isActive
-                        ? "bg-muted font-medium text-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-primary-soft font-bold text-primary"
+                        : "font-medium text-[#475467] hover:bg-muted hover:text-foreground"
                     )}
                   >
-                    {Icon && <Icon className="h-4 w-4" />}
+                    {Icon && <Icon className="h-[18px] w-[18px] shrink-0" />}
                     {item.label}
                   </Link>
                 );

@@ -23,7 +23,7 @@ export default async function AdminUsersPage() {
         <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">
           ← Admin
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">Users</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Users</h1>
         <p className="text-sm text-muted-foreground">Akun internal kantor (bukan akun portal klien — itu dikelola di halaman masing-masing klien).</p>
       </div>
       <UsersAdmin

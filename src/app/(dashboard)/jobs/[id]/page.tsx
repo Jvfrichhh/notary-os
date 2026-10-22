@@ -205,7 +205,7 @@ export default async function JobDetailPage({
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{job.jobNumber}</p>
-          <h1 className="text-xl font-semibold text-foreground">{job.description || "(Tanpa deskripsi)"}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{job.description || "(Tanpa deskripsi)"}</h1>
           <Link href={`/clients/${job.client.id}`} className="text-sm text-primary hover:underline">
             {job.client.fullName} · {job.client.clientNumber}
           </Link>
@@ -227,7 +227,7 @@ export default async function JobDetailPage({
         <div className="space-y-6 lg:col-span-2">
           {/* Info */}
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Informasi Pekerjaan</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">Informasi Pekerjaan</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
               <Info label="Jenis Layanan" value={job.serviceType?.name} />
               <Info label="Status" value={formatStatusLabel(job.status)} />
@@ -288,7 +288,7 @@ export default async function JobDetailPage({
           {/* Checklist */}
           <Card>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
+              <h2 className="text-base font-bold text-foreground">
                 Checklist Dokumen ({completedChecklistItems}/{totalChecklistItems})
               </h2>
             </div>
@@ -383,7 +383,7 @@ export default async function JobDetailPage({
 
           {/* Draft Akta */}
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Draft Akta ({job.deedDrafts.length})</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">Draft Akta ({job.deedDrafts.length})</h2>
             {job.deedDrafts.length > 0 && (
               <ul className="mb-3 divide-y divide-border text-sm">
                 {job.deedDrafts.map((d) => (
@@ -464,7 +464,7 @@ export default async function JobDetailPage({
 
           {/* Tasks */}
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Tugas ({job.tasks.length})</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">Tugas ({job.tasks.length})</h2>
             <div className="space-y-1.5">
               {job.tasks.map((task) => (
                 <div key={task.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
@@ -527,7 +527,7 @@ export default async function JobDetailPage({
           {canViewDocuments && (
             <Card>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">Dokumen ({job.documents.length})</h2>
+                <h2 className="text-base font-bold text-foreground">Dokumen ({job.documents.length})</h2>
                 {canUploadDocuments && (
                   <Link href={`/documents/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
                     + Upload Dokumen
@@ -554,7 +554,7 @@ export default async function JobDetailPage({
           {/* Proses PPAT */}
           {ppatStageDefs.length > 0 && (
             <Card>
-              <h2 className="mb-3 text-sm font-semibold text-foreground">
+              <h2 className="mb-3 text-base font-bold text-foreground">
                 Proses PPAT ({ppatStageDefs.filter((d) => stageDone.has(d.key)).length}/{ppatStageDefs.length})
               </h2>
               <ol className="space-y-2">
@@ -615,7 +615,7 @@ export default async function JobDetailPage({
           {canViewArchive && (isPpatService || job.ppatDeeds.length > 0) && (
             <Card>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">Akta PPAT ({job.ppatDeeds.length})</h2>
+                <h2 className="text-base font-bold text-foreground">Akta PPAT ({job.ppatDeeds.length})</h2>
                 {canEditArchive && !isFinal && (
                   <Link href={`/ppat/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
                     + Daftarkan akta PPAT
@@ -688,7 +688,7 @@ export default async function JobDetailPage({
           {canViewArchive && (
             <Card>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">Akta ({job.deeds.length})</h2>
+                <h2 className="text-base font-bold text-foreground">Akta ({job.deeds.length})</h2>
                 {canEditArchive && job.deedDrafts.length === 0 && (
                   <Link href={`/archive/deed/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
                     + Catat akta manual
@@ -718,7 +718,7 @@ export default async function JobDetailPage({
           {/* Pemeriksaan Notaris */}
           {!isFinal && (
             <Card>
-              <h2 className="mb-2 text-sm font-semibold text-foreground">Pemeriksaan Notaris</h2>
+              <h2 className="mb-2 text-base font-bold text-foreground">Pemeriksaan Notaris</h2>
               {job.status === "REVIEW" ? (
                 isNotary ? (
                   <div className="space-y-3">
@@ -770,7 +770,7 @@ export default async function JobDetailPage({
 
           {/* Status change */}
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Ubah Status</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">Ubah Status</h2>
             <p className="mb-2 text-xs text-muted-foreground">Status juga berubah otomatis: dokumen lengkap, diajukan, disetujui, dan akta disahkan.</p>
             {isFinal ? (
               <p className="text-sm text-muted-foreground">Job ini sudah final ({formatStatusLabel(job.status)}).</p>
@@ -806,7 +806,7 @@ export default async function JobDetailPage({
           {canViewFinance && (
             <Card>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">Pembayaran</h2>
+                <h2 className="text-base font-bold text-foreground">Pembayaran</h2>
                 {canEditFinance && job.payments.length === 0 && (
                   <Link href={`/payments/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
                     + Buat tagihan
@@ -837,7 +837,7 @@ export default async function JobDetailPage({
 
           {/* Riwayat */}
           <Card>
-            <h2 className="mb-2 text-sm font-semibold text-foreground">Riwayat</h2>
+            <h2 className="mb-2 text-base font-bold text-foreground">Riwayat</h2>
             {timeline.length === 0 ? (
               <p className="text-sm text-muted-foreground">Belum ada riwayat.</p>
             ) : (

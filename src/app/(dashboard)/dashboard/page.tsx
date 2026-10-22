@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatDate, formatStatusLabel, getJakartaToday } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
-import { ShieldAlert } from "lucide-react";
+import { AlertTriangle, Plus, ShieldAlert } from "lucide-react";
 import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, reportSentInfo } from "@/lib/compliance/monthly";
 
 /** Pengingat Notaris: laporan bulanan bulan lalu yang belum terkirim & tugas bertenggat terlambat. */
@@ -66,8 +65,42 @@ async function getRecentJobs() {
     where: { recordStatus: "ACTIVE" },
     take: 5,
     orderBy: { createdAt: "desc" },
-    include: { client: true, pic: true }
+    include: { client: true, pic: true, serviceType: { select: { name: true } } }
   });
+}
+
+/** Tugas bertenggat terdekat (termasuk yang sudah lewat) untuk kolom kanan dashboard. */
+async function getUpcomingTasks() {
+  const soon = new Date(getJakartaToday().getTime() + 14 * 86400000);
+  return prisma.jobTask.findMany({
+    where: {
+      status: { not: "DONE" },
+      dueDate: { not: null, lte: soon },
+      job: { recordStatus: "ACTIVE", status: { notIn: ["COMPLETED", "CANCELLED"] } }
+    },
+    orderBy: { dueDate: "asc" },
+    take: 5,
+    select: { id: true, title: true, dueDate: true, assignee: { select: { name: true } }, job: { select: { id: true, jobNumber: true } } }
+  });
+}
+
+const DEADLINE_TONE = {
+  overdue: "bg-[#FEF3F2] text-status-overdue",
+  "due-today": "bg-[#FFFAEB] text-status-due-today",
+  "due-soon": "bg-[#FFFAEB] text-status-due-today",
+  "on-track": "bg-muted text-foreground",
+  archived: "bg-muted text-foreground"
+} as const;
+
+const MONTH_SHORT = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
+
+/** Sapaan & tanggal menurut jam kantor (Asia/Jakarta). */
+function greeting() {
+  const now = new Date();
+  const hour = (now.getUTCHours() + 7) % 24;
+  const salam = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 18 ? "Selamat sore" : "Selamat malam";
+  const tanggal = new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }).format(now);
+  return { salam, tanggal };
 }
 
 interface PageProps {
@@ -88,36 +121,52 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   // Setiap blok query hanya dijalankan kalau izinnya ada; tanpa izin -> null,
   // tidak ada query ke tabel tersebut sama sekali.
-  const [jobStats, recentJobs] = await Promise.all([
+  const [jobStats, recentJobs, upcoming] = await Promise.all([
     canViewJobs ? getJobStats(user.id) : Promise.resolve(null),
-    canViewJobs ? getRecentJobs() : Promise.resolve([])
+    canViewJobs ? getRecentJobs() : Promise.resolve([]),
+    canViewJobs ? getUpcomingTasks() : Promise.resolve([])
   ]);
+  const { salam, tanggal } = greeting();
+  const firstName = (user.name ?? "").trim().split(/\s+/)[0] || "";
 
   const cards = [
     ...(jobStats
       ? [
-          { label: "Total Pekerjaan", value: jobStats.totalJobs },
-          { label: "Sedang Diproses", value: jobStats.inProgress },
-          { label: "Tenggat Hari Ini", value: jobStats.dueToday },
-          { label: "Terlambat", value: jobStats.overdue },
-          { label: "Selesai", value: jobStats.completed },
+          { label: "Total Pekerjaan", value: jobStats.totalJobs, hint: "Semua yang tercatat", dot: "bg-[#98A2B3]", href: "/jobs" },
+          { label: "Sedang Diproses", value: jobStats.inProgress, hint: "Dikerjakan staf", dot: "bg-[#2E90FA]", href: "/jobs?status=IN_PROGRESS" },
+          { label: "Tenggat Hari Ini", value: jobStats.dueToday, hint: "Perlu dicek hari ini", dot: "bg-[#F79009]", href: "/deadlines" },
+          { label: "Terlambat", value: jobStats.overdue, hint: "Lewat target", dot: "bg-[#F04438]", href: "/deadlines" },
+          { label: "Selesai", value: jobStats.completed, hint: "Sudah rampung", dot: "bg-[#12B76A]", href: "/jobs?status=COMPLETED" },
           // Notaris: antrean persetujuan; staf: pekerjaan yang menjadi tanggungannya.
           canCreateJobs
-            ? { label: "Menunggu Persetujuan", value: jobStats.waitingReview, href: "/jobs?status=REVIEW" }
-            : { label: "Job Saya", value: jobStats.myOpen, href: "/jobs?mine=1" }
+            ? { label: "Menunggu Persetujuan", value: jobStats.waitingReview, hint: "Perlu dicek Notaris", dot: "bg-[#7A5AF8]", href: "/jobs?status=REVIEW" }
+            : { label: "Job Saya", value: jobStats.myOpen, hint: "Tanggung jawab Anda", dot: "bg-[#7A5AF8]", href: "/jobs?mine=1" }
         ]
       : [])
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Ringkasan operasional kantor hari ini</p>
+    <div className="mx-auto max-w-[1200px] space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">{tanggal}</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-[28px]">
+            {salam}{firstName ? `, ${firstName}` : ""}
+          </h1>
+        </div>
+        {canCreateJobs && (
+          <Link
+            href="/clients/new"
+            className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground shadow-card hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.6} />
+            Klien &amp; Pekerjaan Baru
+          </Link>
+        )}
       </div>
 
       {searchParams.password === "changed" && (
-        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
+        <div className="rounded-lg border border-[#ABEFC6] bg-primary-soft px-4 py-3 text-sm font-medium text-status-on-track">
           Password berhasil diganti.
         </div>
       )}
@@ -125,21 +174,21 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       {complianceAlerts.length > 0 && (
         <Link
           href="/compliance"
-          className="block rounded-md border border-status-due-soon/40 bg-status-due-soon/10 px-3 py-2 text-sm text-foreground hover:opacity-90"
+          className="flex items-start gap-3 rounded-lg border border-[#FEDF89] bg-[#FFFAEB] px-4 py-3 text-sm text-[#7A2E0E] hover:opacity-90"
         >
-          {complianceAlerts.map((a) => (
-            <p key={a}>• {a}</p>
-          ))}
-          <p className="mt-1 text-xs font-medium text-primary">Buka Laporan Bulanan →</p>
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-status-due-today" />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            {complianceAlerts.map((a) => (
+              <p key={a}>{a}</p>
+            ))}
+          </div>
+          <span className="shrink-0 font-bold text-status-due-today">Buka →</span>
         </Link>
       )}
 
       {accessDenied && (
-        <div
-          role="alert"
-          className="flex items-start gap-2 rounded-md border border-status-overdue/40 bg-status-overdue/10 px-3 py-2 text-sm text-foreground"
-        >
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-status-overdue" />
+        <div role="alert" className="flex items-start gap-3 rounded-lg border border-[#FECDCA] bg-[#FEF3F2] px-4 py-3 text-sm text-foreground">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-status-overdue" />
           <p>
             Anda tidak memiliki akses ke halaman yang diminta, sehingga dialihkan ke Dashboard. Hubungi
             Notaris/Admin jika Anda merasa seharusnya memiliki akses tersebut.
@@ -148,57 +197,119 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       )}
 
       {cards.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {cards.map((c) => {
-            const body = (
-              <Card className="text-center">
-                <p className="text-2xl font-semibold text-foreground">{c.value}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{c.label}</p>
-              </Card>
-            );
-            return "href" in c && c.href ? (
-              <Link key={c.label} href={c.href} className="block hover:opacity-90">
-                {body}
-              </Link>
-            ) : (
-              <div key={c.label}>{body}</div>
-            );
-          })}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+          {cards.map((c) => (
+            <Link
+              key={c.label}
+              href={c.href}
+              className="flex flex-col gap-2.5 rounded-xl border border-border bg-background p-4 shadow-card transition-shadow hover:shadow-md"
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-[13px] font-semibold text-[#475467]">{c.label}</span>
+                <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} />
+              </span>
+              <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground">{c.value}</span>
+              <span className="text-xs text-muted-foreground">{c.hint}</span>
+            </Link>
+          ))}
         </div>
       )}
 
       {canViewJobs && (
-      <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Pekerjaan Terbaru</h2>
-          <Link href="/jobs" className="text-xs font-medium text-primary hover:underline">
-            Lihat semua
-          </Link>
-        </div>
-        {recentJobs.length === 0 ? (
-          <EmptyState
-            title="Belum ada pekerjaan."
-            actionLabel={canCreateJobs ? "Tambah Klien & Pekerjaan" : undefined}
-            actionHref={canCreateJobs ? "/clients/new" : undefined}
-          />
-        ) : (
-          <div className="divide-y divide-border">
-            {recentJobs.map((job) => (
-              <Link key={job.id} href={`/jobs/${job.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:bg-muted/50">
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground">{job.jobNumber} — {job.client.fullName}</p>
-                  <p className="line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(job.status)}</span>
-                  {job.deadline && <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={`Target ${formatDate(job.deadline)}`} />}
-                  <span className="text-xs text-muted-foreground">PIC: {job.pic?.name ?? "-"}</span>
-                </div>
+        <div className="flex flex-wrap items-start gap-5">
+          <section className="min-w-0 flex-[999_1_520px] overflow-hidden rounded-xl border border-border bg-background shadow-card">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-base font-bold text-foreground">Pekerjaan Terbaru</h2>
+              <Link href="/jobs" className="text-sm font-semibold text-primary hover:underline">
+                Lihat semua
               </Link>
-            ))}
-          </div>
-        )}
-      </Card>
+            </div>
+            {recentJobs.length === 0 ? (
+              <div className="p-5">
+                <EmptyState
+                  title="Belum ada pekerjaan."
+                  actionLabel={canCreateJobs ? "Tambah Klien & Pekerjaan" : undefined}
+                  actionHref={canCreateJobs ? "/clients/new" : undefined}
+                />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-[0.04em] text-muted-foreground">
+                      <th className="px-5 py-3 font-bold">Pekerjaan</th>
+                      <th className="px-3 py-3 font-bold">Klien</th>
+                      <th className="px-3 py-3 font-bold">Status</th>
+                      <th className="px-5 py-3 font-bold">Target</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentJobs.map((job) => (
+                      <tr key={job.id} className="border-t border-muted hover:bg-canvas">
+                        <td className="px-5 py-3.5">
+                          <Link href={`/jobs/${job.id}`} className="font-semibold text-foreground hover:text-primary">
+                            {job.serviceType?.name ?? job.description ?? job.jobNumber}
+                          </Link>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {job.jobNumber} · PIC {job.pic?.name ?? "-"}
+                          </p>
+                        </td>
+                        <td className="px-3 py-3.5 text-[#344054]">{job.client.fullName}</td>
+                        <td className="px-3 py-3.5">
+                          <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-[#344054]">
+                            {formatStatusLabel(job.status)}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5">
+                          {job.deadline ? (
+                            <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatDate(job.deadline)} />
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="min-w-0 flex-[1_1_300px] rounded-xl border border-border bg-background p-5 shadow-card">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-bold text-foreground">Tenggat Terdekat</h2>
+              <Link href="/deadlines" className="text-sm font-semibold text-primary hover:underline">
+                Semua
+              </Link>
+            </div>
+            {upcoming.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Tidak ada tenggat dalam 2 minggu ke depan.</p>
+            ) : (
+              <ul className="space-y-4">
+                {upcoming.map((t) => {
+                  const d = t.dueDate!;
+                  const tone = classifyDeadline(d, "IN_PROGRESS");
+                  return (
+                    <li key={t.id}>
+                      <Link href={`/jobs/${t.job.id}`} className="flex items-start gap-3 hover:opacity-90">
+                        <span className={`w-12 shrink-0 rounded-md py-1.5 text-center ${DEADLINE_TONE[tone]}`}>
+                          <span className="block text-lg font-extrabold leading-tight">{d.getUTCDate()}</span>
+                          <span className="block text-[11px] font-bold">{MONTH_SHORT[d.getUTCMonth()]}</span>
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-foreground">{t.title}</span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {t.job.jobNumber} · {t.assignee?.name ?? "Belum ditugaskan"}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
       )}
     </div>
   );

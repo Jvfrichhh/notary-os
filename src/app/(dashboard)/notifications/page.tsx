@@ -41,7 +41,7 @@ export default async function NotificationsPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Notifikasi</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Notifikasi</h1>
           <p className="text-sm text-muted-foreground">{unreadCount} belum dibaca</p>
         </div>
         {unreadCount > 0 && (

@@ -13,10 +13,10 @@ export const dynamic = "force-dynamic";
 type JobWithRelations = Job & { client: Client; pic: User | null };
 
 const GROUPS: { tone: DeadlineTone; title: string }[] = [
-  { tone: "overdue", title: "🔴 Terlambat" },
-  { tone: "due-today", title: "🟠 Hari Ini" },
-  { tone: "due-soon", title: "🟡 Segera (≤ 3 hari)" },
-  { tone: "on-track", title: "🟢 Mendatang" }
+  { tone: "overdue", title: "Terlambat" },
+  { tone: "due-today", title: "Hari Ini" },
+  { tone: "due-soon", title: "Segera (≤ 3 hari)" },
+  { tone: "on-track", title: "Mendatang" }
 ];
 
 export default async function DeadlinesPage() {
@@ -50,7 +50,7 @@ export default async function DeadlinesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Tenggat</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Tenggat</h1>
         <p className="text-sm text-muted-foreground">Semua pekerjaan aktif yang punya tenggat, dikelompokkan berdasarkan urgensi</p>
       </div>
 
@@ -66,7 +66,7 @@ export default async function DeadlinesPage() {
 
             return (
               <div key={group.tone}>
-                <h2 className="mb-2 text-sm font-semibold text-foreground">
+                <h2 className="mb-2 text-base font-bold text-foreground">
                   {group.title} <span className="font-normal text-muted-foreground">({items.length})</span>
                 </h2>
                 <Card className="!p-0">

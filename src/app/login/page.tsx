@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 // useSearchParams butuh Suspense agar halaman login tetap bisa dirender statis.
 export default function LoginPage() {
@@ -55,10 +55,29 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
-      <div className="login-enter w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm sm:p-8">
-        <h1 className="text-lg font-semibold text-foreground">Notary Operating System</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Masuk ke sistem manajemen kantor notaris</p>
+    <div className="flex min-h-screen flex-col bg-canvas lg:flex-row">
+      <section className="flex flex-col justify-between gap-8 bg-primary px-6 py-8 text-white sm:px-10 lg:w-1/2 lg:p-14">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/15">
+            <ShieldCheck className="h-5 w-5" />
+          </span>
+          <span className="text-lg font-extrabold">Notary OS</span>
+        </div>
+        <div className="max-w-md">
+          <p className="text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            Semua pekerjaan kantor notaris, rapi di satu tempat.
+          </p>
+          <p className="mt-4 hidden text-base leading-relaxed text-white/85 sm:block">
+            Klien, pekerjaan, draft akta, arsip protokol, dan tenggat — terpantau setiap hari.
+          </p>
+        </div>
+        <p className="hidden text-sm text-white/80 lg:block">Kantor Notaris &amp; PPAT Ari Yudani Aprianti, S.H., M.Kn. · Kota Bogor</p>
+      </section>
+
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
+      <div className="login-enter w-full max-w-sm rounded-xl border border-border bg-background p-6 shadow-[0_12px_32px_rgba(16,24,40,.08)] sm:p-8">
+        <h1 className="text-[22px] font-extrabold text-foreground">Masuk</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Gunakan akun kantor Anda.</p>
 
         {replaced && (
           <p className="mt-4 rounded-md border border-status-due-soon/40 bg-status-due-soon/10 px-3 py-2 text-sm text-foreground">
@@ -68,26 +87,26 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground">Email</label>
+            <label className="block text-sm font-semibold text-[#344054]">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="mt-1.5 h-12 w-full rounded-md border border-[#D0D5DD] px-3.5 text-[15px] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
               placeholder="Masukkan Email Anda"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground">Password</label>
-            <div className="relative mt-1">
+            <label className="block text-sm font-semibold text-[#344054]">Password</label>
+            <div className="relative mt-1.5">
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-border px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="h-12 w-full rounded-md border border-[#D0D5DD] px-3.5 pr-11 text-[15px] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
                 placeholder="Masukkan Password"
               />
               <button
@@ -108,7 +127,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="h-12 w-full rounded-md bg-primary text-[15px] font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {loading ? "Memproses..." : "Masuk"}
           </button>
@@ -117,6 +136,7 @@ function LoginForm() {
         <p className="mt-6 text-xs text-muted-foreground">
           © 2026 Java Fauzan. All rights reserved.
         </p>
+      </div>
       </div>
     </div>
   );

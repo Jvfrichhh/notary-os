@@ -8,26 +8,37 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Tema "Modern Bersih" (Varian A, Okt 2026): latar abu-abu muda, kartu
+      // putih bersudut lembut, satu warna utama hijau zamrud.
       colors: {
-        border: "hsl(220 13% 91%)",
-        background: "hsl(0 0% 100%)",
-        foreground: "hsl(224 15% 15%)",
-        muted: "hsl(220 14% 96%)",
-        "muted-foreground": "hsl(220 9% 46%)",
-        primary: "hsl(222 47% 20%)",
-        "primary-foreground": "hsl(0 0% 100%)",
+        border: "#EAECF0",
+        background: "#FFFFFF",
+        canvas: "#F6F7F9",
+        foreground: "#101828",
+        muted: "#F2F4F7",
+        "muted-foreground": "#596172",
+        primary: "#047857",
+        "primary-foreground": "#FFFFFF",
+        "primary-soft": "#ECFDF3",
         status: {
-          overdue: "hsl(0 72% 51%)",
-          "due-today": "hsl(25 95% 53%)",
-          "due-soon": "hsl(45 93% 47%)",
-          "on-track": "hsl(142 71% 35%)",
-          archived: "hsl(220 9% 60%)"
+          overdue: "#B42318",
+          "due-today": "#B54708",
+          "due-soon": "#A15C07",
+          "on-track": "#067647",
+          archived: "#667085"
         }
       },
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"]
+      },
+      boxShadow: {
+        card: "0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.03)"
+      },
       borderRadius: {
-        lg: "10px",
-        md: "8px",
-        sm: "6px"
+        xl: "16px",
+        lg: "14px",
+        md: "10px",
+        sm: "8px"
       }
     }
   },

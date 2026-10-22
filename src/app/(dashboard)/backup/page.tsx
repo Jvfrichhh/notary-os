@@ -28,7 +28,7 @@ export default async function BackupPage({ searchParams }: { searchParams: { ok?
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Backup & Ekspor Protokol</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Backup & Ekspor Protokol</h1>
         <p className="text-sm text-muted-foreground">
           Protokol notaris wajib disimpan selamanya. Sistem membuat backup database otomatis tiap minggu; unduh secara berkala dan simpan di luar
           cloud (harddisk kantor / Google Drive kantor).
@@ -52,7 +52,7 @@ export default async function BackupPage({ searchParams }: { searchParams: { ok?
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
-          <h2 className="mb-1 text-sm font-semibold text-foreground">Backup database</h2>
+          <h2 className="mb-1 text-base font-bold text-foreground">Backup database</h2>
           <p className="mb-3 text-xs text-muted-foreground">
             Seluruh data (klien, pekerjaan, akta, repertorium, dsb.) dalam satu file ZIP. Otomatis setiap 7 hari.
           </p>
@@ -67,7 +67,7 @@ export default async function BackupPage({ searchParams }: { searchParams: { ok?
         </Card>
 
         <Card>
-          <h2 className="mb-1 text-sm font-semibold text-foreground">Ekspor protokol per tahun</h2>
+          <h2 className="mb-1 text-base font-bold text-foreground">Ekspor protokol per tahun</h2>
           <p className="mb-3 text-xs text-muted-foreground">
             File Word Minuta & Salinan semua akta tahun itu + Repertorium, Klapper, dan daftar Legalisasi/Waarmerking/Wasiat.
           </p>
@@ -88,7 +88,7 @@ export default async function BackupPage({ searchParams }: { searchParams: { ok?
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Riwayat backup & ekspor</h2>
+          <h2 className="text-base font-bold text-foreground">Riwayat backup & ekspor</h2>
           <p className="text-xs text-muted-foreground">File berisi data pribadi klien; simpan di tempat aman dan jangan dibagikan.</p>
         </div>
         {archives.length === 0 ? (

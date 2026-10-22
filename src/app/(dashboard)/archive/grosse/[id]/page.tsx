@@ -31,7 +31,7 @@ export default async function GrosseDetailPage({ params }: { params: { id: strin
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Grosse</p>
-          <h1 className="text-xl font-semibold text-foreground">Akta {record.deed.deedNumber}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Akta {record.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {record.deed.deedType} · {formatDate(record.deed.deedDate)}
           </p>
@@ -59,7 +59,7 @@ export default async function GrosseDetailPage({ params }: { params: { id: strin
       </div>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Dokumen</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">Dokumen</h2>
         {canEdit ? (
           <form action={updateDerivativeDocument.bind(null, "grosse", record.id)} className="space-y-3">
             <select name="documentId" defaultValue={record.documentId ?? ""} className={fieldClass}>
@@ -96,7 +96,7 @@ export default async function GrosseDetailPage({ params }: { params: { id: strin
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {canEdit && (
           <Card>
-            <h2 className="mb-2 text-sm font-semibold text-foreground">Status</h2>
+            <h2 className="mb-2 text-base font-bold text-foreground">Status</h2>
             <form action={updateDerivativeStatus.bind(null, "grosse", record.id)} className="space-y-2">
               <select name="status" defaultValue={record.status} className={fieldClass}>
                 {STATUS_OPTIONS.map((s) => (
@@ -114,7 +114,7 @@ export default async function GrosseDetailPage({ params }: { params: { id: strin
 
         {canEdit && (
           <Card>
-            <h2 className="mb-2 text-sm font-semibold text-foreground">Arsip</h2>
+            <h2 className="mb-2 text-base font-bold text-foreground">Arsip</h2>
             {record.recordStatus === "ACTIVE" ? (
               <form action={archiveGrosse.bind(null, record.id)}>
                 <button type="submit" className="w-full rounded-md border border-border py-2 text-sm font-medium text-foreground hover:bg-muted">

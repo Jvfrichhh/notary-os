@@ -120,7 +120,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">{job.jobNumber}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{job.jobNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {job.serviceType?.name ?? "Layanan notaris"}
             {job.description ? ` · ${job.description}` : ""}
@@ -140,7 +140,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
         const state = reviewState(r, draftHash(d.data));
         return (
           <Card key={d.id}>
-            <h2 className="mb-1 text-sm font-semibold text-foreground">Draft {d.title ?? "akta"} untuk Anda periksa</h2>
+            <h2 className="mb-1 text-base font-bold text-foreground">Draft {d.title ?? "akta"} untuk Anda periksa</h2>
             {state === "outdated" ? (
               <p className="text-sm text-muted-foreground">Kantor sedang memperbarui draft ini. Anda akan diberi tahu bila versi baru siap.</p>
             ) : (
@@ -190,7 +190,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
 
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Dokumen yang Diperlukan</h2>
+          <h2 className="text-base font-bold text-foreground">Dokumen yang Diperlukan</h2>
           {checklistItems.length > 0 && (
             <span className="text-xs text-muted-foreground">
               {checklistItems.filter((i) => i.status === "COMPLETE").length}/{checklistItems.length} lengkap
@@ -265,7 +265,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Informasi</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">Informasi</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Target selesai" value={job.deadline ? formatDate(job.deadline) : "Belum ditentukan"} />
             <Row label="Mulai dikerjakan" value={job.startDate ? formatDate(job.startDate) : "—"} />
@@ -276,7 +276,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
 
         {ppatDefs.length > 0 && (
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Tahapan Proses</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">Tahapan Proses</h2>
             <ol className="space-y-2 text-sm">
               {ppatDefs.map((d, i) => {
                 const at = ppatDone.get(d.key);
@@ -303,7 +303,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
         {job.payments.map((p) => (
           <Card key={p.id}>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Tagihan {p.invoiceNumber ?? ""}</h2>
+              <h2 className="text-base font-bold text-foreground">Tagihan {p.invoiceNumber ?? ""}</h2>
               <a href={`/api/portal/billing/tagihan/${p.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
                 <Download className="h-3.5 w-3.5" /> Unduh tagihan
               </a>
@@ -331,7 +331,7 @@ export default async function PortalJobDetailPage({ params }: { params: { id: st
         ))}
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Riwayat</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">Riwayat</h2>
           <ol className="space-y-3 text-sm">
             {timeline.map((t) => (
               <li key={t.id} className="flex gap-3">

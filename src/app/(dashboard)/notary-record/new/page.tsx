@@ -37,7 +37,7 @@ export default async function NewRepertoriumPage({ searchParams }: NewRepertoriu
     if (alreadyRecorded) {
       return (
         <div className="max-w-2xl space-y-4">
-          <h1 className="text-xl font-semibold text-foreground">Catat Repertorium</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Catat Repertorium</h1>
           <p className="text-sm text-muted-foreground">
             Akta ini sudah tercatat di Repertorium ({alreadyRecorded.year}/{String(alreadyRecorded.sequenceNumber).padStart(4, "0")}).
           </p>
@@ -52,7 +52,7 @@ export default async function NewRepertoriumPage({ searchParams }: NewRepertoriu
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Catat Repertorium</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Catat Repertorium</h1>
         <p className="text-sm text-muted-foreground">
           Nomor urut dibuat otomatis per tahun. Detail akta diambil dari Akta yang dipilih.
         </p>

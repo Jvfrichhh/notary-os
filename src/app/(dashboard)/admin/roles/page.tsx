@@ -31,7 +31,7 @@ export default async function AdminRolesPage() {
         <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">
           ← Admin
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">Roles &amp; Permissions</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Roles &amp; Permissions</h1>
         <p className="text-sm text-muted-foreground">Matriks izin saat ini (baca saja). Perubahan izin dilakukan lewat kode yang ditinjau.</p>
       </div>
       <Card className="overflow-x-auto p-0">

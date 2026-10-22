@@ -43,7 +43,7 @@ export default async function NewDocumentPage({ searchParams }: NewDocumentPageP
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Unggah Dokumen</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Unggah Dokumen</h1>
         <p className="text-sm text-muted-foreground">Versi awal (v1) akan otomatis dicatat.</p>
       </div>
 

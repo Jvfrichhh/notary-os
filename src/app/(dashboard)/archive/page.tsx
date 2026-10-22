@@ -88,7 +88,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Lemari Arsip</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Lemari Arsip</h1>
           <p className="text-sm text-muted-foreground">Minuta, Salinan, Grosse, dan Kutipan — semua terhubung ke Akta</p>
         </div>
         {canCreate && (

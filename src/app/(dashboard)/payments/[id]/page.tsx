@@ -50,7 +50,7 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
           <Link href="/payments" className="text-xs text-muted-foreground hover:text-foreground">
             ← Pembayaran
           </Link>
-          <h1 className="text-xl font-semibold text-foreground">Tagihan {p.invoiceNumber ?? ""}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Tagihan {p.invoiceNumber ?? ""}</h1>
           <p className="text-sm text-muted-foreground">
             <Link href={`/clients/${p.client.id}`} className="text-primary hover:underline">
               {p.client.fullName}
@@ -112,7 +112,7 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
 
       {canEdit && remaining > 0 && p.status !== "REFUNDED" && (
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Catat pembayaran masuk</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">Catat pembayaran masuk</h2>
           <form action={recordPayment.bind(null, p.id)} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
             <label>
               <span className="mb-1 block text-xs text-muted-foreground">Jumlah (Rp)</span>
@@ -146,7 +146,7 @@ export default async function PaymentDetailPage({ params, searchParams }: { para
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Kuitansi ({p.receipts.length})</h2>
+          <h2 className="text-base font-bold text-foreground">Kuitansi ({p.receipts.length})</h2>
         </div>
         {p.receipts.length === 0 ? (
           <p className="px-5 py-4 text-sm text-muted-foreground">Belum ada pembayaran tercatat.</p>

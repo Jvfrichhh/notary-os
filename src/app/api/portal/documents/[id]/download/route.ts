@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getPortalPrincipal } from "@/lib/portalSession";
 import { getFileStorage } from "@/lib/storage";
 import { safeContentType } from "@/lib/uploadValidation";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 /**
  * Unduh dokumen oleh KLIEN. Hanya dokumen yang:
@@ -15,7 +16,8 @@ import { safeContentType } from "@/lib/uploadValidation";
  * bisa diunduh lewat endpoint ini. Setelah lolos, redirect ke signed URL
  * berumur pendek -- sama seperti endpoint internal.
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(ctx);
   const result = await getPortalPrincipal();
   if (!result.ok) {
     const status = result.reason === "unauthenticated" ? 401 : 403;

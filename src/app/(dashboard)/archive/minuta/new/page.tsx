@@ -6,8 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { MinutaForm } from "@/components/archive/MinutaForm";
 import { createMinuta } from "@/app/(dashboard)/archive/actions";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
-export default async function NewMinutaPage({ searchParams }: { searchParams: { deedId?: string } }) {
+export default async function NewMinutaPage(props: Async<{ searchParams: { deedId?: string } }>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_MINUTA);
 
   const deedId = searchParams.deedId;

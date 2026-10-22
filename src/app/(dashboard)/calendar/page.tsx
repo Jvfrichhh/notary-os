@@ -6,6 +6,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { classifyDeadline, getJakartaToday, type DeadlineTone } from "@/lib/format";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 // Sama dengan token warna di StatusBadge, dipakai di sini karena chip kalender
 // perlu label custom (nomor job) sehingga tidak bisa pakai komponen StatusBadge langsung.
@@ -29,7 +30,8 @@ interface CalendarPageProps {
   searchParams: { year?: string; month?: string }; // month: 1-12
 }
 
-export default async function CalendarPage({ searchParams }: CalendarPageProps) {
+export default async function CalendarPage(props: Async<CalendarPageProps>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.VIEW_JOBS);
 
   // "Hari ini" versi kantor (Asia/Jakarta), bukan timezone server -- dipakai

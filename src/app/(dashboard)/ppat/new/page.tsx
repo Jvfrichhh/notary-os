@@ -8,6 +8,7 @@ import { createPpatDeed } from "@/app/(dashboard)/ppat/actions";
 import { getJakartaToday, toDateInput } from "@/lib/format";
 import { nextPpatSequence } from "@/lib/ppat";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,8 @@ const ERR: Record<string, string> = {
   number: "Nomor akta sudah terdaftar atau gagal dibuat. Periksa nomor urut lalu coba lagi."
 };
 
-export default async function NewPpatPage({ searchParams }: { searchParams: { jobId?: string; err?: string } }) {
+export default async function NewPpatPage(props: Async<{ searchParams: { jobId?: string; err?: string } }>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_REPERTORIUM);
   const today = getJakartaToday();
   const job = searchParams.jobId

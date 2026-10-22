@@ -14,10 +14,12 @@ import { stagesFor } from "@/lib/ppatStages";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { respondDraftReview } from "./actions";
 import type { JobStatus } from "@prisma/client";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalJobDetailPage({ params }: { params: { id: string } }) {
+export default async function PortalJobDetailPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   const { clientId } = await requireClientAccount();
 
   // Kunci isolasi antar-klien: id dari URL HARUS cocok DAN clientId HARUS

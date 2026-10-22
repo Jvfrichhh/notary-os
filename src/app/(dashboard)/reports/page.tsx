@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { LineChart } from "@/components/charts/LineChart";
 import { CountUp } from "@/components/motion/CountUp";
 import { formatCurrency, getJakartaToday } from "@/lib/format";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,8 @@ interface PageProps {
   searchParams: { year?: string };
 }
 
-export default async function ReportsPage({ searchParams }: PageProps) {
+export default async function ReportsPage(props: Async<PageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canViewFinance = await userHasPermission(user.id, PERMISSIONS.VIEW_FINANCE);
 

@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatDate, formatStatusLabel } from "@/lib/format";
 import { JOB_STATUSES } from "@/lib/jobStatus";
 import { cn } from "@/lib/utils";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,8 @@ interface JobsPageProps {
   searchParams: { view?: string; q?: string; status?: string; mine?: string };
 }
 
-export default async function JobsPage({ searchParams }: JobsPageProps) {
+export default async function JobsPage(props: Async<JobsPageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
 

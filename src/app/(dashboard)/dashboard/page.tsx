@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
 import { AlertTriangle, Plus, ShieldAlert } from "lucide-react";
 import { gatherMonth, monthLabel, previousYm, REPORT_DUE_DAY, reportSentInfo } from "@/lib/compliance/monthly";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 /** Pengingat Notaris: laporan bulanan bulan lalu yang belum terkirim & tugas bertenggat terlambat. */
 async function getComplianceAlerts() {
@@ -129,7 +130,8 @@ interface PageProps {
   searchParams: { denied?: string; password?: string };
 }
 
-export default async function DashboardPage({ searchParams }: PageProps) {
+export default async function DashboardPage(props: Async<PageProps>) {
+  const { searchParams } = await unwrapProps(props);
   // Dashboard terbuka untuk semua user login, tapi isinya mengikuti izin:
   // ringkasan job hanya untuk pemilik view_jobs, hitungan kunjungan hanya
   // untuk pemilik view_visits (semua role bawaan punya keduanya; ini menjaga

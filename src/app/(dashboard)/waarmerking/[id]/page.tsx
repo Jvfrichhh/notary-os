@@ -6,10 +6,12 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { formatDate, formatStatusLabel } from "@/lib/format";
 import { archiveWaarmerking, restoreWaarmerking } from "@/app/(dashboard)/waarmerking/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
-export default async function WaarmerkingDetailPage({ params }: { params: { id: string } }) {
+export default async function WaarmerkingDetailPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_WAARMERKING);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_WAARMERKING);
 

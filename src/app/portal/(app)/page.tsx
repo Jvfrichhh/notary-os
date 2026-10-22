@@ -6,10 +6,12 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatDate } from "@/lib/format";
 import { PORTAL_ACTIVE_STATUSES, PORTAL_NEEDS_CLIENT_STATUSES, portalStatusLabel } from "@/lib/portalLabels";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalDashboardPage({ searchParams }: { searchParams: { password?: string } }) {
+export default async function PortalDashboardPage(props: Async<{ searchParams: { password?: string } }>) {
+  const { searchParams } = await unwrapProps(props);
   const { clientId, client } = await requireClientAccount();
 
   // SEMUA query dibatasi where: { clientId } dari principal yang sudah

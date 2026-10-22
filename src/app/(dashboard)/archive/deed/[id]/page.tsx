@@ -6,6 +6,7 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { formatDate, formatStatusLabel } from "@/lib/format";
 import { updateDeedStatus, archiveDeed, restoreDeed } from "@/app/(dashboard)/archive/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,8 @@ function FileLink({ documentId }: { documentId: string | null }) {
   );
 }
 
-export default async function DeedDetailPage({ params }: { params: { id: string } }) {
+export default async function DeedDetailPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
 

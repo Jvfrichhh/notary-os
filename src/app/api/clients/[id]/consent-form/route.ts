@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { buildSimpleDocx } from "@/lib/office/simpleDocx";
 import { NOTARIS } from "@/lib/deeds/common";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,8 @@ export const dynamic = "force-dynamic";
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
 /** Formulir persetujuan pemrosesan data pribadi (UU PDP) untuk ditandatangani klien. */
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, ctx: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(ctx);
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.kind === "client" || session.user.revoked) return NextResponse.json({ error: "Akses ditolak." }, { status: 401 });
   if (!(await userHasPermission(session.user.id, PERMISSIONS.VIEW_CLIENTS))) return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });

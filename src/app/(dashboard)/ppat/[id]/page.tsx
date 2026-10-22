@@ -9,6 +9,7 @@ import { PpatForm } from "@/components/ppat/PpatForm";
 import { submitPpatToBpn, updatePpatDeed } from "@/app/(dashboard)/ppat/actions";
 import { classifyDeadline, formatDate, getJakartaToday, toDateInput } from "@/lib/format";
 import { isSkmht, ppatDuty } from "@/lib/ppat";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ const ERR: Record<string, string> = { required: "Lengkapi tanggal, perbuatan huk
 
 const str = (v: { toString(): string } | null) => (v == null ? "" : v.toString().replace(/\.00$/, ""));
 
-export default async function PpatDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { ok?: string; err?: string } }) {
+export default async function PpatDetailPage(props: Async<{ params: { id: string }; searchParams: { ok?: string; err?: string } }>) {
+  const { params, searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
   const d = await prisma.ppatDeed.findUnique({ where: { id: params.id }, include: { job: { select: { id: true, jobNumber: true } } } });

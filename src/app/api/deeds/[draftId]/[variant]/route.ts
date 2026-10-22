@@ -7,12 +7,14 @@ import { PERMISSIONS } from "@/lib/permissionKeys";
 import { getDeedTemplate, variantLabels } from "@/lib/deeds/registry";
 import { renderDeed } from "@/lib/deeds/render";
 import type { DeedData } from "@/lib/deeds/schema";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Unduh draft akta sebagai .docx (minuta = garis hitam, salinan = garis merah). */
-export async function GET(_req: Request, { params }: { params: { draftId: string; variant: string } }) {
+export async function GET(_req: Request, ctx: Async<{ params: { draftId: string; variant: string } }>) {
+  const { params } = await unwrapProps(ctx);
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.kind === "client" || session.user.revoked) return NextResponse.json({ error: "Akses ditolak." }, { status: 401 });
   if (!(await userHasPermission(session.user.id, PERMISSIONS.VIEW_JOBS))) {

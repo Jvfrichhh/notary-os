@@ -4,12 +4,14 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { DocumentForm } from "@/components/documents/DocumentForm";
 import { uploadDocument } from "@/app/(dashboard)/documents/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 interface NewDocumentPageProps {
   searchParams: { clientId?: string; jobId?: string };
 }
 
-export default async function NewDocumentPage({ searchParams }: NewDocumentPageProps) {
+export default async function NewDocumentPage(props: Async<NewDocumentPageProps>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.UPLOAD_DOCUMENTS);
 
   const { clientId, jobId } = searchParams;

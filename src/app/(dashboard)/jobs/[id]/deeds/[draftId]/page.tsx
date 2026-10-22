@@ -14,16 +14,18 @@ import { nextDeedNumber } from "@/lib/deeds/numbering";
 import { draftHash, reviewState } from "@/lib/deeds/review";
 import { shareDraftWithClient } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { formatDateTime } from "@/lib/format";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
-export default async function DeedDraftPage({
-  params,
-  searchParams
-}: {
+export default async function DeedDraftPage(props: Async<{
   params: { id: string; draftId: string };
   searchParams?: { shared?: string };
-}) {
+}>) {
+  const {
+  params,
+  searchParams
+} = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEditJobs = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
   const isNotary = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);

@@ -5,6 +5,7 @@ import { getDeedTemplate } from "@/lib/deeds/registry";
 import { renderDeed } from "@/lib/deeds/render";
 import { draftHash } from "@/lib/deeds/review";
 import type { DeedData } from "@/lib/deeds/schema";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,8 @@ export const dynamic = "force-dynamic";
  * catatan kantor). Hanya draft pada pekerjaan miliknya, review terakhir, dan
  * isi yang masih sama dengan saat dibagikan.
  */
-export async function GET(_req: Request, { params }: { params: { reviewId: string } }) {
+export async function GET(_req: Request, ctx: Async<{ params: { reviewId: string } }>) {
+  const { params } = await unwrapProps(ctx);
   const portal = await getPortalPrincipal();
   if (!portal.ok) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: portal.reason === "unauthenticated" ? 401 : 403 });

@@ -5,8 +5,10 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { WasiatForm } from "@/components/wasiat/WasiatForm";
 import { updateWasiat } from "@/app/(dashboard)/wasiat/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
-export default async function EditWasiatPage({ params }: { params: { id: string } }) {
+export default async function EditWasiatPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_WASIAT);
 
   const record = await prisma.wasiat.findUnique({ where: { id: params.id }, include: { client: true } });

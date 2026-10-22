@@ -6,6 +6,7 @@ import { userHasPermission, PERMISSIONS } from "@/lib/permissions";
 import { getFileStorage } from "@/lib/storage";
 import { isProtocolDocument } from "@/lib/protocolDocuments";
 import { safeContentType } from "@/lib/uploadValidation";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 /**
  * Satu-satunya pintu masuk untuk membuka/mengunduh dokumen. Route ini yang
@@ -14,7 +15,8 @@ import { safeContentType } from "@/lib/uploadValidation";
  * ke /api/files/local/[token] saat development). Tidak ada cara mengakses
  * file hanya dengan menebak/mengubah URL storageKey secara langsung.
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(ctx);
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.kind === "client" || session.user.revoked) {
     return NextResponse.json({ error: "Anda harus login." }, { status: 401 });

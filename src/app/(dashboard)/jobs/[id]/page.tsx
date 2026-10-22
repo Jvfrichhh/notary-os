@@ -34,16 +34,18 @@ import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { draftHash, reviewState } from "@/lib/deeds/review";
 import { suggestCovernoteItems } from "@/lib/covernote";
 import { stagesFor } from "@/lib/ppatStages";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
-export default async function JobDetailPage({
-  params,
-  searchParams
-}: {
+export default async function JobDetailPage(props: Async<{
   params: { id: string };
   searchParams?: { created?: string; ok?: string; err?: string; portal?: string; doc?: string; cn?: string };
-}) {
+}>) {
+  const {
+  params,
+  searchParams
+} = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
   const canViewFinance = await userHasPermission(user.id, PERMISSIONS.VIEW_FINANCE);

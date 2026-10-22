@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/format";
 import { markNotificationRead, markAllNotificationsRead, openNotification } from "@/app/(dashboard)/notifications/actions";
 import { notificationHref } from "@/lib/notificationLinks";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ interface PageProps {
   searchParams: { filter?: string };
 }
 
-export default async function NotificationsPage({ searchParams }: PageProps) {
+export default async function NotificationsPage(props: Async<PageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requireUser();
   const filter = searchParams.filter === "unread" ? "unread" : searchParams.filter === "read" ? "read" : "all";
 

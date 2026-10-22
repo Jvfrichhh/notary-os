@@ -2,7 +2,7 @@ import { readNewPortalAccount } from "@/lib/portalAccounts";
 import { ClearPortalCookie } from "@/components/clients/ClearPortalCookie";
 
 /** Pemberitahuan hasil "Buatkan akses portal klien" saat Tambah Klien. */
-export function PortalAccountBanner({ status }: { status: string }) {
+export async function PortalAccountBanner({ status }: { status: string }) {
   if (status === "taken") {
     return (
       <div className="rounded-md border border-status-due-soon/40 bg-status-due-soon/10 px-3 py-2 text-sm text-foreground">
@@ -17,7 +17,7 @@ export function PortalAccountBanner({ status }: { status: string }) {
       </div>
     );
   }
-  const acc = status === "created" ? readNewPortalAccount() : null;
+  const acc = status === "created" ? await readNewPortalAccount() : null;
   if (!acc) return null;
   return (
     <div className="rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-sm text-foreground">

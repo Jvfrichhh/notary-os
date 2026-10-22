@@ -12,6 +12,7 @@ import { archiveClient, createJobForClient, recordDataConsent, restoreClient } f
 import { ClientNewJobForm } from "@/components/clients/ClientNewJobForm";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { ClientPortalAccess } from "@/components/clients/ClientPortalAccess";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -22,7 +23,8 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default async function ClientDetailPage({ params, searchParams }: { params: { id: string }; searchParams?: { portal?: string; jobFailed?: string } }) {
+export default async function ClientDetailPage(props: Async<{ params: { id: string }; searchParams?: { portal?: string; jobFailed?: string } }>) {
+  const { params, searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_CLIENTS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
   const canDelete = await userHasPermission(user.id, PERMISSIONS.DELETE_CLIENTS);

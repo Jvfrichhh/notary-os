@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate, formatCurrency, formatStatusLabel } from "@/lib/format";
 import { archivePayment, restorePayment } from "@/app/(dashboard)/payments/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ interface PageProps {
   searchParams: { q?: string; status?: string; recordStatus?: string };
 }
 
-export default async function PaymentsPage({ searchParams }: PageProps) {
+export default async function PaymentsPage(props: Async<PageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_FINANCE);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
 

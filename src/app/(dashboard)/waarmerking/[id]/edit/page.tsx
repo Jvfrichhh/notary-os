@@ -5,8 +5,10 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { ServiceRecordForm } from "@/components/serviceRecords/ServiceRecordForm";
 import { updateWaarmerking } from "@/app/(dashboard)/waarmerking/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
-export default async function EditWaarmerkingPage({ params }: { params: { id: string } }) {
+export default async function EditWaarmerkingPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_WAARMERKING);
 
   const record = await prisma.waarmerking.findUnique({ where: { id: params.id }, include: { client: true } });

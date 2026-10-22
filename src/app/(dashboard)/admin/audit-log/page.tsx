@@ -5,6 +5,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/format";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,8 @@ function actorLabel(userName: string | null | undefined, action: string): string
   return "Sistem";
 }
 
-export default async function AdminAuditLogPage({ searchParams }: PageProps) {
+export default async function AdminAuditLogPage(props: Async<PageProps>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.VIEW_AUDIT_LOG);
 
   const page = Math.min(10000, Math.max(1, Math.floor(Number(searchParams.page)) || 1));

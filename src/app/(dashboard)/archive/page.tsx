@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ interface ArchivePageProps {
   searchParams: { tab?: string; q?: string; year?: string };
 }
 
-export default async function ArchivePage({ searchParams }: ArchivePageProps) {
+export default async function ArchivePage(props: Async<ArchivePageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
 

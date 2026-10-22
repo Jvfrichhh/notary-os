@@ -13,6 +13,7 @@ import { DocumentAiPanel } from "@/components/documents/DocumentAiPanel";
 import { toAnalysisView } from "@/lib/ai/analysisView";
 import { canAnalyzeFileType, latestAnalysisFor } from "@/lib/ai/documentAnalysis";
 import { isAiEnabled } from "@/lib/ai/client";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -23,7 +24,8 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default async function DocumentDetailPage({ params }: { params: { id: string } }) {
+export default async function DocumentDetailPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_DOCUMENTS);
   const canUpload = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
   const canDelete = await userHasPermission(user.id, PERMISSIONS.DELETE_DOCUMENTS);

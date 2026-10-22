@@ -5,6 +5,7 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate, formatStatusLabel } from "@/lib/format";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,8 @@ interface PageProps {
   searchParams: { q?: string; status?: string; recordStatus?: string };
 }
 
-export default async function WaarmerkingPage({ searchParams }: PageProps) {
+export default async function WaarmerkingPage(props: Async<PageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_WAARMERKING);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_WAARMERKING);
 

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { formatDateTime, formatFileSize, getJakartaYear } from "@/lib/format";
 import { listArchives } from "@/lib/compliance/backup";
 import { createBackupNow, exportProtocol } from "@/app/(dashboard)/backup/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 // Ekspor protokol mengambil banyak file dari storage; beri waktu lebih.
@@ -17,7 +18,8 @@ const ERR: Record<string, string> = {
 };
 
 /** Backup database & ekspor protokol notaris (khusus Notaris). */
-export default async function BackupPage({ searchParams }: { searchParams: { ok?: string; err?: string; missing?: string } }) {
+export default async function BackupPage(props: Async<{ searchParams: { ok?: string; err?: string; missing?: string } }>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.MANAGE_USERS);
   const archives = await listArchives();
   const years = await prisma.repertorium.findMany({ distinct: ["year"], select: { year: true }, orderBy: { year: "desc" } });

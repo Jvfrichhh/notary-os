@@ -6,10 +6,12 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { formatDate, formatStatusLabel } from "@/lib/format";
 import { archiveWasiat, restoreWasiat } from "@/app/(dashboard)/wasiat/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
-export default async function WasiatDetailPage({ params }: { params: { id: string } }) {
+export default async function WasiatDetailPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_WASIAT);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_WASIAT);
 

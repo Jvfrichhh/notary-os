@@ -7,12 +7,14 @@ import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/format";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
 import { updateMinuta, archiveMinuta, restoreMinuta } from "@/app/(dashboard)/archive/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 export const dynamic = "force-dynamic";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
-export default async function MinutaDetailPage({ params }: { params: { id: string } }) {
+export default async function MinutaDetailPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
 

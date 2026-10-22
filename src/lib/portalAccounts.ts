@@ -38,7 +38,7 @@ export async function createPortalAccountForNewClient(params: {
     entityId: account.id,
     newValue: { clientId: params.clientId, email: account.email }
   });
-  cookies().set("portal_new_account", JSON.stringify({ email: account.email, pw: temporaryPassword }), {
+  (await cookies()).set("portal_new_account", JSON.stringify({ email: account.email, pw: temporaryPassword }), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -49,8 +49,8 @@ export async function createPortalAccountForNewClient(params: {
 }
 
 /** Baca kredensial portal baru (hanya di halaman tujuan, maks. 5 menit). */
-export function readNewPortalAccount(): { email: string; pw: string } | null {
-  const raw = cookies().get("portal_new_account")?.value;
+export async function readNewPortalAccount(): Promise<{ email: string; pw: string } | null> {
+  const raw = (await cookies()).get("portal_new_account")?.value;
   if (!raw) return null;
   try {
     const v = JSON.parse(raw) as { email?: string; pw?: string };

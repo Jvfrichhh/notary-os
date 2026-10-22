@@ -4,12 +4,14 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { PaymentForm } from "@/components/payments/PaymentForm";
 import { createPayment } from "@/app/(dashboard)/payments/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 interface PageProps {
   searchParams: { clientId?: string; jobId?: string };
 }
 
-export default async function NewPaymentPage({ searchParams }: PageProps) {
+export default async function NewPaymentPage(props: Async<PageProps>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_FINANCE);
 
   const [clients, jobs] = await Promise.all([

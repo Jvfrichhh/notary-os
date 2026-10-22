@@ -6,8 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { DerivativeForm } from "@/components/archive/DerivativeForm";
 import { createKutipan } from "@/app/(dashboard)/archive/actions";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
-export default async function NewKutipanPage({ searchParams }: { searchParams: { deedId?: string } }) {
+export default async function NewKutipanPage(props: Async<{ searchParams: { deedId?: string } }>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_MINUTA);
 
   const deedId = searchParams.deedId;

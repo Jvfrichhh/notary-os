@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { use, useEffect } from "react";
 import { signOut } from "next-auth/react";
 
 /**
  * Menghapus cookie sesi lalu kembali ke halaman login. Dipakai saat akun yang
  * sama login di browser lain (sesi ini tidak berlaku lagi).
  */
-export default function LogoutPage({ searchParams }: { searchParams: { reason?: string } }) {
-  const reason = searchParams.reason === "elsewhere" ? "elsewhere" : "";
+export default function LogoutPage({ searchParams }: { searchParams: Promise<{ reason?: string }> }) {
+  const reason = use(searchParams).reason === "elsewhere" ? "elsewhere" : "";
   useEffect(() => {
     signOut({ callbackUrl: reason ? `/login?reason=${reason}` : "/login" });
   }, [reason]);

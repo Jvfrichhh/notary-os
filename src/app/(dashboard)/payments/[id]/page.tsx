@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { formatCurrency, formatDate, formatDateTime, formatStatusLabel, toDateInput, getJakartaToday } from "@/lib/format";
 import { cancelReceipt, recordPayment } from "@/app/(dashboard)/payments/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,8 @@ const ERR: Record<string, string> = {
 };
 
 /** Tagihan satu pekerjaan: ringkasan, catat pembayaran, daftar kuitansi. */
-export default async function PaymentDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { ok?: string; err?: string; r?: string } }) {
+export default async function PaymentDetailPage(props: Async<{ params: { id: string }; searchParams: { ok?: string; err?: string; r?: string } }>) {
+  const { params, searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_FINANCE);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
   const p = await prisma.payment.findUnique({

@@ -5,8 +5,10 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { PaymentForm } from "@/components/payments/PaymentForm";
 import { updatePayment } from "@/app/(dashboard)/payments/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
-export default async function EditPaymentPage({ params }: { params: { id: string } }) {
+export default async function EditPaymentPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_FINANCE);
 
   const payment = await prisma.payment.findUnique({ where: { id: params.id }, include: { client: true, job: true } });

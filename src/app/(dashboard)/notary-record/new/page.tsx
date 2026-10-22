@@ -6,12 +6,14 @@ import { Card } from "@/components/ui/Card";
 import { RepertoriumForm } from "@/components/notary-record/RepertoriumForm";
 import { createRepertorium } from "@/app/(dashboard)/notary-record/actions";
 import { formatDate } from "@/lib/format";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 interface NewRepertoriumPageProps {
   searchParams: { deedId?: string };
 }
 
-export default async function NewRepertoriumPage({ searchParams }: NewRepertoriumPageProps) {
+export default async function NewRepertoriumPage(props: Async<NewRepertoriumPageProps>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_REPERTORIUM);
 
   // Hanya akta yang belum punya Repertorium yang boleh dipilih -- one-to-one.

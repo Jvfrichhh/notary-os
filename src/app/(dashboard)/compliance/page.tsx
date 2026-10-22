@@ -17,13 +17,15 @@ import {
   type ReportKind
 } from "@/lib/compliance/monthly";
 import { markReportSent } from "@/app/(dashboard)/compliance/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
 const inputCls = "rounded-md border border-border bg-background px-3 py-2 text-sm";
 
 /** Laporan bulanan wajib (MPD & Daftar Pusat Wasiat) + tenggat hukum setelah akta. */
-export default async function CompliancePage({ searchParams }: { searchParams: { month?: string; ok?: string } }) {
+export default async function CompliancePage(props: Async<{ searchParams: { month?: string; ok?: string } }>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canMark = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
   const today = getJakartaToday();

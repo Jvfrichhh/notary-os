@@ -6,13 +6,15 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/format";
 import { updateRepertorium, archiveRepertorium, restoreRepertorium } from "@/app/(dashboard)/notary-record/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
-export default async function RepertoriumDetailPage({ params }: { params: { id: string } }) {
+export default async function RepertoriumDetailPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
 

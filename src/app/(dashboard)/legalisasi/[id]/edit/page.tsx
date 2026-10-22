@@ -5,8 +5,10 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { ServiceRecordForm } from "@/components/serviceRecords/ServiceRecordForm";
 import { updateLegalisasi } from "@/app/(dashboard)/legalisasi/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
-export default async function EditLegalisasiPage({ params }: { params: { id: string } }) {
+export default async function EditLegalisasiPage(props: Async<{ params: { id: string } }>) {
+  const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_LEGALISASI);
 
   const record = await prisma.legalisasi.findUnique({ where: { id: params.id }, include: { client: true } });

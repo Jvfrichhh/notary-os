@@ -4,12 +4,14 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { DeedForm } from "@/components/archive/DeedForm";
 import { createDeed } from "@/app/(dashboard)/archive/actions";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 interface NewDeedPageProps {
   searchParams: { jobId?: string; clientId?: string };
 }
 
-export default async function NewDeedPage({ searchParams }: NewDeedPageProps) {
+export default async function NewDeedPage(props: Async<NewDeedPageProps>) {
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_MINUTA);
 
   const [clients, jobs, notaries, lockedJob] = await Promise.all([

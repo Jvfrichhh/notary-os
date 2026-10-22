@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate, formatDateTime, formatFileSize, formatStatusLabel } from "@/lib/format";
 import type { Prisma } from "@prisma/client";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,8 @@ interface DocumentsPageProps {
  *  - klik folder: dokumen klien itu, dikelompokkan per pekerjaan;
  *  - "Semua file": daftar file seperti sebelumnya (cari nama file/deskripsi).
  */
-export default async function DocumentsPage({ searchParams }: DocumentsPageProps) {
+export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_DOCUMENTS);
   const canUpload = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
 

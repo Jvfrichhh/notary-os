@@ -6,6 +6,7 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ interface ClientsPageProps {
   searchParams: { q?: string; status?: string };
 }
 
-export default async function ClientsPage({ searchParams }: ClientsPageProps) {
+export default async function ClientsPage(props: Async<ClientsPageProps>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_CLIENTS);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.CREATE_CLIENTS);
 

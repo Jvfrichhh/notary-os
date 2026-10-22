@@ -7,11 +7,13 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatCurrency, formatDate, getJakartaYear } from "@/lib/format";
 import { isSkmht, ppatDuty } from "@/lib/ppat";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
 /** Buku Daftar Akta PPAT per tahun. */
-export default async function PpatRegisterPage({ searchParams }: { searchParams: { year?: string } }) {
+export default async function PpatRegisterPage(props: Async<{ searchParams: { year?: string } }>) {
+  const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
   const year = Number(searchParams.year) || getJakartaYear();

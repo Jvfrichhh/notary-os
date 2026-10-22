@@ -4,6 +4,7 @@ import path from "path";
 import { verifyLocalFileToken } from "@/lib/storage/localFileToken";
 import { LOCAL_STORAGE_BASE_PATH } from "@/lib/storage/LocalStorageProvider";
 import { prisma } from "@/lib/prisma";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 
 /**
  * Endpoint ini SENGAJA tidak menerima storageKey langsung -- hanya token HMAC
@@ -13,7 +14,8 @@ import { prisma } from "@/lib/prisma";
  * pengecekan session di sini), token-nya tidak bisa ditebak/diubah dan
  * kedaluwarsa dalam waktu singkat -- setara presigned URL R2 di production.
  */
-export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(_req: NextRequest, ctx: Async<{ params: { token: string } }>) {
+  const { params } = await unwrapProps(ctx);
   const payload = verifyLocalFileToken(params.token);
   if (!payload) {
     return NextResponse.json({ error: "Link kedaluwarsa atau tidak valid." }, { status: 403 });

@@ -48,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Versi dokumen tidak ditemukan." }, { status: 404 });
     }
     storageKey = version.storageKey;
-    fileName = version.fileName;
+    fileName = version.fileName ?? document.fileName;
   }
 
   const signedUrl = await getFileStorage().getSignedUrl(storageKey, 300, { contentType: safeContentType(fileName) });

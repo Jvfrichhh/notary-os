@@ -1,10 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/components/layout/ThemeToggle";
+import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 
 export const metadata: Metadata = {
   title: "Nexora — Sistem Manajemen Kantor Notaris",
-  description: "Internal management system untuk kantor notaris"
+  description: "Internal management system untuk kantor notaris",
+  manifest: "/site.webmanifest",
+  applicationName: "Nexora",
+  appleWebApp: { capable: true, title: "Nexora", statusBarStyle: "default" }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#082A21"
 };
 
 // Font Plus Jakarta Sans dimuat langsung dari Google Fonts oleh browser (bukan
@@ -22,7 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link rel="stylesheet" href={FONT_URL} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <RegisterServiceWorker />
+      </body>
     </html>
   );
 }

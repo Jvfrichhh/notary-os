@@ -85,7 +85,7 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Repertorium & Klapper</h1>
           <p className="text-sm text-muted-foreground">Repertorium dan Klapper — dua tampilan dari data yang sama</p>
@@ -149,7 +149,7 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
       ) : tab === "repertorium" ? (
         <Card className="!p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">No. Urut</th>
@@ -162,15 +162,15 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
               <tbody className="divide-y divide-border">
                 {entries.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                    <td data-label="No. Urut" className="px-4 py-3">
                       <Link href={`/notary-record/${r.id}`} className="font-medium text-foreground hover:underline">
                         {r.year}/{String(r.sequenceNumber).padStart(4, "0")}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.deed.deedNumber}</td>
-                    <td className="px-4 py-3 text-foreground">{r.appearerName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.deedType}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(r.deedDate)}</td>
+                    <td data-label="Nomor Akta" className="px-4 py-3 text-muted-foreground">{r.deed.deedNumber}</td>
+                    <td data-label="Nama Penghadap" className="px-4 py-3 text-foreground">{r.appearerName}</td>
+                    <td data-label="Jenis Akta" className="px-4 py-3 text-muted-foreground">{r.deedType}</td>
+                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(r.deedDate)}</td>
                   </tr>
                 ))}
               </tbody>

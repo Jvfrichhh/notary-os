@@ -23,7 +23,7 @@ export default async function WaarmerkingDetailPage(props: Async<{ params: { id:
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Waarmerking</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{record.number}</h1>
@@ -38,7 +38,7 @@ export default async function WaarmerkingDetailPage(props: Async<{ params: { id:
       </div>
 
       <Card>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-xs text-muted-foreground">Klien</dt>
             <dd>

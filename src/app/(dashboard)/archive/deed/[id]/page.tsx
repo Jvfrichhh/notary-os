@@ -122,7 +122,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
               )}
             </div>
             {deed.repertorium ? (
-              <div className="flex items-center justify-between py-1 text-sm">
+              <div className="flex items-center justify-between gap-3 py-1 text-sm">
                 <Link href={`/notary-record/${deed.repertorium.id}`} className="text-foreground hover:underline">
                   {deed.repertorium.year}/{String(deed.repertorium.sequenceNumber).padStart(4, "0")} — {deed.repertorium.appearerName}
                 </Link>
@@ -141,7 +141,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             canEdit={canEdit}
           >
             {deed.minuta.map((m) => (
-              <div key={m.id} className="flex items-center justify-between py-2.5 text-sm">
+              <div key={m.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <Link href={`/archive/minuta/${m.id}`} className="text-foreground hover:underline">
                   Minuta · {formatDate(m.createdAt)}
                 </Link>
@@ -158,7 +158,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             canEdit={canEdit}
           >
             {deed.salinan.map((s) => (
-              <div key={s.id} className="flex items-center justify-between py-2.5 text-sm">
+              <div key={s.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <Link href={`/archive/salinan/${s.id}`} className="text-foreground hover:underline">
                   Salinan · {formatDate(s.createdAt)}
                 </Link>
@@ -175,7 +175,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             canEdit={canEdit}
           >
             {deed.grosse.map((g) => (
-              <div key={g.id} className="flex items-center justify-between py-2.5 text-sm">
+              <div key={g.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <Link href={`/archive/grosse/${g.id}`} className="text-foreground hover:underline">
                   Grosse · {formatStatusLabel(g.status)}
                 </Link>
@@ -192,7 +192,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             canEdit={canEdit}
           >
             {deed.kutipan.map((k) => (
-              <div key={k.id} className="flex items-center justify-between py-2.5 text-sm">
+              <div key={k.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <Link href={`/archive/kutipan/${k.id}`} className="text-foreground hover:underline">
                   Kutipan · {formatStatusLabel(k.status)}
                 </Link>

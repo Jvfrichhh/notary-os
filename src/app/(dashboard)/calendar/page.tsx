@@ -112,7 +112,7 @@ export default async function CalendarPage(props: Async<CalendarPageProps>) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Kalender</h1>
           <p className="text-sm text-muted-foreground">Tenggat pekerjaan dan janji temu dalam sebulan</p>
@@ -137,6 +137,9 @@ export default async function CalendarPage(props: Async<CalendarPageProps>) {
       </div>
 
       <Card className="!p-3">
+        <p className="mb-2 text-xs text-muted-foreground sm:hidden">Geser ke samping untuk melihat seluruh minggu.</p>
+        <div className="-mx-1 overflow-x-auto px-1">
+        <div className="min-w-[640px]">
         <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-muted-foreground">
           {DAY_NAMES.map((d) => (
             <div key={d} className="py-2">
@@ -200,6 +203,8 @@ export default async function CalendarPage(props: Async<CalendarPageProps>) {
               </div>
             );
           })}
+        </div>
+        </div>
         </div>
       </Card>
 

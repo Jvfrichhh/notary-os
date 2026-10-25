@@ -57,7 +57,7 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas lg:flex-row">
-      <section className="flex flex-col justify-between gap-6 bg-brand-deep px-6 py-8 text-white sm:px-10 lg:w-1/2 lg:gap-8 lg:p-14">
+      <section className="flex flex-col justify-between gap-4 bg-brand-deep px-6 py-6 text-white sm:gap-6 sm:px-10 sm:py-8 lg:w-1/2 lg:gap-8 lg:p-14">
         <div className="flex items-center gap-3">
           <img src="/brand/nexora-mark.png" alt="" className="h-11 w-auto" />
           <span>
@@ -65,7 +65,7 @@ function LoginForm() {
             <span className="block text-[10px] font-medium uppercase tracking-[0.22em] text-brand-gold/80">Smarter work. Seamless trust.</span>
           </span>
         </div>
-        <OfficeIllustration className="mx-auto w-full max-w-[300px] sm:max-w-[420px] lg:max-w-[520px]" />
+        <OfficeIllustration className="mx-auto w-full max-w-[230px] sm:max-w-[420px] lg:max-w-[520px]" />
         <div className="max-w-md">
           <p className="text-xl font-extrabold leading-tight tracking-tight sm:text-3xl">
             Semua pekerjaan kantor notaris, rapi di satu tempat.

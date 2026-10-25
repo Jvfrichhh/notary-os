@@ -262,7 +262,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[620px] text-sm">
+                <table className="table-stack w-full min-w-[620px] text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-[0.04em] text-muted-foreground">
                       <th className="px-5 py-3 font-bold">Pekerjaan</th>
@@ -274,7 +274,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
                   <tbody>
                     {recentJobs.map((job) => (
                       <tr key={job.id} className="border-t border-muted hover:bg-canvas">
-                        <td className="px-5 py-3.5">
+                        <td data-label="Pekerjaan" className="px-5 py-3.5">
                           <Link href={`/jobs/${job.id}`} className="font-semibold text-foreground hover:text-primary">
                             {job.serviceType?.name ?? job.description ?? job.jobNumber}
                           </Link>
@@ -282,13 +282,13 @@ export default async function DashboardPage(props: Async<PageProps>) {
                             {job.jobNumber} · PIC {job.pic?.name ?? "-"}
                           </p>
                         </td>
-                        <td className="px-3 py-3.5 text-fg-2">{job.client.fullName}</td>
-                        <td className="px-3 py-3.5">
+                        <td data-label="Klien" className="px-3 py-3.5 text-fg-2">{job.client.fullName}</td>
+                        <td data-label="Status" className="px-3 py-3.5">
                           <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-fg-2">
                             {formatStatusLabel(job.status)}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3.5">
+                        <td data-label="Target" className="whitespace-nowrap px-5 py-3.5">
                           {job.deadline ? (
                             <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatDate(job.deadline)} />
                           ) : (

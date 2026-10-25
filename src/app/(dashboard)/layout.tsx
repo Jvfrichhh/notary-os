@@ -23,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const sections = filterNavSections(NAV_SECTIONS, permissions, { aiEnabled: isAiEnabled() });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-canvas">
+    <div className="flex h-screen h-[100dvh] overflow-hidden bg-canvas">
       <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
       <WelcomeOverlay name={user.name ?? "Pengguna"} subtitle={user.role === "NOTARY" ? "Notaris & PPAT" : "Staf Kantor Notaris"} />
       <Suspense>
@@ -31,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </Suspense>
       <SessionWatcher />
       <Sidebar sections={sections} />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>

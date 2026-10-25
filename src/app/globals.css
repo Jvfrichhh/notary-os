@@ -312,3 +312,75 @@ a,
 button {
   -webkit-tap-highlight-color: transparent;
 }
+
+/*
+ * HP: tabel daftar (class "table-stack") tampil sebagai kartu bertumpuk.
+ * Kolom pertama jadi judul kartu; kolom lain jadi baris "Label ..... nilai"
+ * (label diambil dari atribut data-label tiap sel). Di layar >= 768px tabel
+ * tampil seperti biasa.
+ */
+@media (max-width: 767px) {
+  table.table-stack {
+    min-width: 0 !important;
+  }
+  table.table-stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  table.table-stack,
+  table.table-stack tbody,
+  table.table-stack tr,
+  table.table-stack td {
+    display: block;
+    width: 100%;
+  }
+  table.table-stack tr {
+    padding: 0.75rem 1rem;
+  }
+  table.table-stack td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.2rem 0 !important;
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  table.table-stack td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: rgb(var(--muted-foreground));
+  }
+  /* Sel pertama = judul kartu (tanpa label, rata kiri). */
+  table.table-stack td:first-child {
+    display: block;
+    text-align: left;
+    padding-bottom: 0.35rem !important;
+    font-size: 0.9375rem;
+  }
+  table.table-stack td:first-child::before {
+    display: none;
+  }
+  /* Sel kosong (kolom aksi tanpa judul) & baris "belum ada data". */
+  table.table-stack td:not([data-label]) {
+    display: block;
+    text-align: right;
+  }
+  table.table-stack td[colspan] {
+    display: block;
+    text-align: center;
+  }
+  table.table-stack td:empty {
+    display: none;
+  }
+}

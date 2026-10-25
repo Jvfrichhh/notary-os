@@ -29,7 +29,7 @@ export default async function SalinanDetailPage(props: Async<{ params: { id: str
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Salinan</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Akta {salinan.deed.deedNumber}</h1>

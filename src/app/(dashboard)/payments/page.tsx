@@ -49,7 +49,7 @@ export default async function PaymentsPage(props: Async<PageProps>) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Pembayaran</h1>
           <p className="text-sm text-muted-foreground">
@@ -106,7 +106,7 @@ export default async function PaymentsPage(props: Async<PageProps>) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">No. Tagihan</th>
@@ -123,17 +123,17 @@ export default async function PaymentsPage(props: Async<PageProps>) {
               <tbody className="divide-y divide-border">
                 {payments.map((p) => (
                   <tr key={p.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                    <td data-label="No. Tagihan" className="px-4 py-3">
                       <Link href={`/payments/${p.id}`} className="font-medium text-primary hover:underline">
                         {p.invoiceNumber ?? "Lihat"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Klien" className="px-4 py-3">
                       <Link href={`/clients/${p.client.id}`} className="font-medium text-foreground hover:underline">
                         {p.client.fullName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td data-label="Pekerjaan" className="px-4 py-3 text-muted-foreground">
                       {p.job ? (
                         <Link href={`/jobs/${p.job.id}`} className="hover:underline">
                           {p.job.jobNumber}
@@ -142,11 +142,11 @@ export default async function PaymentsPage(props: Async<PageProps>) {
                         "-"
                       )}
                     </td>
-                    <td className="px-4 py-3 text-foreground">{formatCurrency(p.totalAmount)}</td>
-                    <td className="px-4 py-3 text-foreground">{formatCurrency(p.paidAmount)}</td>
-                    <td className="px-4 py-3 text-foreground">{formatCurrency(p.remainingAmount)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(p.paymentDate)}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Total" className="px-4 py-3 text-foreground">{formatCurrency(p.totalAmount)}</td>
+                    <td data-label="Dibayar" className="px-4 py-3 text-foreground">{formatCurrency(p.paidAmount)}</td>
+                    <td data-label="Sisa" className="px-4 py-3 text-foreground">{formatCurrency(p.remainingAmount)}</td>
+                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(p.paymentDate)}</td>
+                    <td data-label="Status" className="px-4 py-3">
                       <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
                         {formatStatusLabel(p.status)}
                       </span>

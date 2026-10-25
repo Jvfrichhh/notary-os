@@ -88,7 +88,7 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Lemari Arsip</h1>
           <p className="text-sm text-muted-foreground">Minuta, Salinan, Grosse, dan Kutipan — semua terhubung ke Akta</p>
@@ -146,7 +146,7 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
       ) : (
         <Card className="!p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Nomor Akta</th>
@@ -159,19 +159,19 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
               <tbody className="divide-y divide-border">
                 {rows.map((row) => (
                   <tr key={row.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                    <td data-label="Nomor Akta" className="px-4 py-3">
                       <Link href={`/archive/${tab}/${row.id}`} className="font-medium text-foreground hover:underline">
                         {row.deed.deedNumber}
                       </Link>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Klien" className="px-4 py-3">
                       <Link href={`/clients/${row.deed.client.id}`} className="text-foreground hover:underline">
                         {row.deed.client.fullName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.deed.deedType}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(row.deed.deedDate)}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Jenis Akta" className="px-4 py-3 text-muted-foreground">{row.deed.deedType}</td>
+                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(row.deed.deedDate)}</td>
+                    <td data-label="File" className="px-4 py-3">
                       {row.document ? (
                         <a
                           href={`/api/documents/${row.document.id}/download`}

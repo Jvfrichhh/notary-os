@@ -64,7 +64,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
   }
 
   const header = (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Document Vault</h1>
         <p className="text-sm text-muted-foreground">Dokumen tersusun dalam folder per klien</p>
@@ -484,7 +484,7 @@ type DocRow = {
 function DocTable({ docs, showClient }: { docs: DocRow[]; showClient: boolean }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="table-stack w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
             <th className="px-4 py-3 font-medium">Nama File</th>
@@ -498,16 +498,16 @@ function DocTable({ docs, showClient }: { docs: DocRow[]; showClient: boolean })
         <tbody className="divide-y divide-border">
           {docs.map((doc) => (
             <tr key={doc.id} className="hover:bg-muted/50">
-              <td className="px-4 py-3">
+              <td data-label="Nama File" className="px-4 py-3">
                 <Link href={`/documents/${doc.id}`} className="flex items-start gap-2 font-medium text-foreground hover:underline">
                   <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="break-all">{doc.fileName}</span>
                 </Link>
                 {doc.description && <p className="ml-6 max-w-xs truncate text-xs text-muted-foreground">{doc.description}</p>}
               </td>
-              <td className="px-4 py-3 text-muted-foreground">{formatStatusLabel(doc.category)}</td>
+              <td data-label="Kategori" className="px-4 py-3 text-muted-foreground">{formatStatusLabel(doc.category)}</td>
               {showClient && (
-                <td className="px-4 py-3 text-muted-foreground">
+                <td data-label="Klien / Pekerjaan" className="px-4 py-3 text-muted-foreground">
                   {doc.client && (
                     <Link href={`/documents?clientId=${doc.client.id}`} className="hover:underline">
                       {doc.client.fullName}
@@ -517,9 +517,9 @@ function DocTable({ docs, showClient }: { docs: DocRow[]; showClient: boolean })
                   {!doc.client && !doc.job && "-"}
                 </td>
               )}
-              <td className="px-4 py-3 text-muted-foreground">{formatFileSize(doc.fileSize)}</td>
-              <td className="px-4 py-3 text-muted-foreground">{doc.uploader?.name ?? (doc.uploadedByClientAccount ? "Klien (portal)" : "-")}</td>
-              <td className="px-4 py-3 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</td>
+              <td data-label="Ukuran" className="px-4 py-3 text-muted-foreground">{formatFileSize(doc.fileSize)}</td>
+              <td data-label="Diunggah oleh" className="px-4 py-3 text-muted-foreground">{doc.uploader?.name ?? (doc.uploadedByClientAccount ? "Klien (portal)" : "-")}</td>
+              <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</td>
             </tr>
           ))}
         </tbody>

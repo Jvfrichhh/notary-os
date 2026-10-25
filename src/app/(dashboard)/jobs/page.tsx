@@ -59,7 +59,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Daftar Pekerjaan</h1>
           <p className="text-sm text-muted-foreground">Seluruh pekerjaan aktif kantor</p>
@@ -171,7 +171,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
       ) : (
         <Card className="!p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Pekerjaan</th>
@@ -185,23 +185,23 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
               <tbody className="divide-y divide-border">
                 {jobs.map((job) => (
                   <tr key={job.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                    <td data-label="Pekerjaan" className="px-4 py-3">
                       <Link href={`/jobs/${job.id}`} className="font-medium text-foreground hover:underline">
                         {job.jobNumber}
                       </Link>
                       <p className="line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Klien" className="px-4 py-3">
                       <Link href={`/clients/${job.client.id}`} className="text-foreground hover:underline">
                         {job.client.fullName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{job.serviceType?.name ?? "-"}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Layanan" className="px-4 py-3 text-muted-foreground">{job.serviceType?.name ?? "-"}</td>
+                    <td data-label="Tenggat" className="px-4 py-3">
                       <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatDate(job.deadline)} />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatStatusLabel(job.status)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{job.pic?.name ?? "-"}</td>
+                    <td data-label="Status" className="px-4 py-3 text-muted-foreground">{formatStatusLabel(job.status)}</td>
+                    <td data-label="PIC" className="px-4 py-3 text-muted-foreground">{job.pic?.name ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

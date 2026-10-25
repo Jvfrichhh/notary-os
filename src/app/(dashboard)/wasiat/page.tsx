@@ -46,7 +46,7 @@ export default async function WasiatPage(props: Async<PageProps>) {
         Pencatatan internal kantor saja — bukan pengganti sistem AHU maupun kewajiban pelaporan resmi wasiat.
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Wasiat</h1>
           <p className="text-sm text-muted-foreground">Pelacakan internal pencatatan wasiat.</p>
@@ -100,7 +100,7 @@ export default async function WasiatPage(props: Async<PageProps>) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Klien</th>
@@ -115,19 +115,19 @@ export default async function WasiatPage(props: Async<PageProps>) {
               <tbody className="divide-y divide-border">
                 {records.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                    <td data-label="Klien" className="px-4 py-3">
                       <Link href={`/clients/${r.client.id}`} className="font-medium text-foreground hover:underline">
                         {r.client.fullName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td data-label="Nomor Akta" className="px-4 py-3 text-muted-foreground">
                       <Link href={`/wasiat/${r.id}`} className="hover:underline">
                         {r.deedNumber ?? "-"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.wasiatType ?? "-"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
+                    <td data-label="Jenis" className="px-4 py-3 text-muted-foreground">{r.wasiatType ?? "-"}</td>
+                    <td data-label="Pekerjaan" className="px-4 py-3 text-muted-foreground">
                       {r.job ? (
                         <Link href={`/jobs/${r.job.id}`} className="hover:underline">
                           {r.job.jobNumber}
@@ -136,7 +136,7 @@ export default async function WasiatPage(props: Async<PageProps>) {
                         "-"
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="Status" className="px-4 py-3">
                       <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
                         {formatStatusLabel(r.status)}
                       </span>

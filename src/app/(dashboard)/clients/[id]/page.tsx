@@ -67,7 +67,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
           Klien sudah tersimpan, tetapi pekerjaannya gagal dibuat. Klik &quot;+ Pekerjaan baru&quot; untuk membuatnya lagi.
         </div>
       )}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{client.clientNumber}</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{client.fullName}</h1>

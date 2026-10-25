@@ -182,7 +182,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
         <h2 className="mb-3 text-base font-bold text-foreground">Riwayat Versi</h2>
         <div className="divide-y divide-border">
           {versions.map((v) => (
-            <div key={v.id} className="flex items-center justify-between py-2.5 text-sm">
+            <div key={v.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <div>
                 <p className="font-medium text-foreground">
                   v{v.versionNumber}

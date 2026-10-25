@@ -62,7 +62,7 @@ export default async function PpatRegisterPage(props: Async<{ searchParams: { ye
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">No. Akta</th>
@@ -79,23 +79,23 @@ export default async function PpatRegisterPage(props: Async<{ searchParams: { ye
                   const duty = ppatDuty(d.deedType, d.deedDate);
                   return (
                     <tr key={d.id} className="align-top hover:bg-muted/50">
-                      <td className="px-4 py-3">
+                      <td data-label="No. Akta" className="px-4 py-3">
                         <Link href={`/ppat/${d.id}`} className="font-medium text-primary hover:underline">
                           {d.deedNumber}
                         </Link>
                         {d.job && <p className="text-xs text-muted-foreground">{d.job.jobNumber}</p>}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(d.deedDate)}</td>
-                      <td className="px-4 py-3">{d.deedType}</td>
-                      <td className="px-4 py-3 text-xs">
+                      <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(d.deedDate)}</td>
+                      <td data-label="Perbuatan Hukum" className="px-4 py-3">{d.deedType}</td>
+                      <td data-label="Para Pihak" className="px-4 py-3 text-xs">
                         <p>{d.partyFrom}</p>
                         <p className="text-muted-foreground">→ {d.partyTo}</p>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                      <td data-label="Objek" className="px-4 py-3 text-xs text-muted-foreground">
                         {[d.rightType, d.location, d.landArea ? `LT ${d.landArea} m²` : ""].filter(Boolean).join(" · ") || "-"}
                       </td>
-                      <td className="px-4 py-3 text-xs">{d.transactionValue ? formatCurrency(d.transactionValue) : "-"}</td>
-                      <td className="px-4 py-3">
+                      <td data-label="Nilai" className="px-4 py-3 text-xs">{d.transactionValue ? formatCurrency(d.transactionValue) : "-"}</td>
+                      <td data-label="Ke Kantor Pertanahan" className="px-4 py-3">
                         {d.submittedToBpnAt ? (
                           <span className="text-xs text-status-on-track">
                             {isSkmht(d.deedType) ? "APHT dibuat" : "Disampaikan"} {formatDate(d.submittedToBpnAt)}

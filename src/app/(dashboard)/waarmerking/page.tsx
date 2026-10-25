@@ -42,7 +42,7 @@ export default async function WaarmerkingPage(props: Async<PageProps>) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Waarmerking</h1>
           <p className="text-sm text-muted-foreground">Pencatatan layanan waarmerking dokumen.</p>
@@ -95,7 +95,7 @@ export default async function WaarmerkingPage(props: Async<PageProps>) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Nomor</th>
@@ -110,20 +110,20 @@ export default async function WaarmerkingPage(props: Async<PageProps>) {
               <tbody className="divide-y divide-border">
                 {records.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3 font-medium text-foreground">
+                    <td data-label="Nomor" className="px-4 py-3 font-medium text-foreground">
                       <Link href={`/waarmerking/${r.id}`} className="hover:underline">
                         {r.number}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
+                    <td data-label="Klien" className="px-4 py-3">
                       <Link href={`/clients/${r.client.id}`} className="text-foreground hover:underline">
                         {r.client.fullName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.serviceType ?? "-"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.pic?.name ?? "-"}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Jenis Layanan" className="px-4 py-3 text-muted-foreground">{r.serviceType ?? "-"}</td>
+                    <td data-label="PIC" className="px-4 py-3 text-muted-foreground">{r.pic?.name ?? "-"}</td>
+                    <td data-label="Status" className="px-4 py-3">
                       <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
                         {formatStatusLabel(r.status)}
                       </span>

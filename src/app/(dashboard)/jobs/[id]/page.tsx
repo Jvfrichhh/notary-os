@@ -541,7 +541,7 @@ export default async function JobDetailPage(props: Async<{
               ) : (
                 <ul className="divide-y divide-border text-sm">
                   {job.documents.map((doc) => (
-                    <li key={doc.id} className="flex items-center justify-between py-2">
+                    <li key={doc.id} className="flex items-center justify-between gap-3 py-2">
                       <Link href={`/documents/${doc.id}`} className="text-foreground hover:underline">
                         {doc.fileName}
                       </Link>
@@ -631,7 +631,7 @@ export default async function JobDetailPage(props: Async<{
               ) : (
                 <ul className="divide-y divide-border text-sm">
                   {job.ppatDeeds.map((p) => (
-                    <li key={p.id} className="flex items-center justify-between py-2">
+                    <li key={p.id} className="flex items-center justify-between gap-3 py-2">
                       <Link href={`/ppat/${p.id}`} className="text-foreground hover:underline">
                         {p.deedNumber} — {p.deedType}
                       </Link>
@@ -702,7 +702,7 @@ export default async function JobDetailPage(props: Async<{
               ) : (
                 <ul className="divide-y divide-border text-sm">
                   {job.deeds.map((deed) => (
-                    <li key={deed.id} className="flex items-center justify-between py-2">
+                    <li key={deed.id} className="flex items-center justify-between gap-3 py-2">
                       <Link href={`/archive/deed/${deed.id}`} className="text-foreground hover:underline">
                         {deed.deedNumber} — {deed.deedType}
                       </Link>
@@ -820,7 +820,7 @@ export default async function JobDetailPage(props: Async<{
               ) : (
                 job.payments.map((p) => (
                   <dl key={p.id} className="space-y-1.5 text-sm">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <span className="text-xs text-muted-foreground">{p.invoiceNumber ?? "Tagihan"}</span>
                       <Link href={`/payments/${p.id}`} className="text-xs font-medium text-primary hover:underline">
                         {canEditFinance ? "Catat bayar / kuitansi" : "Detail"}
@@ -938,7 +938,7 @@ function Info({ label, value }: { label: string; value?: string | null }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-medium text-foreground">{value}</dd>
     </div>

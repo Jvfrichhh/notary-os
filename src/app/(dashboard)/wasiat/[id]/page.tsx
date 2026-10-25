@@ -27,7 +27,7 @@ export default async function WasiatDetailPage(props: Async<{ params: { id: stri
         Pencatatan internal kantor saja — bukan pengganti sistem AHU maupun kewajiban pelaporan resmi wasiat.
       </div>
 
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Wasiat</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{record.deedNumber ?? "Belum ada nomor akta"}</h1>
@@ -42,7 +42,7 @@ export default async function WasiatDetailPage(props: Async<{ params: { id: stri
       </div>
 
       <Card>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-xs text-muted-foreground">Klien</dt>
             <dd>

@@ -128,7 +128,7 @@ export default async function AdminAuditLogPage(props: Async<PageProps>) {
             <EmptyState title="Tidak ada catatan yang cocok." />
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="table-stack w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-3">Waktu</th>
@@ -141,14 +141,14 @@ export default async function AdminAuditLogPage(props: Async<PageProps>) {
             <tbody className="divide-y divide-border">
               {logs.map((l) => (
                 <tr key={l.id} className="align-top">
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">{formatDateTime(l.timestamp)}</td>
-                  <td className="whitespace-nowrap px-4 py-2 text-foreground">{actorLabel(l.user?.name, l.action)}</td>
-                  <td className="whitespace-nowrap px-4 py-2 font-mono text-xs text-foreground">{l.action}</td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">
+                  <td data-label="Waktu" className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">{formatDateTime(l.timestamp)}</td>
+                  <td data-label="Pelaku" className="whitespace-nowrap px-4 py-2 text-foreground">{actorLabel(l.user?.name, l.action)}</td>
+                  <td data-label="Aksi" className="whitespace-nowrap px-4 py-2 font-mono text-xs text-foreground">{l.action}</td>
+                  <td data-label="Entitas" className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">
                     {l.entityType}
                     <span className="block font-mono text-[10px]">{l.entityId}</span>
                   </td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">{summarizeChange(l.previousValue, l.newValue)}</td>
+                  <td data-label="Perubahan" className="px-4 py-2 text-xs text-muted-foreground">{summarizeChange(l.previousValue, l.newValue)}</td>
                 </tr>
               ))}
             </tbody>

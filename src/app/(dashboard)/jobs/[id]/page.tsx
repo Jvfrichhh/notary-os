@@ -207,7 +207,7 @@ export default async function JobDetailPage(props: Async<{
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{job.jobNumber}</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{job.description || "(Tanpa deskripsi)"}</h1>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{job.description || "(Tanpa deskripsi)"}</h1>
           <Link href={`/clients/${job.client.id}`} className="text-sm text-primary hover:underline">
             {job.client.fullName} · {job.client.clientNumber}
           </Link>
@@ -289,7 +289,7 @@ export default async function JobDetailPage(props: Async<{
 
           {/* Checklist */}
           <Card>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-bold text-foreground">
                 Checklist Dokumen ({completedChecklistItems}/{totalChecklistItems})
               </h2>
@@ -308,13 +308,13 @@ export default async function JobDetailPage(props: Async<{
                       <button
                         type="submit"
                         disabled={!canEdit}
-                        className="flex items-center gap-2 text-left text-sm disabled:cursor-default"
+                        className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-left text-sm disabled:cursor-default"
                       >
                         <span
                           className={
                             item.status === "COMPLETE"
-                              ? "flex h-4 w-4 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-background"
-                              : "h-4 w-4 rounded border border-border"
+                              ? "flex h-4 w-4 shrink-0 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-background"
+                              : "h-4 w-4 shrink-0 rounded border border-border"
                           }
                         >
                           {item.status === "COMPLETE" && "✓"}
@@ -408,7 +408,7 @@ export default async function JobDetailPage(props: Async<{
                           return v ? <span className={`ml-2 text-xs font-normal ${v[1]}`}>· {v[0]}</span> : null;
                         })()}
                     </Link>
-                    <span className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       diperbarui {fmtDeedTime(d.updatedAt)}
                       <a href={`/api/deeds/${d.id}/minuta`} className="text-foreground hover:underline">{variantLabels(getDeedTemplate(d.templateKey)).minuta}</a>
                       <a href={`/api/deeds/${d.id}/salinan`} className="text-status-overdue hover:underline">{variantLabels(getDeedTemplate(d.templateKey)).salinan}</a>
@@ -471,12 +471,12 @@ export default async function JobDetailPage(props: Async<{
               {job.tasks.map((task) => (
                 <div key={task.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
                 <form action={canEdit ? toggleTaskStatus.bind(null, task.id, job.id) : undefined} className="min-w-0 flex-1">
-                  <button type="submit" disabled={!canEdit} className="flex items-center gap-2 text-left text-sm disabled:cursor-default">
+                  <button type="submit" disabled={!canEdit} className="flex min-w-0 items-center gap-2 text-left text-sm disabled:cursor-default">
                     <span
                       className={
                         task.status === "DONE"
-                          ? "flex h-4 w-4 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-background"
-                          : "h-4 w-4 rounded border border-border"
+                          ? "flex h-4 w-4 shrink-0 items-center justify-center rounded border border-status-on-track bg-status-on-track text-[10px] text-background"
+                          : "h-4 w-4 shrink-0 rounded border border-border"
                       }
                     >
                       {task.status === "DONE" && "✓"}
@@ -491,7 +491,7 @@ export default async function JobDetailPage(props: Async<{
                 )}
                 {isNotary && task.status !== "DONE" && (
                   // Notaris dapat mengatur / menyesuaikan tenggat tugas.
-                  <form action={updateTaskDueDate.bind(null, task.id, job.id)} className="flex items-center gap-1">
+                  <form action={updateTaskDueDate.bind(null, task.id, job.id)} className="flex flex-wrap items-center gap-1">
                     {task.dueDate && <StatusBadge tone={classifyDeadline(task.dueDate, "OPEN")} label={formatDate(task.dueDate)} />}
                     <input type="date" name="dueDate" defaultValue={toDateInput(task.dueDate)} className="rounded border border-border bg-background px-1.5 py-0.5 text-xs" />
                     <button type="submit" className="rounded border border-border px-1.5 py-0.5 text-xs hover:bg-muted">
@@ -505,18 +505,18 @@ export default async function JobDetailPage(props: Async<{
             </div>
 
             {canEdit && (
-              <form action={addJobTask.bind(null, job.id)} className="mt-3 flex gap-2 border-t border-border pt-3">
+              <form action={addJobTask.bind(null, job.id)} className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3 sm:flex-nowrap">
                 <input
                   name="title"
                   required
                   placeholder="Tambah tugas baru..."
-                  className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="min-w-0 flex-1 basis-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:basis-0"
                 />
                 <input
                   type="date"
                   name="dueDate"
                   title="Tenggat (opsional)"
-                  className="w-36 rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                  className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground sm:w-36 sm:flex-none"
                 />
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
                   Tambah
@@ -528,7 +528,7 @@ export default async function JobDetailPage(props: Async<{
           {/* Documents */}
           {canViewDocuments && (
             <Card>
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-base font-bold text-foreground">Dokumen ({job.documents.length})</h2>
                 {canUploadDocuments && (
                   <Link href={`/documents/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
@@ -542,10 +542,10 @@ export default async function JobDetailPage(props: Async<{
                 <ul className="divide-y divide-border text-sm">
                   {job.documents.map((doc) => (
                     <li key={doc.id} className="flex items-center justify-between gap-3 py-2">
-                      <Link href={`/documents/${doc.id}`} className="text-foreground hover:underline">
+                      <Link href={`/documents/${doc.id}`} className="min-w-0 break-all text-foreground hover:underline">
                         {doc.fileName}
                       </Link>
-                      <span className="text-xs text-muted-foreground">{formatStatusLabel(doc.category)}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{formatStatusLabel(doc.category)}</span>
                     </li>
                   ))}
                 </ul>
@@ -565,7 +565,7 @@ export default async function JobDetailPage(props: Async<{
                   const isNext = nextStage?.key === d.key;
                   return (
                     <li key={d.key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                      <span className="flex items-center gap-2">
+                      <span className="flex min-w-0 flex-wrap items-center gap-2">
                         <span
                           className={
                             done
@@ -616,7 +616,7 @@ export default async function JobDetailPage(props: Async<{
           {/* Akta PPAT (layanan selaku PPAT) */}
           {canViewArchive && (isPpatService || job.ppatDeeds.length > 0) && (
             <Card>
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-base font-bold text-foreground">Akta PPAT ({job.ppatDeeds.length})</h2>
                 {canEditArchive && !isFinal && (
                   <Link href={`/ppat/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
@@ -632,7 +632,7 @@ export default async function JobDetailPage(props: Async<{
                 <ul className="divide-y divide-border text-sm">
                   {job.ppatDeeds.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-3 py-2">
-                      <Link href={`/ppat/${p.id}`} className="text-foreground hover:underline">
+                      <Link href={`/ppat/${p.id}`} className="min-w-0 break-words text-foreground hover:underline">
                         {p.deedNumber} — {p.deedType}
                       </Link>
                       <span className="text-xs text-muted-foreground">
@@ -689,7 +689,7 @@ export default async function JobDetailPage(props: Async<{
           {/* Akta */}
           {canViewArchive && (
             <Card>
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-base font-bold text-foreground">Akta ({job.deeds.length})</h2>
                 {canEditArchive && job.deedDrafts.length === 0 && (
                   <Link href={`/archive/deed/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
@@ -703,10 +703,10 @@ export default async function JobDetailPage(props: Async<{
                 <ul className="divide-y divide-border text-sm">
                   {job.deeds.map((deed) => (
                     <li key={deed.id} className="flex items-center justify-between gap-3 py-2">
-                      <Link href={`/archive/deed/${deed.id}`} className="text-foreground hover:underline">
+                      <Link href={`/archive/deed/${deed.id}`} className="min-w-0 break-words text-foreground hover:underline">
                         {deed.deedNumber} — {deed.deedType}
                       </Link>
-                      <span className="text-xs text-muted-foreground">{formatDate(deed.deedDate)}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{formatDate(deed.deedDate)}</span>
                     </li>
                   ))}
                 </ul>
@@ -807,7 +807,7 @@ export default async function JobDetailPage(props: Async<{
           {/* Payment */}
           {canViewFinance && (
             <Card>
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-base font-bold text-foreground">Pembayaran</h2>
                 {canEditFinance && job.payments.length === 0 && (
                   <Link href={`/payments/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">

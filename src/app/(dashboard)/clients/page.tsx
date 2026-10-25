@@ -124,7 +124,7 @@ export default async function ClientsPage(props: Async<ClientsPageProps>) {
                     <td data-label="Tipe" className="px-4 py-3 text-muted-foreground">{c.clientType ?? "-"}</td>
                     <td data-label="Kontak" className="px-4 py-3 text-muted-foreground">
                       <p>{c.phone ?? "-"}</p>
-                      <p className="text-xs">{c.email ?? ""}</p>
+                      <p className="break-all text-xs">{c.email ?? ""}</p>
                     </td>
                     <td data-label="Kota" className="px-4 py-3 text-muted-foreground">{c.city ?? "-"}</td>
                     <td data-label="Pekerjaan" className="px-4 py-3 text-muted-foreground">{c._count.jobs}</td>

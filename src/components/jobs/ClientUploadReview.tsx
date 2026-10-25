@@ -38,7 +38,7 @@ export function ClientUploadReview({
           <span className="text-muted-foreground">
             {" "}
             · {canViewDocuments ? (
-              <Link href={`/documents/${item.document.id}`} className="text-primary hover:underline">
+              <Link href={`/documents/${item.document.id}`} className="break-all text-primary hover:underline">
                 {item.document.fileName}
               </Link>
             ) : (
@@ -76,7 +76,7 @@ export function ClientUploadReview({
               required
               minLength={3}
               placeholder="Alasan perbaikan (ditampilkan ke klien)"
-              className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <button
               type="submit"

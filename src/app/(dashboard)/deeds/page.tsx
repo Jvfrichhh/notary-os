@@ -217,7 +217,7 @@ export default async function DeedsPage() {
                     {d.job.jobNumber} · {d.job.client.fullName} · diperbarui {formatDateTime(d.updatedAt)}
                   </p>
                 </div>
-                <span className="flex items-center gap-3 text-xs">
+                <span className="flex flex-wrap items-center gap-3 text-xs">
                   <a href={`/api/deeds/${d.id}/minuta`} className="text-foreground hover:underline">
                     {variantLabels(getDeedTemplate(d.templateKey)).minuta}
                   </a>

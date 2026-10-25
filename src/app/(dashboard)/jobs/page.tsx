@@ -138,7 +138,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
           {JOB_STATUSES.map((status) => {
             const columnJobs = jobs.filter((j) => j.status === status);
             return (
-              <div key={status} className="w-72 flex-shrink-0">
+              <div key={status} className="w-72 max-w-[85vw] flex-shrink-0">
                 <div className="mb-2 flex items-center justify-between px-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {formatStatusLabel(status)}

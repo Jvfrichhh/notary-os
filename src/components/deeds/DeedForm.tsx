@@ -156,7 +156,7 @@ function Field({ def, value, onChange, stretch }: { def: FieldDef; value: unknow
         </div>
         {items.map((item, i) => (
           <div key={i} className="rounded-md border border-border p-3">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-foreground">
                 {def.itemLabel} {i + 1}
               </p>
@@ -313,20 +313,20 @@ export function DeedForm({
   return (
     <div className="space-y-6">
       {sections.map((s) => (
-        <fieldset key={s.title} disabled={!canEdit} className="space-y-3 rounded-lg border border-border bg-background p-5 shadow-sm">
+        <fieldset key={s.title} disabled={!canEdit} className="min-w-0 space-y-3 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
           <legend className="px-1 text-sm font-semibold text-foreground">{s.title}</legend>
           {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
           <FieldGrid fields={s.fields} data={data} onChange={set} />
         </fieldset>
       ))}
 
-      <div className="sticky bottom-0 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background/95 p-3 shadow-sm backdrop-blur">
+      <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-2 rounded-lg border border-border bg-background/95 p-2 shadow-sm backdrop-blur sm:flex sm:flex-wrap sm:items-center sm:p-3">
         {canEdit && (
           <button
             type="button"
             onClick={() => save()}
             disabled={pending}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             <Save className="h-4 w-4" /> {pending ? "Menyimpan..." : "Simpan"}
           </button>
@@ -336,7 +336,7 @@ export function DeedForm({
             type="button"
             onClick={saveAndSubmit}
             disabled={pending}
-            className="inline-flex items-center gap-1.5 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
           >
             <Send className="h-4 w-4" /> Simpan & Ajukan ke Notaris
           </button>
@@ -345,19 +345,19 @@ export function DeedForm({
           type="button"
           onClick={() => download("minuta")}
           disabled={pending}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
         >
-          <Download className="h-4 w-4" /> Unduh {labels.minuta} (.docx)
+          <Download className="h-4 w-4" /> Unduh {labels.minuta}<span className="hidden sm:inline"> (.docx)</span>
         </button>
         <button
           type="button"
           onClick={() => download("salinan")}
           disabled={pending}
-          className="inline-flex items-center gap-1.5 rounded-md border border-status-overdue/50 px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10 disabled:opacity-60"
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-status-overdue/50 px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10 disabled:opacity-60"
         >
-          <Download className="h-4 w-4" /> Unduh {labels.salinan} (.docx)
+          <Download className="h-4 w-4" /> Unduh {labels.salinan}<span className="hidden sm:inline"> (.docx)</span>
         </button>
-        <span className="text-xs text-muted-foreground">{dirty ? "Ada perubahan belum disimpan" : status}</span>
+        <span className="col-span-2 text-center text-xs text-muted-foreground sm:text-left">{dirty ? "Ada perubahan belum disimpan" : status}</span>
       </div>
     </div>
   );

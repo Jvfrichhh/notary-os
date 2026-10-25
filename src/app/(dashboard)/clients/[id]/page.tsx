@@ -16,9 +16,9 @@ import { unwrapProps, type Async } from "@/lib/pageProps";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm text-foreground">{value?.trim() ? value : "-"}</p>
+      <p className="break-words text-sm text-foreground">{value?.trim() ? value : "-"}</p>
     </div>
   );
 }
@@ -70,14 +70,14 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{client.clientNumber}</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{client.fullName}</h1>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{client.fullName}</h1>
           {client.status === "ARCHIVED" && (
             <span className="mt-1 inline-block rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">
               Diarsipkan
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {canEdit && client.status === "ACTIVE" && (
             <Link
               href={`/clients/${client.id}/edit`}
@@ -137,7 +137,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
               ? `Persetujuan data pribadi (UU PDP) dicatat ${formatDateTime(client.dataConsentAt)}${consentBy ? ` oleh ${consentBy}` : ""}.`
               : "Persetujuan data pribadi (UU PDP) belum dicatat."}
           </span>
-          <span className="flex items-center gap-3">
+          <span className="flex flex-wrap items-center gap-3">
             <a href={`/api/clients/${client.id}/consent-form`} className="text-xs font-medium text-primary hover:underline">
               Unduh formulir persetujuan (Word)
             </a>
@@ -186,7 +186,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
 
       {canViewDocuments && (
         <Card>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-bold text-foreground">Dokumen Terkait</h2>
             {canUploadDocuments && (
               <Link href={`/documents/new?clientId=${client.id}`} className="text-xs font-medium text-primary hover:underline">
@@ -199,9 +199,9 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
           ) : (
             <div className="divide-y divide-border">
               {client.documents.map((doc) => (
-                <Link key={doc.id} href={`/documents/${doc.id}`} className="flex items-center justify-between py-2.5 text-sm hover:bg-muted/50">
-                  <span className="font-medium text-foreground">{doc.fileName}</span>
-                  <span className="text-xs text-muted-foreground">{formatStatusLabel(doc.category)}</span>
+                <Link key={doc.id} href={`/documents/${doc.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:bg-muted/50">
+                  <span className="min-w-0 break-all font-medium text-foreground">{doc.fileName}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{formatStatusLabel(doc.category)}</span>
                 </Link>
               ))}
             </div>

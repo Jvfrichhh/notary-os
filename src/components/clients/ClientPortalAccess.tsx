@@ -40,7 +40,7 @@ function TemporaryPasswordBox({ state }: { state: PortalAccountActionState }) {
     <div className="mt-3 rounded-md border border-status-due-today/40 bg-status-due-today/5 p-3 text-sm">
       <p className="text-foreground">{state.success}</p>
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <code className="rounded bg-background px-2 py-1 font-mono text-base tracking-wider text-foreground">
+        <code className="break-all rounded bg-background px-2 py-1 font-mono text-base tracking-wider text-foreground">
           {state.temporaryPassword}
         </code>
         <button
@@ -101,7 +101,7 @@ function AccountRow({ account, canManage }: { account: Account; canManage: boole
     <li className="py-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="font-medium text-foreground">
+          <p className="break-all font-medium text-foreground">
             {account.email}
             {!account.isActive && (
               <span className="ml-2 rounded-full bg-status-archived/10 px-2 py-0.5 text-[11px] font-medium text-status-archived">
@@ -120,7 +120,7 @@ function AccountRow({ account, canManage }: { account: Account; canManage: boole
           </p>
         </div>
         {canManage && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <form action={resetAction}>
               <Pending className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">
                 <KeyRound className="h-3.5 w-3.5" /> Reset password

@@ -48,7 +48,7 @@ export function FinalizeDeedForm({
   };
 
   return (
-    <form action={action} className="space-y-4 rounded-lg border border-primary/40 bg-primary/5 p-5">
+    <form action={action} className="space-y-4 rounded-lg border border-primary/40 bg-primary/5 p-4 sm:p-5">
       <div>
         <h2 className="text-base font-bold text-foreground">Sahkan & Daftarkan</h2>
         <p className="text-xs text-muted-foreground">
@@ -58,7 +58,7 @@ export function FinalizeDeedForm({
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-3">
-        <label className="w-32">
+        <label className="w-28 sm:w-32">
           <span className="mb-1 block text-xs text-muted-foreground">{ppat ? "Nomor akta PPAT" : "Nomor akta"}</span>
           <input
             name="nomor"
@@ -70,7 +70,7 @@ export function FinalizeDeedForm({
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           />
         </label>
-        <label className="w-48">
+        <label className="min-w-0 flex-1 sm:w-48 sm:flex-none">
           <span className="mb-1 block text-xs text-muted-foreground">Tanggal akta</span>
           <input
             name="tanggal"

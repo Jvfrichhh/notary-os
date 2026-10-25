@@ -90,7 +90,7 @@ export function DerivativeForm({ action, label, deeds, documents, lockedDeed, ca
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SubmitButton label={label} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal

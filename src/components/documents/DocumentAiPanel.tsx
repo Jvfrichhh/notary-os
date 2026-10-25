@@ -159,7 +159,7 @@ export function DocumentAiPanel({
               {(Object.keys(analysis.extractedFields) as (keyof ExtractedFields)[]).map((k) => (
                 <div key={k} className="flex gap-2">
                   <dt className="w-24 shrink-0 text-muted-foreground">{FIELD_LABEL[k] ?? k}</dt>
-                  <dd className="text-foreground">
+                  <dd className="min-w-0 break-words text-foreground">
                     {analysis.extractedFields[k]}
                     {analysis.clientMatch && k in analysis.clientMatch && (
                       <span className="ml-2">
@@ -183,7 +183,7 @@ export function DocumentAiPanel({
                   return (
                     <label key={f} className="flex items-start gap-2">
                       <input type="checkbox" name="field" value={f} defaultChecked={!current} disabled={same} className="mt-0.5" />
-                      <span>
+                      <span className="min-w-0 break-words">
                         <span className="text-foreground">{CLIENT_FIELD_LABEL[f]}:</span> {proposed}
                         {same ? (
                           <span className="ml-1 text-muted-foreground">(sudah sama)</span>
@@ -197,7 +197,7 @@ export function DocumentAiPanel({
                   );
                 })}
               </div>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Pending className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">
                   Terapkan
                 </Pending>

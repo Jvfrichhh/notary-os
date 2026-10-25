@@ -38,7 +38,7 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Minuta</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Akta {minuta.deed.deedNumber}</h1>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">Akta {minuta.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {minuta.deed.deedType} · {formatDate(minuta.deed.deedDate)}
           </p>
@@ -123,7 +123,7 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
               <dt className="text-xs text-muted-foreground">File</dt>
               <dd>
                 {minuta.document ? (
-                  <a href={`/api/documents/${minuta.document.id}/download`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                  <a href={`/api/documents/${minuta.document.id}/download`} target="_blank" rel="noreferrer" className="break-all text-primary hover:underline">
                     {minuta.document.fileName}
                   </a>
                 ) : (

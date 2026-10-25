@@ -19,7 +19,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm text-foreground">{value?.trim() ? value : "-"}</p>
+      <p className="break-words text-sm text-foreground">{value?.trim() ? value : "-"}</p>
     </div>
   );
 }
@@ -69,8 +69,8 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-medium text-muted-foreground">{formatStatusLabel(document.category)}</p>
           <h1 className="break-all text-xl font-semibold text-foreground">{document.fileName}</h1>
           {document.status === "ARCHIVED" && (
@@ -79,7 +79,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
             </span>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <a
             href={`/api/documents/${document.id}/download`}
             target="_blank"
@@ -183,7 +183,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
         <div className="divide-y divide-border">
           {versions.map((v) => (
             <div key={v.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-              <div>
+              <div className="min-w-0 break-words">
                 <p className="font-medium text-foreground">
                   v{v.versionNumber}
                   {v.isCurrent && (
@@ -201,7 +201,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
                 href={`/api/documents/${document.id}/download?version=${v.versionNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-medium text-primary hover:underline"
+                className="shrink-0 py-2 text-xs font-medium text-primary hover:underline"
               >
                 Buka
               </a>

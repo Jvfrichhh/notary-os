@@ -21,11 +21,11 @@ export function VersionUploadForm({ documentId, accept }: { documentId: string; 
       <p className="text-sm font-medium text-foreground">Unggah Versi Baru</p>
       <input type="file" name="file" required accept={accept} className={inputCls} />
       <input type="text" name="notes" placeholder="Catatan versi (opsional)" className={inputCls} />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={busy}
-          className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-60"
+          className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-60"
         >
           {uploading ? "Mengunggah..." : busy ? "Menyimpan..." : "Upload sebagai Versi Baru"}
         </button>

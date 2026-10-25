@@ -139,7 +139,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
         </select>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SubmitButton />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal

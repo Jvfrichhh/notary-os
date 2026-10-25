@@ -36,7 +36,7 @@ export default async function PpatRegisterPage(props: Async<{ searchParams: { ye
             Nomor akta PPAT berurut per tahun, terpisah dari repertorium notaris. Laporan bulanannya ada di menu Laporan Bulanan.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <form className="flex items-center gap-2">
             <select name="year" defaultValue={String(year)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
               {yearOptions.map((y) => (
@@ -88,8 +88,10 @@ export default async function PpatRegisterPage(props: Async<{ searchParams: { ye
                       <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(d.deedDate)}</td>
                       <td data-label="Perbuatan Hukum" className="px-4 py-3">{d.deedType}</td>
                       <td data-label="Para Pihak" className="px-4 py-3 text-xs">
-                        <p>{d.partyFrom}</p>
-                        <p className="text-muted-foreground">→ {d.partyTo}</p>
+                        <div className="min-w-0">
+                          <p>{d.partyFrom}</p>
+                          <p className="text-muted-foreground">→ {d.partyTo}</p>
+                        </div>
                       </td>
                       <td data-label="Objek" className="px-4 py-3 text-xs text-muted-foreground">
                         {[d.rightType, d.location, d.landArea ? `LT ${d.landArea} m²` : ""].filter(Boolean).join(" · ") || "-"}

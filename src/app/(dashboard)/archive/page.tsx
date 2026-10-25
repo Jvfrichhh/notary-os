@@ -103,7 +103,7 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
         )}
       </div>
 
-      <div className="flex w-fit gap-1 rounded-md bg-muted p-1 text-sm">
+      <div className="flex w-fit max-w-full gap-1 overflow-x-auto whitespace-nowrap rounded-md bg-muted p-1 text-sm">
         {TABS.map((t) => (
           <Link
             key={t.key}

@@ -100,7 +100,7 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
         )}
       </div>
 
-      <div className="flex w-fit gap-1 rounded-md bg-muted p-1 text-sm">
+      <div className="flex w-fit max-w-full gap-1 overflow-x-auto whitespace-nowrap rounded-md bg-muted p-1 text-sm">
         {TABS.map((t) => (
           <Link
             key={t.key}
@@ -188,15 +188,15 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
                     <Link
                       key={entry.id}
                       href={`/notary-record/${entry.id}`}
-                      className="flex items-center justify-between px-4 py-3 text-sm hover:bg-muted/50"
+                      className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/50"
                     >
-                      <div>
+                      <div className="min-w-0 break-words">
                         <p className="font-medium text-foreground">{entry.appearerName}</p>
                         <p className="text-xs text-muted-foreground">
                           {entry.deedType} · {entry.deed.deedNumber}
                         </p>
                       </div>
-                      <span className="text-xs text-muted-foreground">{formatDate(entry.deedDate)}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{formatDate(entry.deedDate)}</span>
                     </Link>
                   ))}
                 </div>

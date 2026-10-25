@@ -33,12 +33,12 @@ export default async function KutipanDetailPage(props: Async<{ params: { id: str
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Kutipan</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Akta {record.deed.deedNumber}</h1>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">Akta {record.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {record.deed.deedType} · {formatDate(record.deed.deedDate)}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(record.status)}</span>
           {record.recordStatus === "ARCHIVED" && (
             <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">Diarsipkan</span>
@@ -77,7 +77,7 @@ export default async function KutipanDetailPage(props: Async<{ params: { id: str
             </button>
           </form>
         ) : record.document ? (
-          <a href={`/api/documents/${record.document.id}/download`} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+          <a href={`/api/documents/${record.document.id}/download`} target="_blank" rel="noreferrer" className="break-all text-sm text-primary hover:underline">
             {record.document.fileName}
           </a>
         ) : (

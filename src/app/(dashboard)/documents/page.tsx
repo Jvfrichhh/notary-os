@@ -286,13 +286,13 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
         {header}
         <Card className="!p-0">
           <div className="flex flex-col gap-3 border-b border-border p-4">
-            <nav className="flex items-center gap-1 text-sm">
+            <nav className="flex flex-wrap items-center gap-1 text-sm">
               <Link href={href({ clientId: undefined, q: undefined, category: undefined, page: undefined })} className="text-muted-foreground hover:text-foreground">
                 Semua folder
               </Link>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                <FolderOpen className="h-4 w-4 text-amber-500" />
+              <span className="flex min-w-0 items-center gap-1.5 break-words font-medium text-foreground">
+                <FolderOpen className="h-4 w-4 shrink-0 text-amber-500" />
                 {client ? `${client.fullName} (${client.clientNumber})` : "Tanpa klien"}
               </span>
               {client && (
@@ -340,7 +340,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
             <div className="divide-y divide-border">
               {ordered.map((g) => (
                 <section key={g.jobId ?? "_umum"}>
-                  <div className="flex items-center justify-between bg-muted/40 px-4 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 bg-muted/40 px-4 py-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <Folder className="h-4 w-4 shrink-0 text-amber-500" />
                       <span className="truncate text-sm font-medium text-foreground">{g.title}</span>
@@ -445,7 +445,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3 text-sm text-muted-foreground">
             <span>
               Halaman {page} dari {totalPages} ({total} dokumen)
             </span>
@@ -503,18 +503,20 @@ function DocTable({ docs, showClient }: { docs: DocRow[]; showClient: boolean })
                   <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="break-all">{doc.fileName}</span>
                 </Link>
-                {doc.description && <p className="ml-6 max-w-xs truncate text-xs text-muted-foreground">{doc.description}</p>}
+                {doc.description && <p className="ml-6 max-w-[16rem] truncate sm:max-w-xs text-xs text-muted-foreground">{doc.description}</p>}
               </td>
               <td data-label="Kategori" className="px-4 py-3 text-muted-foreground">{formatStatusLabel(doc.category)}</td>
               {showClient && (
                 <td data-label="Klien / Pekerjaan" className="px-4 py-3 text-muted-foreground">
-                  {doc.client && (
-                    <Link href={`/documents?clientId=${doc.client.id}`} className="hover:underline">
-                      {doc.client.fullName}
-                    </Link>
-                  )}
-                  {doc.job && <p className="text-xs">{doc.job.jobNumber}</p>}
-                  {!doc.client && !doc.job && "-"}
+                  <div className="min-w-0">
+                    {doc.client && (
+                      <Link href={`/documents?clientId=${doc.client.id}`} className="hover:underline">
+                        {doc.client.fullName}
+                      </Link>
+                    )}
+                    {doc.job && <p className="text-xs">{doc.job.jobNumber}</p>}
+                    {!doc.client && !doc.job && "-"}
+                  </div>
                 </td>
               )}
               <td data-label="Ukuran" className="px-4 py-3 text-muted-foreground">{formatFileSize(doc.fileSize)}</td>

@@ -32,7 +32,7 @@ export default async function SalinanDetailPage(props: Async<{ params: { id: str
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Salinan</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Akta {salinan.deed.deedNumber}</h1>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">Akta {salinan.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {salinan.deed.deedType} · {formatDate(salinan.deed.deedDate)}
           </p>
@@ -73,7 +73,7 @@ export default async function SalinanDetailPage(props: Async<{ params: { id: str
             </button>
           </form>
         ) : salinan.document ? (
-          <a href={`/api/documents/${salinan.document.id}/download`} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline">
+          <a href={`/api/documents/${salinan.document.id}/download`} target="_blank" rel="noreferrer" className="break-all text-sm text-primary hover:underline">
             {salinan.document.fileName}
           </a>
         ) : (

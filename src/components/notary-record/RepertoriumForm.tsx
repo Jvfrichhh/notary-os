@@ -115,7 +115,7 @@ export function RepertoriumForm({ action, deeds, lockedDeedId, cancelHref }: Rep
         <textarea name="description" rows={3} className={fieldClass} />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SubmitButton />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal

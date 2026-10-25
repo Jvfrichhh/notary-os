@@ -45,7 +45,7 @@ function SubmitButton({ busy, uploading }: { busy: boolean; uploading: boolean }
     <button
       type="submit"
       disabled={busy}
-      className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+      className="min-h-[40px] rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
     >
       {uploading ? "Mengunggah..." : busy ? "Menyimpan..." : "Upload Dokumen"}
     </button>
@@ -81,7 +81,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
           <label className="mb-1 block text-sm font-medium text-foreground">Klien</label>
           {lockedClient ? (
             <>
-              <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+              <p className="break-words rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
                 {lockedClient.label}
               </p>
               <input type="hidden" name="clientId" value={lockedClient.id} />
@@ -142,7 +142,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
         <textarea id="description" name="description" rows={3} className={fieldClass} />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SubmitButton busy={busy} uploading={uploading} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal

@@ -52,12 +52,12 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Akta</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{deed.deedNumber}</h1>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {deed.deedType} · {formatDate(deed.deedDate)}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
             {formatStatusLabel(deed.status)}
           </span>
@@ -83,7 +83,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
           {/* Info */}
           <Card>
             <h2 className="mb-3 text-base font-bold text-foreground">Informasi Akta</h2>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-3 break-words text-sm sm:grid-cols-3">
               <div>
                 <dt className="text-xs text-muted-foreground">Klien</dt>
                 <dd>
@@ -113,7 +113,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
 
           {/* Repertorium -- one-to-one dengan Akta */}
           <Card>
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-bold text-foreground">Repertorium</h2>
               {canEdit && !deed.repertorium && (
                 <Link href={`/notary-record/new?deedId=${deed.id}`} className="text-xs font-medium text-primary hover:underline">
@@ -123,10 +123,10 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             </div>
             {deed.repertorium ? (
               <div className="flex items-center justify-between gap-3 py-1 text-sm">
-                <Link href={`/notary-record/${deed.repertorium.id}`} className="text-foreground hover:underline">
+                <Link href={`/notary-record/${deed.repertorium.id}`} className="min-w-0 break-words text-foreground hover:underline">
                   {deed.repertorium.year}/{String(deed.repertorium.sequenceNumber).padStart(4, "0")} — {deed.repertorium.appearerName}
                 </Link>
-                <span className="text-xs text-muted-foreground">{formatDate(deed.repertorium.deedDate)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{formatDate(deed.repertorium.deedDate)}</span>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Akta ini belum tercatat di Repertorium.</p>
@@ -266,7 +266,7 @@ function ArchiveSection({
 }) {
   return (
     <Card>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-bold text-foreground">
           {title} ({count})
         </h2>

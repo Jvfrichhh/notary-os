@@ -166,7 +166,7 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
                     {r.voidedAt ? ` · DIBATALKAN ${formatDateTime(r.voidedAt)}: ${r.voidReason ?? ""}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <a href={`/api/billing/kuitansi/${r.id}`} className="text-xs font-medium text-primary hover:underline">
                     Unduh kuitansi
                   </a>
@@ -174,7 +174,7 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
                     <details className="text-xs">
                       <summary className="cursor-pointer text-status-overdue">Batalkan</summary>
                       <form action={cancelReceipt.bind(null, r.id)} className="mt-1 flex gap-1">
-                        <input name="reason" required minLength={3} placeholder="Alasan" className="rounded border border-border px-2 py-1" />
+                        <input name="reason" required minLength={3} placeholder="Alasan" className="min-w-0 flex-1 rounded border border-border px-2 py-1" />
                         <ConfirmButton message="Batalkan kuitansi ini? Total dibayar akan dikurangi." className="rounded border border-status-overdue/50 px-2 py-1 text-status-overdue">
                           OK
                         </ConfirmButton>

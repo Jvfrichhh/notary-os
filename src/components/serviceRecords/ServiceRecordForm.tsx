@@ -174,7 +174,7 @@ export function ServiceRecordForm({
         <textarea name="notes" rows={3} defaultValue={initial?.notes ?? ""} className={fieldClass} />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SubmitButton label={initial ? "Simpan Perubahan" : `Simpan ${moduleLabel}`} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           Batal

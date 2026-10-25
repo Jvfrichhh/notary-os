@@ -33,7 +33,7 @@ export default async function WasiatDetailPage(props: Async<{ params: { id: stri
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{record.deedNumber ?? "Belum ada nomor akta"}</h1>
           <p className="text-sm text-muted-foreground">{formatDate(record.date)}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(record.status)}</span>
           {record.recordStatus === "ARCHIVED" && (
             <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">Diarsipkan</span>
@@ -98,7 +98,7 @@ export default async function WasiatDetailPage(props: Async<{ params: { id: stri
       </Card>
 
       {canEdit && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href={`/wasiat/${record.id}/edit`} className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
             Edit
           </Link>

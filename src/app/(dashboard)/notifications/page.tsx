@@ -78,9 +78,9 @@ export default async function NotificationsPage(props: Async<PageProps>) {
               const href = notificationHref(n.relatedEntityType, n.relatedEntityId);
               return (
                 <div key={n.id} className={`flex items-start justify-between gap-3 px-4 py-3 ${!n.isRead ? "bg-primary/5" : ""}`}>
-                  <div className="flex items-start gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                     {!n.isRead && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                    <div>
+                    <div className="min-w-0 break-words">
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {TYPE_LABEL[n.type] ?? n.type}
                       </p>

@@ -191,7 +191,7 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
       })}
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-bold text-foreground">Dokumen yang Diperlukan</h2>
           {checklistItems.length > 0 && (
             <span className="text-xs text-muted-foreground">
@@ -354,8 +354,8 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-right font-medium text-foreground">{value}</dd>
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 break-words text-right font-medium text-foreground">{value}</dd>
     </div>
   );
 }

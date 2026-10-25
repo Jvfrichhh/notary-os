@@ -42,7 +42,7 @@ export default async function PortalNotificationsPage() {
               const href = n.relatedEntityType === "Job" && n.relatedEntityId ? `/portal/jobs/${n.relatedEntityId}` : null;
               return (
                 <li key={n.id} className="flex items-start justify-between gap-3 py-3 text-sm">
-                  <div className="min-w-0">
+                  <div className="min-w-0 break-words">
                     {href ? (
                       // Membuka notifikasi = otomatis ditandai dibaca, lalu ke halaman pekerjaan.
                       <form action={openClientNotification.bind(null, n.id)}>

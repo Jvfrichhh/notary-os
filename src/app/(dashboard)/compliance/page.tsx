@@ -72,7 +72,7 @@ export default async function CompliancePage(props: Async<{ searchParams: { mont
             Laporan wajib dibuat otomatis dari Repertorium, Legalisasi, Waarmerking, Wasiat, dan Buku Akta PPAT. Unduh, tanda tangani, kirim, lalu tandai terkirim.
           </p>
         </div>
-        <form className="flex items-end gap-2">
+        <form className="flex flex-wrap items-end gap-2">
           <label>
             <span className="mb-1 block text-xs text-muted-foreground">Bulan</span>
             <input type="month" name="month" defaultValue={ym} className={inputCls} />

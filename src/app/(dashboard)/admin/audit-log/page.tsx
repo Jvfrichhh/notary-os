@@ -157,7 +157,7 @@ export default async function AdminAuditLogPage(props: Async<PageProps>) {
       </Card>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           {page > 1 ? (
             <Link href={qs({ page: page - 1 })} className="text-primary hover:underline">
               ← Sebelumnya

@@ -119,6 +119,7 @@ model RolePermission {
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
+  @@index([permissionId])
 }
 
 model User {
@@ -153,6 +154,7 @@ model User {
   notifications     Notification[]
 
   @@map("users")
+  @@index([roleId])
 }
 
 // ----------------------------------------------------------------------------
@@ -263,6 +265,8 @@ model Visit {
 
   @@index([visitDate])
   @@map("visits")
+  @@index([clientId])
+  @@index([staffId])
 }
 
 // ----------------------------------------------------------------------------
@@ -295,6 +299,7 @@ model ServiceTemplate {
   createdAt               DateTime    @default(now())
 
   @@map("service_templates")
+  @@index([serviceTypeId])
 }
 
 // ----------------------------------------------------------------------------
@@ -348,6 +353,13 @@ model Job {
   @@index([status])
   @@index([deadline])
   @@map("jobs")
+  @@index([assistantId])
+  @@index([clientId])
+  @@index([notaryId])
+  @@index([picId])
+  @@index([reviewerId])
+  @@index([serviceTypeId])
+  @@index([visitId])
 }
 
 model JobTask {
@@ -364,6 +376,8 @@ model JobTask {
   createdAt   DateTime   @default(now())
 
   @@map("job_tasks")
+  @@index([assignedTo])
+  @@index([jobId])
 }
 
 model JobChecklist {
@@ -375,6 +389,7 @@ model JobChecklist {
   createdAt  DateTime         @default(now())
 
   @@map("job_checklists")
+  @@index([jobId])
 }
 
 model ChecklistItem {
@@ -395,6 +410,8 @@ model ChecklistItem {
   reviewedById String? // users.id staff yang memeriksa (tanpa relasi agar aditif minimal)
 
   @@map("checklist_items")
+  @@index([attachedDocumentId])
+  @@index([checklistId])
 }
 
 // ----------------------------------------------------------------------------
@@ -437,6 +454,8 @@ model Document {
   @@index([category])
   @@index([status])
   @@map("documents")
+  @@index([uploadedBy])
+  @@index([uploadedByClientAccountId])
 }
 
 /// Hasil analisis AI atas satu dokumen (ekstraksi data + pra-pemeriksaan).
@@ -512,6 +531,9 @@ model Deed {
   deedDraft    DeedDraft?
 
   @@map("deeds")
+  @@index([clientId])
+  @@index([jobId])
+  @@index([notaryId])
 }
 
 model Minuta {
@@ -529,6 +551,10 @@ model Minuta {
   createdAt      DateTime     @default(now())
 
   @@map("minuta")
+  @@index([deedId])
+  @@index([documentId])
+  @@index([jobId])
+  @@index([repertoriumId])
 }
 
 model Salinan {
@@ -544,6 +570,9 @@ model Salinan {
   createdAt    DateTime     @default(now())
 
   @@map("salinan")
+  @@index([deedId])
+  @@index([documentId])
+  @@index([jobId])
 }
 
 model Grosse {
@@ -559,6 +588,9 @@ model Grosse {
   createdAt    DateTime            @default(now())
 
   @@map("grosse")
+  @@index([deedId])
+  @@index([documentId])
+  @@index([jobId])
 }
 
 model Kutipan {
@@ -574,6 +606,9 @@ model Kutipan {
   createdAt    DateTime            @default(now())
 
   @@map("kutipan")
+  @@index([deedId])
+  @@index([documentId])
+  @@index([jobId])
 }
 
 model Repertorium {
@@ -600,6 +635,8 @@ model Repertorium {
   @@index([appearerName])
   @@index([deedType])
   @@map("repertorium")
+  @@index([clientId])
+  @@index([jobId])
 }
 
 // NOTE Phase 4: Klapper TIDAK dibuat sebagai tabel.
@@ -623,6 +660,9 @@ model Legalisasi {
   createdAt   DateTime            @default(now())
 
   @@map("legalisasi")
+  @@index([clientId])
+  @@index([documentId])
+  @@index([picId])
 }
 
 model Waarmerking {
@@ -642,6 +682,9 @@ model Waarmerking {
   createdAt   DateTime            @default(now())
 
   @@map("waarmerking")
+  @@index([clientId])
+  @@index([documentId])
+  @@index([picId])
 }
 
 model Wasiat {
@@ -662,6 +705,9 @@ model Wasiat {
   createdAt         DateTime     @default(now())
 
   @@map("wasiat")
+  @@index([clientId])
+  @@index([evidenceDocumentId])
+  @@index([jobId])
 }
 
 // ----------------------------------------------------------------------------
@@ -690,6 +736,8 @@ model Payment {
   receipts PaymentReceipt[]
 
   @@map("payments")
+  @@index([clientId])
+  @@index([jobId])
 }
 
 /// Satu kali pembayaran masuk (DP / angsuran / pelunasan) + kuitansi bernomor.
@@ -712,6 +760,7 @@ model PaymentReceipt {
 
   @@index([paymentId])
   @@map("payment_receipts")
+  @@index([receivedById])
 }
 
 // ----------------------------------------------------------------------------
@@ -732,6 +781,8 @@ model Appointment {
   createdAt DateTime @default(now())
 
   @@map("appointments")
+  @@index([clientId])
+  @@index([jobId])
 }
 
 // ----------------------------------------------------------------------------
@@ -767,6 +818,7 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@map("audit_logs")
+  @@index([userId])
 }
 
 // Counter untuk generate jobNumber (JOB-YYYY-0001) secara concurrency-safe.
@@ -853,6 +905,8 @@ model PpatDeed {
   @@unique([year, sequence])
   @@index([deedDate])
   @@map("ppat_deeds")
+  @@index([clientId])
+  @@index([jobId])
 }
 
 /// Draft akta yang dibagikan ke portal klien untuk dibaca & disetujui.

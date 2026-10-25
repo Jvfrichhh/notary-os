@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/components/layout/ThemeToggle";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
+import { UpdateNotice } from "@/components/pwa/UpdateNotice";
 
 export const metadata: Metadata = {
   title: "Nexora — Sistem Manajemen Kantor Notaris",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <RegisterServiceWorker />
+        <UpdateNotice />
       </body>
     </html>
   );

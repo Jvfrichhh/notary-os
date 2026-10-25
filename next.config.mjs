@@ -21,6 +21,11 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Penanda versi build (untuk pemberitahuan "Versi baru tersedia"); ditanam
+  // saat build ke kode server & browser sekaligus.
+  env: {
+    APP_VERSION: (process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || "dev").slice(0, 40)
+  },
   experimental: {
     serverActions: { bodySizeLimit: "10mb" }
   },

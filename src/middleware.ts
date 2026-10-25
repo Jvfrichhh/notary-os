@@ -118,5 +118,5 @@ export async function middleware(req: NextRequest) {
 // portal bisa di-rewrite ke /portal/login; halaman login sendiri tidak butuh
 // token (ditangani di dalam: path /login & /portal/login lolos tanpa token).
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|brand/|sw.js|site.webmanifest).*)"]
+  matcher: ["/((?!api/auth|api/version|_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|brand/|sw.js|site.webmanifest).*)"]
 };

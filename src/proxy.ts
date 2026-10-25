@@ -20,7 +20,7 @@ import { DOMAIN_SPLIT_ENABLED, isPortalHost, isStaffHost, portalOrigin, staffOri
  *
  * Catatan: middleware berjalan di Edge, jadi tidak boleh memakai Prisma di sini.
  */
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const url = req.nextUrl;
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
   let pathname = url.pathname;

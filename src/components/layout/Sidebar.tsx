@@ -56,6 +56,22 @@ const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
   map: MapIcon
 };
 
+const OPEN_MENU_EVENT = "nexora:open-menu";
+
+/** Tombol garis tiga di bilah atas (HP/tablet); membuka laci menu Sidebar. */
+export function MobileMenuButton() {
+  return (
+    <button
+      type="button"
+      aria-label="Buka menu"
+      onClick={() => window.dispatchEvent(new Event(OPEN_MENU_EVENT))}
+      className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-muted lg:hidden"
+    >
+      <Menu className="h-5 w-5" />
+    </button>
+  );
+}
+
 interface SidebarProps {
   /**
    * Section menu yang SUDAH difilter sesuai permission user oleh layout
@@ -73,23 +89,30 @@ export function Sidebar({ sections }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
+  // Tombol menu ada di bilah atas (MobileMenuButton) dan mengirim event ini.
+  useEffect(() => {
+    const show = () => setOpen(true);
+    window.addEventListener(OPEN_MENU_EVENT, show);
+    return () => window.removeEventListener(OPEN_MENU_EVENT, show);
+  }, []);
+  // Kunci scroll halaman saat laci menu terbuka.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Buka menu"
-        onClick={() => setOpen(true)}
-        className="fixed left-3 top-3 z-30 rounded-md p-2 text-foreground hover:bg-muted lg:hidden"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
       <div className="hidden h-full lg:flex">
         <SidebarPanel sections={sections} pathname={pathname} />
       </div>
       {open && (
-        <div className="fixed inset-0 z-40 flex lg:hidden">
-          <div className="h-full shadow-xl">
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="h-full max-w-[85vw] shadow-xl">
             <SidebarPanel sections={sections} pathname={pathname} onClose={() => setOpen(false)} />
           </div>
           <button type="button" aria-label="Tutup menu" className="flex-1 bg-black/40" onClick={() => setOpen(false)} />

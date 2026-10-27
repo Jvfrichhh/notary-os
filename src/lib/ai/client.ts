@@ -135,13 +135,24 @@ export async function createMessage(input: CreateMessageInput): Promise<MessageR
  * Retry-After bila ada (dibatasi `maxWaitMs`) -- supaya satu gangguan sesaat
  * tidak langsung menggagalkan jawaban ke staf.
  */
-export async function createMessageWithRetry(input: CreateMessageInput, opts: { retries?: number; maxWaitMs?: number } = {}): Promise<MessageResponse> {
+export async function createMessageWithRetry(
+  input: CreateMessageInput,
+  opts: { retries?: number; maxWaitMs?: number; deadlineAt?: number } = {}
+): Promise<MessageResponse> {
   const retries = opts.retries ?? 2;
   const maxWait = opts.maxWaitMs ?? 8_000;
+  // Batas waktu mutlak (epoch ms) opsional: timeout tiap percobaan dan jeda ulang
+  // dipangkas agar total tidak melewati batas fungsi server (mis. maxDuration 60 dtk).
+  const remaining = () => (opts.deadlineAt ? opts.deadlineAt - Date.now() : Infinity);
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    if (remaining() < 3_000) {
+      if (lastErr) throw lastErr;
+      throw new AiError("Asisten kehabisan waktu. Coba persempit pertanyaannya atau ulangi sebentar lagi.");
+    }
     try {
-      return await createMessage(input);
+      const timeoutMs = Math.min(input.timeoutMs ?? 60_000, remaining());
+      return await createMessage({ ...input, timeoutMs });
     } catch (err) {
       lastErr = err;
       const e = err instanceof AiError ? err : null;
@@ -149,6 +160,7 @@ export async function createMessageWithRetry(input: CreateMessageInput, opts: { 
       if (!retryable || attempt === retries) throw err;
       const hinted = e?.retryAfterMs ?? 0;
       const wait = Math.min(maxWait, Math.max(1_500 * (attempt + 1), hinted));
+      if (remaining() - wait < 5_000) throw err;
       await new Promise((r) => setTimeout(r, wait));
     }
   }

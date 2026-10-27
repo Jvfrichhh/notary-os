@@ -14,6 +14,8 @@ const MAX_STEPS = 5;
 const MAX_HISTORY = 12; // pesan terakhir yang dikirim ulang (hemat token)
 /** Anggaran waktu total; lewat dari ini model diminta menjawab dengan data yang sudah ada. */
 const TIME_BUDGET_MS = 45_000;
+/** Batas keras seluruh giliran (di bawah maxDuration 60 dtk halaman /assistant) agar tidak timeout 504. */
+const HARD_LIMIT_MS = 54_000;
 
 export interface ChatTurn {
   role: "user" | "assistant";
@@ -83,7 +85,7 @@ export async function askAssistant(history: ChatTurn[], question: string, ctx: A
         timeoutMs: 40_000,
         thinking: "none"
       },
-      { retries: lastStep ? 1 : 2 }
+      { retries: lastStep ? 1 : 2, deadlineAt: started + HARD_LIMIT_MS }
     );
     inputTokens += res.usage?.input_tokens ?? 0;
     outputTokens += res.usage?.output_tokens ?? 0;

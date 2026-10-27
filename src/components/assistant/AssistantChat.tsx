@@ -58,7 +58,13 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
     setBubbles((prev) => [...prev, { role: "user", content: q }]);
     setInput("");
     startTransition(async () => {
-      const res = await askAssistantAction(history, q);
+      // Gangguan jaringan / server timeout melempar error dari server action:
+      // tampilkan sebagai gelembung error, jangan sampai halaman jatuh ke error boundary.
+      const res = await askAssistantAction(history, q).catch(() => ({
+        answer: undefined,
+        toolsUsed: undefined,
+        error: "Koneksi ke Asisten terputus atau terlalu lama. Coba kirim ulang pertanyaannya."
+      }));
       setBubbles((prev) => [
         ...prev,
         res.answer

@@ -23,7 +23,7 @@ export type FieldDef = (
     }
   | { kind: "select"; key: string; label: string; options: string[]; default?: string; help?: string; wide?: boolean }
   /** Identitas orang (komparisi). */
-  | { kind: "person"; key: string; label: string; help?: string; optional?: boolean }
+  | { kind: "person"; key: string; label: string; help?: string; optional?: boolean; default?: Person }
   /** Daftar berulang (mis. para pemberi kuasa, pemegang saham). */
   | { kind: "list"; key: string; label: string; itemLabel: string; min?: number; max?: number; fields: FieldDef[]; help?: string }
   /** Pilihan ganda (kotak centang); nilainya string[]. */
@@ -48,6 +48,7 @@ export interface SectionDef {
 export const PERSON_FIELDS: { key: keyof Person; label: string; placeholder?: string; kind?: "select" | "date"; options?: string[] }[] = [
   { key: "sapaan", label: "Sapaan", kind: "select", options: ["Tuan", "Nyonya", "Nona"] },
   { key: "nama", label: "Nama lengkap (sesuai KTP)" },
+  { key: "gelar", label: "Gelar (ditulis lengkap, mis. Sarjana Hukum)", placeholder: "kosongkan bila tidak ada" },
   { key: "tempatLahir", label: "Tempat lahir" },
   { key: "tanggalLahir", label: "Tanggal lahir", kind: "date" },
   { key: "pekerjaan", label: "Pekerjaan", placeholder: "mis. Karyawan Swasta" },
@@ -64,6 +65,8 @@ export const PERSON_FIELDS: { key: keyof Person; label: string; placeholder?: st
 export interface Person {
   sapaan?: string;
   nama?: string;
+  /** Gelar ditulis lengkap setelah nama, mis. "Sarjana Hukum, Magister Kenotariatan". */
+  gelar?: string;
   tempatLahir?: string;
   tanggalLahir?: string;
   pekerjaan?: string;
@@ -79,6 +82,41 @@ export interface Person {
 
 export type DeedData = Record<string, unknown>;
 
+/** Saksi tetap kantor (standar baku kantor Notaris Ari Yudani Aprianti). */
+export const SAKSI_TETAP: [Person, Person] = [
+  {
+    sapaan: "Tuan",
+    nama: "Deny Chandra",
+    gelar: "Sarjana Hukum",
+    tempatLahir: "Jakarta",
+    tanggalLahir: "1973-10-29",
+    pekerjaan: "Karyawan Swasta",
+    kewarganegaraan: "Indonesia",
+    alamat: "Cimanggu Kecil",
+    rt: "001",
+    rw: "007",
+    kelurahan: "Kelurahan Ciwaringin",
+    kecamatan: "Bogor Tengah",
+    kota: "Kota Bogor",
+    nik: "3271032910730007"
+  },
+  {
+    sapaan: "Tuan",
+    nama: "Komar Hidayat",
+    tempatLahir: "Sumedang",
+    tanggalLahir: "1980-06-06",
+    pekerjaan: "Karyawan Swasta",
+    kewarganegaraan: "Indonesia",
+    alamat: "Kampung Sukamulya Nomor 16",
+    rt: "001",
+    rw: "005",
+    kelurahan: "Kelurahan Sukasari",
+    kecamatan: "Bogor Timur",
+    kota: "Kota Bogor",
+    nik: "3211172704800006"
+  }
+];
+
 /** Bagian yang sama untuk semua akta: data akta & saksi. */
 export const COMMON_SECTIONS: SectionDef[] = [
   {
@@ -92,10 +130,10 @@ export const COMMON_SECTIONS: SectionDef[] = [
   },
   {
     title: "Saksi-saksi",
-    description: "Dua orang saksi yang hadir saat penandatanganan (biasanya karyawan kantor).",
+    description: "Dua orang saksi yang hadir saat penandatanganan. Terisi otomatis dengan saksi tetap kantor; ubah bila berbeda.",
     fields: [
-      { kind: "person", key: "saksi1", label: "Saksi pertama" },
-      { kind: "person", key: "saksi2", label: "Saksi kedua" }
+      { kind: "person", key: "saksi1", label: "Saksi pertama", default: SAKSI_TETAP[0] },
+      { kind: "person", key: "saksi2", label: "Saksi kedua", default: SAKSI_TETAP[1] }
     ]
   }
 ];

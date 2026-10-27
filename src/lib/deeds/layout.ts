@@ -1,11 +1,14 @@
 /**
- * Tata letak akta gaya mesin tik (lihat skill "akta-notaris-indonesia"):
- *  - setiap baris = satu paragraf; 50 huruf Courier per baris; sisa baris
- *    ditutup garis putus-putus sampai margin kanan;
- *  - garis tepi kiri menempel pada huruf pertama tiap baris (kolom berbeda
- *    untuk butir bernomor);
- *  - tepat 30 baris per halaman; garis datar pendek membuka & menutup tiap
- *    halaman; halaman terakhir ditutup tepat di bawah kalimat terakhir;
+ * Tata letak akta standar kantor (skill "akta-standar-kantor-ari-yudani",
+ * model PT Branjangan):
+ *  - setiap baris = satu paragraf; maks. 50 huruf Courier per baris; sisa
+ *    baris ditutup strip dari tab kanan ber-leader (bukan strip diketik),
+ *    sehingga bila diedit manual stripnya memanjang/memendek sendiri;
+ *  - garis tepi kiri menjorok mengikuti nomor/kata awal baris (baris nomor
+ *    memakai indent gantung, baris lanjutan menjorok ke awal teks);
+ *  - tepat 30 baris per halaman; garis datar pembuka/penutup halaman dipasang
+ *    di header (lihat docx.ts) sehingga tidak bergeser; halaman terakhir
+ *    ditutup garis tepat di bawah kalimat terakhir;
  *  - bila kalimat penutup + blok tanda tangan tidak muat, sisa halaman diisi
  *    garis penutup penuh dan keduanya pindah ke halaman berikutnya.
  *
@@ -35,9 +38,15 @@ export type Block =
 
 export interface Line {
   segs: Seg[];
-  /** Kolom (dalam huruf) tempat garis tepi & huruf pertama. */
+  /** Kolom (dalam huruf) awal teks = indent kiri paragraf (dan garis tepi untuk baris lanjutan). */
   col: number;
   border: boolean;
+  /** Indent gantung (huruf): baris pertama butir mulai di col - hanging (posisi nomor); garis tepi di sana. */
+  hanging?: number;
+  /** Sisa baris ditutup strip (tab kanan ber-leader). */
+  fill?: boolean;
+  /** Teks di tengah diapit strip kiri-kanan (judul, Pasal, DEMIKIAN AKTA INI). */
+  center?: boolean;
   /** Garis datar pendek di atas / bawah baris ini. */
   markTop?: boolean;
   markBottom?: boolean;
@@ -160,18 +169,8 @@ function segLen(segs: Seg[]): number {
   return segs.reduce((n, s) => n + s.text.length, 0);
 }
 
-/** Tutup sisa baris dengan garis putus-putus sampai lebar baris. */
-export function fillRight(segs: Seg[], width: number): Seg[] {
-  const rest = width - segLen(segs);
-  return rest > 0 ? [...segs, { text: DASH.repeat(rest) }] : segs;
-}
-
-function centered(text: string, bold: boolean, width: number): Seg[] {
-  const t = text.trim();
-  const rest = Math.max(0, width - t.length);
-  const left = Math.floor(rest / 2);
-  return [{ text: DASH.repeat(left) }, { text: t, bold }, { text: DASH.repeat(rest - left) }];
-}
+/** Panjang teks satu baris (untuk pengecekan). */
+export { segLen };
 
 // ---------------------------------------------------------------------------
 // Blok -> baris
@@ -192,7 +191,7 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
         for (const segs of wrapTokens(tokenize(l), LINE_WIDTH - 2, LINE_WIDTH - 2)) {
           const text = segs.map((s) => s.text).join("");
           // Nama akta tebal; baris "Nomor : ..." huruf biasa.
-          title.push({ segs: centered(text, !/^nomor\b/i.test(text.trim()), LINE_WIDTH), col: 0, border: false });
+          title.push({ segs: [{ text: text.trim(), bold: !/^nomor\b/i.test(text.trim()) }], col: 0, border: false, center: true, fill: true });
         }
       }
       continue;
@@ -201,9 +200,11 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
       // Baris tengah panjang (mis. nama PT) dipenggal; minimal 1 garis di kiri-kanan.
       wrapTokens(tokenize(b.text), LINE_WIDTH - 2, LINE_WIDTH - 2).forEach((segs, i) => {
         body.push({
-          segs: centered(segs.map((x) => x.text).join(""), b.bold ?? false, LINE_WIDTH),
+          segs: [{ text: segs.map((x) => x.text).join("").trim(), bold: b.bold ?? false }],
           col: 0,
           border: true,
+          center: true,
+          fill: true,
           paraStart: i === 0,
           keepNext: true
         });
@@ -215,7 +216,7 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
       // Tanda "-" pembuka alinea selalu huruf biasa, menempel pada kata pertama.
       if (!b.noDash && toks.length) toks.unshift({ text: DASH, bold: false }, { ...toks.shift()!, glue: true });
       wrapTokens(toks, LINE_WIDTH, LINE_WIDTH).forEach((segs, i) => {
-        body.push({ segs: fillRight(segs, LINE_WIDTH), col: 0, border: true, paraStart: i === 0, carryStart: i === 0 && !!b.carryStart });
+        body.push({ segs, col: 0, border: true, fill: true, paraStart: i === 0, carryStart: i === 0 && !!b.carryStart });
       });
       continue;
     }
@@ -227,26 +228,27 @@ export function blocksToLines(blocks: Block[]): { title: Line[]; body: Line[]; c
       if (!b.marker.trim()) {
         // Lanjutan butir tanpa nomor: seluruh baris di kolom teks, garis tepi menempel.
         wrapTokens(tokenize(b.text), LINE_WIDTH - textCol, LINE_WIDTH - textCol).forEach((segs, i) => {
-          body.push({ segs: fillRight(segs, LINE_WIDTH - textCol), col: textCol, border: true, paraStart: i === 0 });
+          body.push({ segs, col: textCol, border: true, fill: true, paraStart: i === 0 });
         });
         continue;
       }
       const wrapped = wrapTokens(tokenize(b.text), LINE_WIDTH - textCol, LINE_WIDTH - textCol);
       wrapped.forEach((segs, i) => {
-        if (i === 0) body.push({ segs: fillRight([{ text: marker }, ...segs], LINE_WIDTH - col), col, border: true, paraStart: true });
-        else body.push({ segs: fillRight(segs, LINE_WIDTH - textCol), col: textCol, border: true });
+        // Baris nomor: indent gantung (teks di textCol, nomor menggantung 3 huruf di kirinya).
+        if (i === 0) body.push({ segs: [{ text: marker }, ...segs], col: textCol, hanging: 3, border: true, fill: true, paraStart: true });
+        else body.push({ segs, col: textCol, border: true, fill: true });
       });
     }
   }
 
   // Judul selalu 4 baris; kekurangan diisi garis penuh.
-  while (title.length < 4) title.push({ segs: [{ text: DASH.repeat(LINE_WIDTH) }], col: 0, border: false });
+  while (title.length < 4) title.push({ segs: [], col: 0, border: false, fill: true });
   return { title: title.slice(0, Math.max(4, title.length)), body, closingIndex };
 }
 
 /** Baris garis penuh (pengisi sisa halaman). */
 function fullDashLine(): Line {
-  return { segs: [{ text: DASH.repeat(LINE_WIDTH) }], col: 0, border: true };
+  return { segs: [], col: 0, border: true, fill: true };
 }
 
 /**
@@ -269,13 +271,12 @@ export function paginate(
 
   const pushBody = (l: Line) => {
     if (lineOnPage === LINES_PER_PAGE) {
-      out[out.length - 1].markBottom = true;
       lineOnPage = 0;
       firstOfPage = true;
     }
     const line = { ...l };
     if (firstOfPage) {
-      line.markTop = true;
+      // Garis datar pembuka/penutup halaman dipasang di header (docx.ts); di sini cukup pindah halaman.
       if (out.length > 0 && lineOnPage === 0) line.pageBreakBefore = true;
       firstOfPage = false;
     }
@@ -334,6 +335,7 @@ export function paginate(
     while (lineOnPage < LINES_PER_PAGE) pushBody(fullDashLine());
     carried.forEach(pushBody);
   }
+  // Garis datar tepat di bawah kalimat terakhir akta.
   out[out.length - 1].markBottom = true;
 
   // Blok tanda tangan mengalir setelah badan akta; satu baris tanda tangan

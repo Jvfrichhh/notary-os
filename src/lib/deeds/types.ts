@@ -11,6 +11,10 @@ export interface DeedTemplate {
   build(data: DeedData, variant: "minuta" | "salinan"): Block[];
   /** Penghadap yang menandatangani (blok tanda tangan minuta). */
   signers(data: DeedData): Person[];
+  /** Label di atas tanda tangan tiap penghadap ("Penghadap,", "Pihak Pertama,", ...). Bawaan: "Penghadap,". */
+  signerLabels?(data: DeedData): string[];
+  /** Obyek akta untuk lembar tambahan sidik jari (mis. nama PT, letak tanah). */
+  subject?(data: DeedData): string;
   /** Catatan penyusunan khusus akta ini (halaman catatan minuta). */
   notes?(data: DeedData): string[];
   /** Isian awal dari data klien/job. */

@@ -1,8 +1,8 @@
-import type { Block, Line } from "./layout";
+import type { Block, Line, Seg } from "./layout";
 import type { DeedData, Person } from "./schema";
 import { hari, jamHuruf, orBlank, tanggalHuruf } from "./words";
 
-/** Identitas kantor (skill akta-notaris-indonesia). */
+/** Identitas kantor (skill akta-standar-kantor-ari-yudani). */
 export const NOTARIS = {
   namaLengkap: "ARI YUDANI APRIANTI, Sarjana Hukum, Magister Kenotariatan",
   namaSingkat: "ARI YUDANI APRIANTI, S.H., M.Kn.",
@@ -33,10 +33,29 @@ export const str = (v: unknown): string => (typeof v === "string" ? v.trim() : v
 export const person = (v: unknown): Person => (v && typeof v === "object" ? (v as Person) : {});
 export const list = <T = Record<string, unknown>>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
+/** NAMA huruf besar + gelar lengkap bila ada, mis. "DENY CHANDRA, Sarjana Hukum". */
+export function namaLengkap(p: Person): string {
+  const nama = str(p.nama).toUpperCase() || "[...]";
+  return str(p.gelar) ? `${nama}, ${str(p.gelar)}` : nama;
+}
+
 /** Nama tebal huruf besar, mis. "Tuan **BUDI SANTOSO**". */
 export function namaTebal(p: Person): string {
-  const nama = str(p.nama).toUpperCase() || "[...]";
-  return `${str(p.sapaan) || "Tuan/Nyonya"} **${nama}**`;
+  return `${str(p.sapaan) || "Tuan/Nyonya"} **${namaLengkap(p)}**`;
+}
+
+/** Sebutan singkat untuk blok tanda tangan & lembar sidik jari: "Tn." / "Ny." (tidak tebal). */
+export function sebutanSingkat(p: Person): string {
+  const s = str(p.sapaan).toLowerCase();
+  if (s === "tuan") return "Tn.";
+  if (s === "nyonya" || s === "nona") return "Ny.";
+  return "";
+}
+
+/** "Kelurahan X" / "Desa X" -- tambahkan kata Kelurahan bila belum ada. */
+function kelurahan(v: string): string {
+  if (!v || v === "[...]") return `Kelurahan ${v || "[...]"}`;
+  return /^(kel(urahan)?|desa)\b/i.test(v) ? v.replace(/^kel\.?\s+/i, "Kelurahan ") : `Kelurahan ${v}`;
 }
 
 /** "almarhum" (Tuan) / "almarhumah" (Nyonya, Nona) untuk orang yang telah meninggal. */
@@ -51,11 +70,12 @@ export function almarhum(p: Person): string {
 export function identitas(p: Person, opts: { almarhum?: boolean } = {}): string {
   const wn = str(p.kewarganegaraan) || "Indonesia";
   const tinggal = opts.almarhum ? "semasa hidupnya terakhir bertempat tinggal di" : "bertempat tinggal di";
+  // Urutan standar kantor: lahir, pekerjaan, kewarganegaraan, alamat (kota dahulu), KTP.
   return [
     `lahir di ${orBlank(p.tempatLahir)}, pada tanggal ${tanggalHuruf(p.tanggalLahir)}`,
-    `Warga Negara ${wn}`,
     orBlank(p.pekerjaan),
-    `${tinggal} ${orBlank(p.alamat)}, Rukun Tetangga ${orBlank(p.rt)}, Rukun Warga ${orBlank(p.rw)}, ${orBlank(p.kelurahan)}, Kecamatan ${orBlank(p.kecamatan)}, ${orBlank(p.kota)}`,
+    `Warga Negara ${wn}`,
+    `${tinggal} ${orBlank(p.kota)}, ${orBlank(p.alamat)}, Rukun Tetangga ${orBlank(p.rt)}, Rukun Warga ${orBlank(p.rw)}, ${kelurahan(orBlank(p.kelurahan))}, Kecamatan ${orBlank(p.kecamatan)}`,
     `pemegang Kartu Tanda Penduduk dengan Nomor Induk Kependudukan ${orBlank(p.nik)}`
   ].join(", ");
 }
@@ -83,7 +103,7 @@ export function resolvePenghadap<T extends { t: string; text?: string }>(blocks:
   );
 }
 
-/** "-Pada hari ini ..." + "-Berhadapan dengan saya ..." */
+/** "-Pada hari ini ..." + "-Hadir menghadap kepada saya ..." (kepala akta standar kantor). */
 export function pembuka(data: DeedData): Block[] {
   const tgl = str(data.tanggalAkta);
   return [
@@ -93,7 +113,7 @@ export function pembuka(data: DeedData): Block[] {
     },
     {
       t: "p",
-      text: `Berhadapan dengan saya, **${NOTARIS.namaLengkap}**, ${NOTARIS.kedudukan}, dengan dihadiri oleh saksi-saksi yang saya, Notaris, kenal dan nama-namanya akan disebutkan pada bagian akhir akta ini:`
+      text: `Hadir menghadap kepada saya, **${NOTARIS.namaLengkap}**, ${NOTARIS.kedudukan}, dengan dihadiri oleh saksi-saksi yang saya, Notaris, kenal dan nama-namanya akan disebut pada akhir akta ini:`
     }
   ];
 }
@@ -124,7 +144,7 @@ export function domisili(data: DeedData, pihak = "para pihak"): Block {
   };
 }
 
-/** Akhir akta (Pasal 38 ayat 4 UUJN). */
+/** Akhir akta (Pasal 38 ayat 4 UUJN) -- rumusan standar kantor. */
 export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { wasiat?: boolean } = {}): Block[] {
   const s1 = person(data.saksi1);
   const s2 = person(data.saksi2);
@@ -133,17 +153,12 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { w
     { t: "center", text: "DEMIKIAN AKTA INI", bold: true },
     {
       t: "p",
-      text: `Dibuat sebagai minuta dan dilangsungkan di ${NOTARIS.kota}, pada hari, tanggal dan jam sebagaimana tersebut pada bagian awal akta ini, dengan dihadiri oleh:`
+      // Minuta: "sebagai minuta"; Salinan: "sebagai salinan" (jangan tertukar).
+      text: `Dibuat sebagai ${variant} dan dilangsungkan di ${NOTARIS.kota}, pada hari, tanggal dan pukul tersebut pada bagian awal akta ini, dengan dihadiri oleh:`
     },
     { t: "item", marker: "1.", text: komparisi(s1) },
-    { t: "item", marker: "2.", text: komparisi(s2, ".") },
-    // Keterangan "karyawan kantor Notaris" hanya bila pekerjaan kedua saksi memang demikian.
-    {
-      t: "p",
-      text: [s1, s2].every((x) => /notaris/i.test(str(x.pekerjaan)))
-        ? "Keduanya karyawan kantor Notaris, sebagai saksi-saksi."
-        : "Keduanya sebagai saksi-saksi."
-    },
+    { t: "item", marker: "2.", text: komparisi(s2, ";") },
+    { t: "p", text: "sebagai saksi-saksi." },
     ...(opts.wasiat
       ? ([
           {
@@ -157,7 +172,7 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { w
           },
           {
             t: "p",
-            text: "Segera setelah itu akta ini dibacakan oleh saya, Notaris, kepada Pewasiat di hadapan saksi-saksi, dan atas pertanyaan saya, Notaris, Pewasiat menerangkan bahwa apa yang dibacakan itu benar memuat kehendak terakhirnya; maka akta ini ditandatangani oleh Pewasiat, saksi-saksi dan saya, Notaris."
+            text: "Segera setelah itu akta ini saya, Notaris, bacakan kepada Pewasiat di hadapan saksi-saksi, dan atas pertanyaan saya, Notaris, Pewasiat menerangkan bahwa apa yang dibacakan itu benar memuat kehendak terakhirnya; maka akta ini ditandatangani oleh Pewasiat, saksi-saksi, dan saya, Notaris."
           },
           { t: "p", text: "Segala ketentuan Pasal 938 dan Pasal 939 Kitab Undang-Undang Hukum Perdata telah dipenuhi dalam pembuatan akta wasiat ini." }
         ] as Block[])
@@ -165,23 +180,23 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { w
           {
             t: "p",
             carryStart: true,
-            text: "Segera setelah akta ini dibacakan oleh saya, Notaris, kepada {PENGHADAP} dan saksi-saksi, maka akta ini ditandatangani oleh {PENGHADAP}, saksi-saksi dan saya, Notaris."
+            text: "Segera setelah akta ini saya, Notaris, bacakan kepada {PENGHADAP} dan saksi-saksi, maka akta ini ditandatangani oleh {PENGHADAP}, saksi-saksi, dan saya, Notaris."
           }
         ] as Block[])),
-    { t: "p", text: "Dilangsungkan dengan tanpa perubahan." },
-    { t: "p", text: "Minuta akta ini telah ditandatangani dengan sempurna." }
+    { t: "p", text: "{Penghadap} membubuhkan cap ibu jari tangan kanan pada lembar kertas yang dilekatkan pada minuta akta ini." },
+    { t: "p", text: "Dilangsungkan dengan tiada perubahan." }
   ];
-  if (variant === "salinan") blocks.push({ t: "p", text: "Diberikan sebagai **SALINAN** yang sama bunyinya." });
+  if (variant === "minuta") blocks.push({ t: "p", text: "Asli akta ini telah ditandatangani sempurna." });
+  else {
+    blocks.push({ t: "p", text: "Minuta akta ini telah ditandatangani dengan sempurna." });
+    blocks.push({ t: "p", text: "Diberikan sebagai **SALINAN** yang sama bunyinya." });
+  }
   return blocks;
 }
 
 // ---------------------------------------------------------------------------
 // Blok tanda tangan
 // ---------------------------------------------------------------------------
-
-/** Lebar kolom tanda tangan minuta: Penghadap 14 | Saksi 14 | Pejabat 20 (+ spasi pemisah = 50). */
-const COL_W = 14;
-const COL_LAST = 20;
 
 function wrapPlain(text: string, width: number): string[] {
   const words = text.split(/\s+/).filter(Boolean).flatMap((w) => {
@@ -204,69 +219,76 @@ function wrapPlain(text: string, width: number): string[] {
   return out.length ? out : [""];
 }
 
-const plain = (text: string, bold = false): Line => ({ segs: [{ text, bold }], col: 0, border: false, plain: true });
+const SIG_GAP_MINUTA = 3; // baris kosong untuk tanda tangan (sudah dikurangi satu spasi)
+const SIG_GAP_SALINAN = 2;
+const SIG_COL2 = 26; // kolom kedua (digeser bila nama kolom pertama lebih panjang)
+const WIDTH = 50;
 
-/** Minuta: tiga kolom Penghadap – Saksi-saksi – Notaris. */
-export function tandaTanganMinuta(penghadap: Person[], data: DeedData, pejabat = "Notaris"): { lines: Line[]; minLines: number } {
-  const saksi = [person(data.saksi1), person(data.saksi2)];
-  const lines: Line[] = [plain(""), {
-    segs: [
-      { text: "Penghadap".padEnd(COL_W + 1), bold: true },
-      { text: "Saksi-saksi".padEnd(COL_W + 1), bold: true },
-      { text: pejabat, bold: true }
-    ],
-    col: 0,
-    border: false,
-    plain: true
-  }];
-  const rows = Math.max(penghadap.length, saksi.length, 1);
+/**
+ * Minuta: blok bergaris tepi; tiap penghadap: label ("Penghadap," / "Pihak
+ * Pertama,"), 3 baris kosong, lalu "Tn./Ny. NAMA" (sebutan tidak tebal, nama
+ * tebal). Dua penghadap per baris; kolom kedua digeser bila nama kolom pertama
+ * lebih panjang dari kolomnya supaya tidak bertabrakan.
+ */
+export function tandaTanganMinuta(
+  penghadap: Person[],
+  labels: string[] = [],
+  opts: { border?: boolean } = {}
+): { lines: Line[]; minLines: number } {
+  const border = opts.border ?? true;
+  const mk = (segs: Seg[], rowStart = false): Line => ({ segs, col: 0, border, plain: true, rowStart });
+  const people = penghadap.length ? penghadap : [{} as Person];
+  const lines: Line[] = [];
   let firstRowLen = 0;
-  for (let i = 0; i < rows; i++) {
-    const rowStartAt = lines.length;
-    // Celah 4 baris untuk tanda tangan; baris pertama menandai awal satu baris tanda tangan.
-    // Banyak penandatangan: celah 3 baris supaya seluruh blok tetap muat satu halaman.
-    const gap = rows > 4 ? 3 : 4;
-    for (let g = 0; g < gap; g++) lines.push(g === 0 ? { ...plain(""), rowStart: true } : plain(""));
-    const cols = [
-      penghadap[i] ? wrapPlain(str(penghadap[i].nama).toUpperCase() || "[...]", COL_W) : [""],
-      saksi[i] ? wrapPlain(str(saksi[i].nama).toUpperCase() || "[...]", COL_W) : [""],
-      i === 0 ? wrapPlain(NOTARIS.namaSingkat, COL_LAST) : [""]
-    ];
-    const h = Math.max(...cols.map((c) => c.length));
+  for (let i = 0; i < people.length; i += 2) {
+    const pair = people.slice(i, i + 2);
+    const start = lines.length;
+    const nama = pair.map((p) => ({ sebutan: sebutanSingkat(p), nama: namaLengkap(p) }));
+    const lbl = pair.map((_, k) => labels[i + k] || "Penghadap,");
+    // Lebar kolom pertama: minimal 24; melebar bila nama/label pertama lebih panjang.
+    const w1 = pair.length > 1 ? Math.max(SIG_COL2 - 2, nama[0].sebutan.length + 1 + nama[0].nama.length, lbl[0].length) : WIDTH;
+    const col2 = pair.length > 1 ? Math.min(w1 + 2, WIDTH - 10) : WIDTH;
+    const w2 = WIDTH - col2;
+    const pad = (t: string) => t.padEnd(col2, " ");
+
+    lines.push(mk([{ text: pair.length > 1 ? pad(lbl[0]) + lbl[1] : lbl[0] }], true));
+    for (let g = 0; g < SIG_GAP_MINUTA; g++) lines.push(mk([{ text: "" }]));
+    const c1 = wrapPlain(nama[0].nama, col2 - 1 - (nama[0].sebutan ? nama[0].sebutan.length + 1 : 0));
+    const c2 = pair[1] ? wrapPlain(nama[1].nama, w2 - (nama[1].sebutan ? nama[1].sebutan.length + 1 : 0)) : [];
+    const h = Math.max(c1.length, c2.length);
     for (let r = 0; r < h; r++) {
-      lines.push({
-        segs: cols.map((c, ci) => ({ text: ci < 2 ? (c[r] ?? "").padEnd(COL_W + 1) : c[r] ?? "", bold: true })),
-        col: 0,
-        border: false,
-        plain: true
-      });
+      const segs: Seg[] = [];
+      const left1 = c1[r] ?? "";
+      const pre1 = r === 0 && nama[0].sebutan ? `${nama[0].sebutan} ` : "";
+      segs.push({ text: pre1 });
+      segs.push({ text: left1, bold: true });
+      if (pair[1]) {
+        const used = pre1.length + left1.length;
+        segs.push({ text: " ".repeat(Math.max(1, col2 - used)) });
+        const pre2 = r === 0 && nama[1].sebutan ? `${nama[1].sebutan} ` : "";
+        segs.push({ text: pre2 });
+        segs.push({ text: c2[r] ?? "", bold: true });
+      }
+      lines.push(mk(segs));
     }
-    if (i === 0) firstRowLen = lines.length - rowStartAt;
+    if (i === 0) firstRowLen = lines.length - start;
   }
-  // Judul kolom + baris tanda tangan pertama wajib satu halaman dengan penutup;
-  // bila muat, seluruh blok dipindah bersama alinea terakhir (lihat paginate).
-  return { lines, minLines: 2 + firstRowLen };
+  // Garis datar menutup blok (garis tepi berakhir di sini).
+  lines[lines.length - 1].markBottom = true;
+  return { lines, minLines: firstRowLen };
 }
 
-/** Salinan: blok bergaris tersendiri di kolom tanda tangan, celah 4 baris untuk meterai. */
+/** Salinan: blok bergaris merah tersendiri di kolom tanda tangan (indent 2592 twip = 18 huruf). */
 export function tandaTanganSalinan(): { lines: Line[]; minLines: number } {
-  const col = 16;
-  const w = 50 - col;
-  const center = (t: string, bold = false): Line => {
-    const pad = Math.max(0, Math.floor((w - t.length) / 2));
-    return { segs: [{ text: " ".repeat(Math.max(1, pad)) }, { text: t, bold }], col, border: true, plain: true };
-  };
-  const block: Line[] = [
-    center(NOTARIS.kedudukan + ","),
-    { segs: [{ text: "" }], col, border: true, plain: true },
-    { segs: [{ text: "" }], col, border: true, plain: true },
-    { segs: [{ text: "" }], col, border: true, plain: true },
-    { segs: [{ text: "" }], col, border: true, plain: true },
-    center(NOTARIS.namaSingkat, true)
-  ];
+  const col = 18;
+  const mk = (segs: Seg[]): Line => ({ segs, col, border: true, plain: true });
+  const block: Line[] = [mk([{ text: NOTARIS.kedudukan + "," }])];
+  for (let g = 0; g < SIG_GAP_SALINAN; g++) block.push(mk([{ text: "" }]));
+  block.push(mk([{ text: NOTARIS.namaSingkat, bold: true }]));
   block[0].markTop = true;
+  block[0].rowStart = true;
   block[block.length - 1].markBottom = true;
-  return { lines: [plain(""), ...block], minLines: block.length + 1 };
+  return { lines: [{ segs: [{ text: "" }], col: 0, border: false, plain: true }, ...block], minLines: block.length + 1 };
 }
 
 /**

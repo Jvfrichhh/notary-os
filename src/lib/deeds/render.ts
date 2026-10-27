@@ -1,6 +1,7 @@
 import { blocksToLines, paginate } from "./layout";
-import { buildDocx, type Variant } from "./docx";
-import { resolvePenghadap, tandaTanganMinuta, tandaTanganSalinan } from "./common";
+import { buildDocx, type ExtraSheet, type Variant } from "./docx";
+import { NOTARIS, namaLengkap, resolvePenghadap, sebutanSingkat, str, tandaTanganMinuta, tandaTanganSalinan } from "./common";
+import { tanggalHuruf } from "./words";
 import type { DeedTemplate } from "./types";
 import { isFieldVisible, type DeedData, type FieldDef } from "./schema";
 import { sectionsFor } from "./registry";
@@ -40,11 +41,9 @@ export function renderDeed(
     blocks[0] = { ...blocks[0], lines: [...blocks[0].lines, variant === "minuta" ? "LEMBAR PERTAMA" : "LEMBAR KEDUA"] };
   }
   const { title, body, closingIndex } = blocksToLines(blocks);
-  const sig = isPpat
-    ? tandaTanganMinuta(template.signers(data), data, "PPAT")
-    : variant === "minuta"
-      ? tandaTanganMinuta(template.signers(data), data)
-      : tandaTanganSalinan();
+  const signers = template.signers(data);
+  const labels = template.signerLabels?.(data) ?? [];
+  const sig = isPpat || variant === "minuta" ? tandaTanganMinuta(signers, labels) : tandaTanganSalinan();
   const lines = paginate(title, body, closingIndex, sig.lines, sig.minLines);
 
   const placeholders = body.reduce((n, l) => n + l.segs.reduce((m, s) => m + (s.text.match(/\[\.\.\.\]/g)?.length ?? 0), 0), 0);
@@ -58,10 +57,29 @@ export function renderDeed(
             ? `Masih ada ${placeholders} isian kosong yang tertulis [...] di badan akta; lengkapi di form lalu buat ulang.`
             : "Semua isian sudah terisi.",
           "Periksa kembali: identitas penghadap sesuai KTP, nomor & tanggal akta, renvoi, serta jumlah halaman/lembar.",
+          "Saksi tetap kantor terisi otomatis (Deny Chandra, S.H.; Komar Hidayat). NIK Komar Hidayat memuat tanggal lahir 27-04-1980, berbeda dengan tanggal lahir 06-06-1980 -- konfirmasi sebelum dipakai.",
           ...(template.notes?.(data) ?? [])
         ]
       : undefined;
 
-  // Kedua lembar akta PPAT bergaris hitam (asli); catatan penyusunan hanya di lembar pertama.
-  return { buffer: buildDocx(lines, isPpat ? "minuta" : variant, { title: template.title, notes }), pages, placeholders };
+  // Lembar tambahan sidik jari penghadap: hanya pada minuta / lembar pertama.
+  const extraSheet: ExtraSheet | undefined =
+    variant === "minuta" && opts.notes !== false
+      ? {
+          jenisAkta: template.title,
+          objek: template.subject?.(data) ?? "",
+          nomorAkta: str(data.nomorAkta) || "[...]",
+          tanggalAkta: tanggalHuruf(str(data.tanggalAkta)),
+          notaris: NOTARIS.namaSingkat,
+          penghadap: signers.map((p, i) => ({
+            sebutan: sebutanSingkat(p),
+            nama: namaLengkap(p),
+            kedudukan: (labels[i] || "Penghadap").replace(/,$/, ""),
+            nik: str(p.nik) || "[...]"
+          }))
+        }
+      : undefined;
+
+  // Kedua lembar akta PPAT bergaris hitam (asli); lembar tambahan & catatan hanya di lembar pertama.
+  return { buffer: buildDocx(lines, isPpat ? "minuta" : variant, { title: template.title, notes, extraSheet }), pages, placeholders };
 }

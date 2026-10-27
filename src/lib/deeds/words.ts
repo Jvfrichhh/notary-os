@@ -95,15 +95,15 @@ export function hari(iso: string | null | undefined): string {
   return HARI[new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay()];
 }
 
-/** "10:30" -> "10.30 WIB (sepuluh lewat tiga puluh menit Waktu Indonesia Barat)" */
+/** "10:30" -> "sepuluh lewat tiga puluh menit (10.30) Waktu Indonesia Barat" (gaya standar kantor). */
 export function jamHuruf(hhmm: string | null | undefined): string {
   const m = /^(\d{1,2})[:.](\d{2})/.exec(hhmm ?? "");
-  if (!m) return "[...] Waktu Indonesia Barat ([...] WIB)";
+  if (!m) return "[...] ([...]) Waktu Indonesia Barat";
   const h = Number(m[1]);
   const mi = Number(m[2]);
-  const words = mi === 0 ? `${terbilang(h)} tepat` : `${terbilang(h)} lewat ${terbilang(mi)} menit`;
+  const words = mi === 0 ? terbilang(h) : `${terbilang(h)} lewat ${terbilang(mi)} menit`;
   // Huruf dahulu, angka dalam kurung (gaya akta).
-  return `${words} Waktu Indonesia Barat (${String(h).padStart(2, "0")}.${String(mi).padStart(2, "0")} WIB)`;
+  return `${words} (${String(h).padStart(2, "0")}.${String(mi).padStart(2, "0")}) Waktu Indonesia Barat`;
 }
 
 /** "001" -> "001", dipakai untuk RT/RW. Kosong -> placeholder. */

@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/Card";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 
 export const dynamic = "force-dynamic";
+// Server action asisten boleh berjalan sampai 60 detik (beberapa putaran tool + model).
+export const maxDuration = 60;
 
 export default async function AssistantPage() {
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);

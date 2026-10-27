@@ -86,10 +86,13 @@ export interface MessageResponse {
 
 export class AiError extends Error {
   status?: number;
-  constructor(message: string, status?: number) {
+  /** Saran jeda dari penyedia (header Retry-After / pesan kuota), ms. */
+  retryAfterMs?: number;
+  constructor(message: string, status?: number, retryAfterMs?: number) {
     super(message);
     this.name = "AiError";
     this.status = status;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -102,6 +105,12 @@ export interface CreateMessageInput {
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
+  /**
+   * Anggaran "berpikir" model (Gemini thinkingConfig). "none" untuk tugas
+   * memilih tool & merangkum data (asisten) supaya jawaban cepat; "default"
+   * untuk analisis dokumen yang butuh ketelitian.
+   */
+  thinking?: "none" | "default";
 }
 
 /**
@@ -118,6 +127,32 @@ export async function createMessage(input: CreateMessageInput): Promise<MessageR
   }
   const { anthropicCreateMessage } = await import("@/lib/ai/providers/anthropic");
   return anthropicCreateMessage(input, model);
+}
+
+/**
+ * createMessage dengan percobaan ulang singkat saat layanan sibuk (429 batas per
+ * menit / 5xx / tidak merespons). Maksimal `retries` kali, jeda mengikuti
+ * Retry-After bila ada (dibatasi `maxWaitMs`) -- supaya satu gangguan sesaat
+ * tidak langsung menggagalkan jawaban ke staf.
+ */
+export async function createMessageWithRetry(input: CreateMessageInput, opts: { retries?: number; maxWaitMs?: number } = {}): Promise<MessageResponse> {
+  const retries = opts.retries ?? 2;
+  const maxWait = opts.maxWaitMs ?? 8_000;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await createMessage(input);
+    } catch (err) {
+      lastErr = err;
+      const e = err instanceof AiError ? err : null;
+      const retryable = !e || e.status === undefined || e.status === 429 || e.status >= 500;
+      if (!retryable || attempt === retries) throw err;
+      const hinted = e?.retryAfterMs ?? 0;
+      const wait = Math.min(maxWait, Math.max(1_500 * (attempt + 1), hinted));
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  throw lastErr;
 }
 
 /** Ambil input dari blok tool_use pertama bernama `name` (pola "JSON lewat tool"). */

@@ -1,4 +1,4 @@
-import { createMessage, textOf, type ContentBlockParam, type MessageParam, type ResponseBlock } from "@/lib/ai/client";
+import { createMessageWithRetry, textOf, type ContentBlockParam, type MessageParam, type ResponseBlock } from "@/lib/ai/client";
 import { runTool, toolsFor, type AssistantContext } from "@/lib/ai/assistantTools";
 
 /**
@@ -10,8 +10,10 @@ import { runTool, toolsFor, type AssistantContext } from "@/lib/ai/assistantTool
  * waktu terkendali.
  */
 
-const MAX_STEPS = 6;
+const MAX_STEPS = 5;
 const MAX_HISTORY = 12; // pesan terakhir yang dikirim ulang (hemat token)
+/** Anggaran waktu total; lewat dari ini model diminta menjawab dengan data yang sudah ada. */
+const TIME_BUDGET_MS = 45_000;
 
 export interface ChatTurn {
   role: "user" | "assistant";
@@ -65,15 +67,23 @@ export async function askAssistant(history: ChatTurn[], question: string, ctx: A
   let inputTokens = 0;
   let outputTokens = 0;
 
+  const started = Date.now();
   for (let step = 0; step < MAX_STEPS; step++) {
-    const res = await createMessage({
-      system: systemPrompt(ctx),
-      messages,
-      tools,
-      maxTokens: 1200,
-      temperature: 0.2,
-      timeoutMs: 60_000
-    });
+    const outOfTime = Date.now() - started > TIME_BUDGET_MS;
+    const lastStep = step === MAX_STEPS - 1 || outOfTime;
+    const res = await createMessageWithRetry(
+      {
+        system: systemPrompt(ctx) + (lastStep ? "\n- Waktu hampir habis: jawab SEKARANG dengan data yang sudah ada, tanpa memanggil tool lagi. Bila data belum cukup, katakan bagian mana yang belum sempat dicek." : ""),
+        messages,
+        // Giliran terakhir: tanpa tool supaya pasti menghasilkan jawaban teks.
+        tools: lastStep ? undefined : tools,
+        maxTokens: 1200,
+        temperature: 0.2,
+        timeoutMs: 40_000,
+        thinking: "none"
+      },
+      { retries: lastStep ? 1 : 2 }
+    );
     inputTokens += res.usage?.input_tokens ?? 0;
     outputTokens += res.usage?.output_tokens ?? 0;
 
@@ -83,19 +93,16 @@ export async function askAssistant(history: ChatTurn[], question: string, ctx: A
       return { answer, toolsUsed, inputTokens, outputTokens };
     }
 
-    // Jalankan semua permintaan tool pada giliran ini, lalu kembalikan hasilnya.
+    // Jalankan semua permintaan tool pada giliran ini SEKALIGUS, lalu kembalikan hasilnya.
     messages.push({ role: "assistant", content: res.content as ContentBlockParam[] });
-    const results: ContentBlockParam[] = [];
-    for (const call of toolUses) {
-      toolsUsed.push(call.name);
-      const out = await runTool(call.name, call.input ?? {}, ctx);
-      results.push({
-        type: "tool_result",
-        tool_use_id: call.id,
-        content: JSON.stringify(out.result).slice(0, 20_000),
-        is_error: !out.ok
-      });
-    }
+    toolsUsed.push(...toolUses.map((c) => c.name));
+    const outs = await Promise.all(toolUses.map((call) => runTool(call.name, call.input ?? {}, ctx)));
+    const results: ContentBlockParam[] = toolUses.map((call, i) => ({
+      type: "tool_result",
+      tool_use_id: call.id,
+      content: JSON.stringify(outs[i].result).slice(0, 20_000),
+      is_error: !outs[i].ok
+    }));
     messages.push({ role: "user", content: results });
   }
 

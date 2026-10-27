@@ -152,6 +152,8 @@ function quotaMessage(err: GeminiResponse["error"]): string {
   return `Batas pemakaian gratis Gemini tercapai${limit}.${wait}`;
 }
 
+let thinkingVariantStart = 0;
+
 export async function geminiCreateMessage(input: CreateMessageInput, model: string): Promise<MessageResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new AiError("Fitur AI belum diaktifkan: GEMINI_API_KEY belum diset.");
@@ -172,21 +174,46 @@ export async function geminiCreateMessage(input: CreateMessageInput, model: stri
     else body.toolConfig = { functionCallingConfig: { mode: "AUTO" } };
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), input.timeoutMs ?? 60_000);
-  let res: Response;
-  try {
-    res = await fetch(`${BASE}/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify(body),
-      signal: controller.signal
-    });
-  } catch (err) {
-    const aborted = err instanceof Error && err.name === "AbortError";
-    throw new AiError(aborted ? "Layanan AI tidak merespons tepat waktu. Coba lagi." : "Tidak dapat menghubungi layanan AI.");
-  } finally {
-    clearTimeout(timer);
+  // "Berpikir" seminimal mungkin untuk tugas ringan (asisten): jauh lebih cepat &
+  // hemat kuota. Nama field berbeda antar generasi model (thinkingLevel pada
+  // Gemini 3, thinkingBudget pada 2.5) -> coba berurutan, terakhir tanpa konfigurasi.
+  const thinkingVariants: (Record<string, unknown> | null)[] =
+    input.thinking === "none" ? [{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }, { thinkingBudget: 0 }, null] : [null];
+
+  let res!: Response;
+  // Varian yang pernah diterima model diingat (per proses) supaya tidak coba-coba tiap panggilan.
+  for (let i = input.thinking === "none" ? Math.min(thinkingVariantStart, thinkingVariants.length - 1) : 0; i < thinkingVariants.length; i++) {
+    const tc = thinkingVariants[i];
+    const gen = { ...(body.generationConfig as Record<string, unknown>) };
+    if (tc) gen.thinkingConfig = tc;
+    else delete gen.thinkingConfig;
+    body.generationConfig = gen;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), input.timeoutMs ?? 60_000);
+    try {
+      res = await fetch(`${BASE}/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+    } catch (err) {
+      const aborted = err instanceof Error && err.name === "AbortError";
+      throw new AiError(aborted ? "Layanan AI tidak merespons tepat waktu. Coba lagi." : "Tidak dapat menghubungi layanan AI.");
+    } finally {
+      clearTimeout(timer);
+    }
+    // Konfigurasi thinking ditolak model ini -> coba varian berikutnya.
+    if (res.status === 400 && tc && i < thinkingVariants.length - 1) {
+      const peek = (await res.clone().json().catch(() => null)) as GeminiResponse | null;
+      if (/thinking/i.test(peek?.error?.message ?? "")) {
+        thinkingVariantStart = i + 1;
+        continue;
+      }
+    }
+    if (input.thinking === "none") thinkingVariantStart = i;
+    break;
   }
 
   let json: GeminiResponse;
@@ -199,7 +226,12 @@ export async function geminiCreateMessage(input: CreateMessageInput, model: stri
     const detail = json.error?.message ?? "";
     if (res.status === 400 && /API key/i.test(detail)) throw new AiError("Kunci API Gemini ditolak. Periksa GEMINI_API_KEY.", 400);
     if (res.status === 403) throw new AiError("Kunci API Gemini tidak berwenang. Periksa GEMINI_API_KEY.", 403);
-    if (res.status === 429) throw new AiError(quotaMessage(json.error), 429);
+    if (res.status === 429) {
+      const ra = Number(res.headers.get("retry-after"));
+      const m = /retry in ([\d.]+)s/i.exec(json.error?.message ?? "");
+      const hint = Number.isFinite(ra) && ra > 0 ? ra * 1000 : m ? Number(m[1]) * 1000 : undefined;
+      throw new AiError(quotaMessage(json.error), 429, hint);
+    }
     if (res.status >= 500) throw new AiError("Layanan AI sedang sibuk. Coba lagi.", res.status);
     // Rincian teknis hanya di log server, tidak ditampilkan ke pengguna.
     console.error("[ai] permintaan ditolak", res.status, detail.slice(0, 500));

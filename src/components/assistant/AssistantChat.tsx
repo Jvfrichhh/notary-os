@@ -20,6 +20,18 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
   const [pending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const lastQuestion = useRef("");
+
+  // Penghitung detik saat menunggu, supaya staf tahu prosesnya masih jalan.
+  useEffect(() => {
+    if (!pending) {
+      setElapsed(0);
+      return;
+    }
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(t);
+  }, [pending]);
 
   useEffect(() => {
     try {
@@ -42,6 +54,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
     const q = question.trim();
     if (!q || pending) return;
     const history: ChatTurn[] = bubbles.filter((b) => !b.error).map(({ role, content }) => ({ role, content }));
+    lastQuestion.current = q;
     setBubbles((prev) => [...prev, { role: "user", content: q }]);
     setInput("");
     startTransition(async () => {
@@ -93,12 +106,29 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
                 </div>
               )}
               <div className="whitespace-pre-wrap">{b.content}</div>
+              {b.error && i === bubbles.length - 1 && lastQuestion.current && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Ulangi pertanyaan terakhir tanpa mengetik ulang (gelembung error dibuang).
+                    const q = lastQuestion.current;
+                    setBubbles((prev) => prev.slice(0, -2));
+                    setTimeout(() => send(q), 0);
+                  }}
+                  className="mt-2 rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted"
+                >
+                  Coba lagi
+                </button>
+              )}
             </div>
           </div>
         ))}
         {pending && (
           <div className="flex justify-start">
-            <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">Mencari data...</div>
+            <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+              {elapsed < 4 ? "Mencari data..." : elapsed < 15 ? "Menyusun jawaban..." : "Masih diproses, layanan AI sedang lambat..."}
+              <span className="ml-2 tabular-nums text-xs">{elapsed}s</span>
+            </div>
           </div>
         )}
         <div ref={bottomRef} />

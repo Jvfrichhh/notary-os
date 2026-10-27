@@ -64,6 +64,7 @@ export default async function ReportsPage(props: Async<PageProps>) {
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canViewFinance = await userHasPermission(user.id, PERMISSIONS.VIEW_FINANCE);
+  const canViewStatutory = await userHasPermission(user.id, PERMISSIONS.VIEW_REPERTORIUM);
 
   const jakartaToday = getJakartaToday();
   const todayYear = jakartaToday.getUTCFullYear();
@@ -209,6 +210,19 @@ export default async function ReportsPage(props: Async<PageProps>) {
           ))}
         </nav>
       </div>
+
+      {canViewStatutory && (
+        <Link
+          href={`/reports/client-status?year=${year}`}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-5 py-4 shadow-card hover:bg-muted/50"
+        >
+          <span>
+            <span className="block text-sm font-bold text-foreground">Laporan Tahunan Status Pekerjaan Klien</span>
+            <span className="block text-xs text-muted-foreground">Rekap status semua pekerjaan klien tahun {year} untuk laporan PKJM — bisa diunduh Word / Excel.</span>
+          </span>
+          <span className="text-sm font-bold text-primary">Buka →</span>
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {kpis.map((k, i) => (

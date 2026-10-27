@@ -118,11 +118,11 @@ export async function reportSentInfo(kind: ReportKind, ym: string) {
 const nihil = (rows: string[][], cols: number) => (rows.length ? rows : [["-", "NIHIL", ...Array(cols - 2).fill("")]]);
 
 /** "21 Oktober 2026" untuk tanggal surat. */
-function tanggalPanjang(d: Date): string {
+export function tanggalPanjang(d: Date): string {
   return `${d.getUTCDate()} ${BULAN[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
-function signature(role = "Notaris"): DocBlock[] {
+export function signature(role = "Notaris"): DocBlock[] {
   return [
     { t: "p", text: `${NOTARIS.kota.replace(/^Kota |^Kabupaten /, "")}, ${tanggalPanjang(getJakartaToday())}`, align: "right", spaceAfter: 0 },
     { t: "p", text: `${role},`, align: "right", spaceAfter: 1200 },

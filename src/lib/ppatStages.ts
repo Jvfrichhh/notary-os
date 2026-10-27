@@ -31,6 +31,11 @@ const SELESAI: StageDef = { key: "SERTIFIKAT_SELESAI", label: "Sertipikat selesa
 const HT_SELESAI: StageDef = { key: "SERTIFIKAT_HT_TERBIT", label: "Sertipikat Hak Tanggungan terbit", clientLabel: "Sertipikat Hak Tanggungan terbit", remindAfterDays: 14 };
 const APHT_DIBUAT: StageDef = { key: "APHT_DIBUAT", label: "Ditindaklanjuti dengan APHT", clientLabel: "Akta Pemberian Hak Tanggungan", remindAfterDays: 30 };
 
+/** Label Indonesia per kunci langkah (untuk tampilan ringkas, mis. Asisten AI). */
+export const STAGE_LABELS: Record<string, string> = Object.fromEntries(
+  [CEK, PPH, BPHTB, TTD, BPN, SELESAI, HT_SELESAI, APHT_DIBUAT].map((s) => [s.key, s.label])
+);
+
 /** Tahapan mulai dipakai sejak rilis ini; pekerjaan PPAT yang lebih lama tidak dipantau otomatis. */
 const STAGES_SINCE = new Date("2026-10-21T00:00:00Z");
 

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/permissionKeys";
 import type { ToolDefinition } from "@/lib/ai/client";
 import type { JobStatus, Prisma } from "@prisma/client";
+import { EXTRA_TOOLS } from "@/lib/ai/assistantToolsExtra";
 
 /**
  * "Tools" untuk Asisten Kantor: kumpulan query Prisma BACA-SAJA yang sudah
@@ -19,7 +20,7 @@ export interface AssistantContext {
   permissions: ReadonlySet<string>;
 }
 
-interface ToolSpec {
+export interface ToolSpec {
   def: ToolDefinition;
   permission: string;
   run: (input: Record<string, unknown>, ctx: AssistantContext) => Promise<unknown>;
@@ -98,7 +99,7 @@ function jobRow(j: {
   };
 }
 
-const TOOLS: Record<string, ToolSpec> = {
+const BASE_TOOLS: Record<string, ToolSpec> = {
   office_summary: {
     permission: PERMISSIONS.VIEW_JOBS,
     def: {
@@ -373,6 +374,9 @@ const TOOLS: Record<string, ToolSpec> = {
     }
   }
 };
+
+/** Semua tool: dasar + tambahan (assistantToolsExtra.ts). */
+const TOOLS: Record<string, ToolSpec> = { ...BASE_TOOLS, ...EXTRA_TOOLS };
 
 /** Definisi tool yang boleh dilihat model untuk user ini. */
 export function toolsFor(ctx: AssistantContext): ToolDefinition[] {

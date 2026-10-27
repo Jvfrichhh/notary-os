@@ -11,13 +11,11 @@ import type { Line } from "./layout";
  *    diapit strip (tab tengah + tab kanan ber-leader);
  *  - garis tepi kiri menempel pada indent paragraf (baris nomor: indent gantung);
  *    hitam (minuta), merah (salinan);
- *  - garis datar pembuka/penutup tiap halaman (2 cm) dipasang di HEADER sebagai
- *    gambar mengambang relatif halaman (tidak bergeser saat diedit); halaman 1
- *    memakai header khusus dengan garis pembuka tepat di atas "-Pada hari ini";
- *    garis penutup dibungkus field IF PAGE < SECTIONPAGES agar tidak muncul di
- *    halaman terakhir; nomor halaman di tengah footer;
- *  - garis datar tepat di bawah kalimat terakhir & pada blok tanda tangan
- *    menempel pada paragrafnya (markTop/markBottom);
+ *  - garis datar pendek (2 cm x 1,5 pt) di atas baris pertama & di bawah baris
+ *    terakhir tiap halaman, menempel pada paragraf baris itu dan berangkat dari
+ *    garis tepinya (ikut jorokan) -- sama dengan templat AJB kantor; halaman 1
+ *    mulai di atas "-Pada hari ini"; garis juga tepat di bawah kalimat terakhir
+ *    dan pada blok tanda tangan; nomor halaman di tengah footer;
  *  - Minuta: section tersendiri untuk LEMBAR TAMBAHAN sidik jari + CATATAN
  *    PENYUSUNAN (tanpa garis).
  */
@@ -90,37 +88,15 @@ function paragraph(line: Line, color: string, nextId: () => number): string {
 // Header: garis datar pembuka & penutup halaman (relatif halaman, tidak bergeser)
 // ---------------------------------------------------------------------------
 
-const RULE_X_EMU = (MARGIN.left - 30) * EMU_PER_TWIP;
-const OPEN_Y_EMU = (MARGIN.top + 45) * EMU_PER_TWIP;
-const OPEN_Y_FIRST_EMU = (MARGIN.top + TITLE_LINES * LINE_TWIP + 45) * EMU_PER_TWIP;
-const CLOSE_Y_EMU = (MARGIN.top + LINES_PER_PAGE * LINE_TWIP - 15) * EMU_PER_TWIP;
+const HDR_NS =
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
 
 const fld = (instr: string) =>
   `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`;
 
-/** Garis penutup hanya bila bukan halaman terakhir section: { IF { PAGE } < { SECTIONPAGES } "garis" "" }. */
-function closingRuleField(id: number): string {
-  return (
-    `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> IF </w:instrText></w:r>` +
-    fld("PAGE") +
-    `<w:r><w:instrText xml:space="preserve"> &lt; </w:instrText></w:r>` +
-    fld("SECTIONPAGES") +
-    `<w:r><w:instrText xml:space="preserve"> "</w:instrText></w:r>` +
-    rule(id, RULE_X_EMU, CLOSE_Y_EMU, "page") +
-    `<w:r><w:instrText xml:space="preserve">" "" </w:instrText></w:r>` +
-    `<w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`
-  );
-}
-
-const HDR_NS =
-  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
-
-function headerXml(first: boolean, withRules: boolean): string {
-  const content = withRules
-    ? rule(first ? 1 : 2, RULE_X_EMU, first ? OPEN_Y_FIRST_EMU : OPEN_Y_EMU, "page") + closingRuleField(first ? 3 : 4)
-    : "";
+function headerXml(): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:hdr ${HDR_NS}><w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>${content}</w:p></w:hdr>`;
+<w:hdr ${HDR_NS}><w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:p></w:hdr>`;
 }
 
 function footerXml(withNumber: boolean): string {
@@ -262,9 +238,9 @@ export function buildDocx(
     { name: "word/document.xml", data: document },
     { name: "word/styles.xml", data: styles },
     { name: "word/settings.xml", data: settings },
-    { name: "word/header1.xml", data: headerXml(true, true) },
-    { name: "word/header2.xml", data: headerXml(false, true) },
-    { name: "word/header3.xml", data: headerXml(false, false) },
+    { name: "word/header1.xml", data: headerXml() },
+    { name: "word/header2.xml", data: headerXml() },
+    { name: "word/header3.xml", data: headerXml() },
     { name: "word/footer1.xml", data: footerXml(true) },
     { name: "word/footer2.xml", data: footerXml(false) },
     { name: "word/_rels/document.xml.rels", data: docRels },

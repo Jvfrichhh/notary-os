@@ -6,9 +6,9 @@
  *    sehingga bila diedit manual stripnya memanjang/memendek sendiri;
  *  - garis tepi kiri menjorok mengikuti nomor/kata awal baris (baris nomor
  *    memakai indent gantung, baris lanjutan menjorok ke awal teks);
- *  - tepat 30 baris per halaman; garis datar pembuka/penutup halaman dipasang
- *    di header (lihat docx.ts) sehingga tidak bergeser; halaman terakhir
- *    ditutup garis tepat di bawah kalimat terakhir;
+ *  - tepat 30 baris per halaman; garis datar pendek membuka & menutup tiap
+ *    halaman, menempel pada garis tepi baris pertama/terakhir halaman itu
+ *    (ikut jorokannya); halaman terakhir ditutup tepat di bawah kalimat terakhir;
  *  - bila kalimat penutup + blok tanda tangan tidak muat, sisa halaman diisi
  *    garis penutup penuh dan keduanya pindah ke halaman berikutnya.
  *
@@ -271,12 +271,14 @@ export function paginate(
 
   const pushBody = (l: Line) => {
     if (lineOnPage === LINES_PER_PAGE) {
+      out[out.length - 1].markBottom = true;
       lineOnPage = 0;
       firstOfPage = true;
     }
     const line = { ...l };
     if (firstOfPage) {
-      // Garis datar pembuka/penutup halaman dipasang di header (docx.ts); di sini cukup pindah halaman.
+      // Garis datar pendek di atas baris pertama tiap halaman, menempel pada garis tepi baris itu.
+      line.markTop = true;
       if (out.length > 0 && lineOnPage === 0) line.pageBreakBefore = true;
       firstOfPage = false;
     }

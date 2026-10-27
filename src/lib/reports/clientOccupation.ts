@@ -30,9 +30,14 @@ export function periodLabel(p: Period): string {
   return p === "all" ? "seluruh klien terdaftar" : `klien terdaftar tahun ${p}`;
 }
 
+/**
+ * Isian Pekerjaan selalu dipakai bila ada (klien bertipe Perusahaan pun biasanya
+ * diwakili orang, mis. "Karyawan Swasta" dari PT tertentu). "Badan Usaha" hanya
+ * untuk klien Perusahaan yang kolom pekerjaannya kosong.
+ */
 export function categoryOf(c: { clientType: string | null; occupation: string | null }): string {
-  if (c.clientType === "Perusahaan") return COMPANY_CATEGORY;
-  return normalizeOccupation(c.occupation);
+  if (c.occupation?.trim()) return normalizeOccupation(c.occupation);
+  return c.clientType === "Perusahaan" ? COMPANY_CATEGORY : EMPTY_CATEGORY;
 }
 
 export async function gatherClientOccupation(period: Period) {

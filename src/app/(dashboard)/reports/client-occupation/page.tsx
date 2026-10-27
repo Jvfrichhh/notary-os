@@ -76,7 +76,7 @@ export default async function ClientOccupationReportPage(props: Async<{ searchPa
         {[
           { label: "Klien", value: d.total },
           { label: "Jenis pekerjaan", value: d.summary.filter((s) => s.label !== EMPTY_CATEGORY).length },
-          { label: "Badan usaha", value: d.companies },
+          { label: "Badan usaha (tanpa pekerjaan)", value: d.companies },
           { label: "Belum diisi", value: d.missing, warn: d.missing > 0 }
         ].map((k, i) => (
           <div

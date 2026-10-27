@@ -213,12 +213,14 @@ export default async function ReportsPage(props: Async<PageProps>) {
 
       {canViewStatutory && (
         <Link
-          href={`/reports/client-status?year=${year}`}
+          href={`/reports/client-occupation?year=${year}`}
           className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-5 py-4 shadow-card hover:bg-muted/50"
         >
           <span>
-            <span className="block text-sm font-bold text-foreground">Laporan Tahunan Status Pekerjaan Klien</span>
-            <span className="block text-xs text-muted-foreground">Rekap status semua pekerjaan klien tahun {year} untuk laporan PKJM — bisa diunduh Word / Excel.</span>
+            <span className="block text-sm font-bold text-foreground">Laporan Tahunan Pekerjaan / Profesi Klien (PKJM)</span>
+            <span className="block text-xs text-muted-foreground">
+              Jumlah klien per jenis pekerjaan (karyawan swasta, pelajar/mahasiswa, tidak bekerja, dst.) tahun {year} — bisa diunduh Word / Excel.
+            </span>
           </span>
           <span className="text-sm font-bold text-primary">Buka →</span>
         </Link>

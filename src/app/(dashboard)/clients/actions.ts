@@ -22,6 +22,7 @@ const clientSchema = z.object({
   city: z.string().optional().or(z.literal("")),
   companyName: z.string().optional().or(z.literal("")),
   npwp: z.string().optional().or(z.literal("")),
+  occupation: z.string().max(60, "Maksimal 60 karakter").optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal(""))
 });
 
@@ -129,6 +130,7 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
     city: formData.get("city") || "",
     companyName: formData.get("companyName") || "",
     npwp: formData.get("npwp") || "",
+    occupation: formData.get("occupation") || "",
     notes: formData.get("notes") || ""
   });
 
@@ -189,6 +191,7 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
           city: toNullable(data.city),
           companyName: toNullable(data.companyName),
           npwp: toNullable(data.npwp),
+          occupation: toNullable(data.occupation),
           notes: toNullable(data.notes),
           createdBy: user.id,
           // Persetujuan pemrosesan data pribadi (UU PDP) dicatat saat pendaftaran.
@@ -280,6 +283,7 @@ export async function updateClient(
     city: formData.get("city") || "",
     companyName: formData.get("companyName") || "",
     npwp: formData.get("npwp") || "",
+    occupation: formData.get("occupation") || "",
     notes: formData.get("notes") || ""
   });
 
@@ -305,6 +309,7 @@ export async function updateClient(
       city: toNullable(data.city),
       companyName: toNullable(data.companyName),
       npwp: toNullable(data.npwp),
+      occupation: toNullable(data.occupation),
       notes: toNullable(data.notes)
     }
   });

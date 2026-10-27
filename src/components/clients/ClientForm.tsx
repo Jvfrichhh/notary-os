@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { ClientFormState } from "@/app/(dashboard)/clients/actions";
 import type { Client } from "@prisma/client";
 import { NewJobSection, type ServiceOption, type StaffOption } from "@/components/clients/NewJobSection";
+import { OCCUPATION_OPTIONS } from "@/lib/occupations";
 
 interface ClientFormProps {
   action: (prevState: ClientFormState, formData: FormData) => Promise<ClientFormState>;
@@ -115,6 +116,27 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
         <Field label="Kota" name="city" defaultValue={client?.city} errors={errors.city} />
         <Field label="Nama Perusahaan" name="companyName" defaultValue={client?.companyName} errors={errors.companyName} />
         <Field label="NPWP" name="npwp" defaultValue={client?.npwp} errors={errors.npwp} />
+        <div>
+          <label htmlFor="occupation" className="mb-1 block text-sm font-medium text-foreground">
+            Pekerjaan (sesuai KTP)
+          </label>
+          <input
+            id="occupation"
+            name="occupation"
+            list="occupation-options"
+            defaultValue={client?.occupation ?? ""}
+            placeholder="mis. Karyawan Swasta"
+            autoComplete="off"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <datalist id="occupation-options">
+            {OCCUPATION_OPTIONS.map((o) => (
+              <option key={o} value={o} />
+            ))}
+          </datalist>
+          {errors.occupation && <p className="mt-1 text-xs text-status-overdue">{errors.occupation[0]}</p>}
+          <p className="mt-1 text-xs text-muted-foreground">Dipakai untuk laporan tahunan (PKJM). Pilih dari daftar atau ketik sendiri.</p>
+        </div>
       </div>
 
       <div>

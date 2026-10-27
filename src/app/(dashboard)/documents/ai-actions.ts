@@ -94,7 +94,7 @@ export async function applyAnalysisToClient(
 
   const client = await prisma.client.findUnique({
     where: { id: analysis.document.clientId },
-    select: { id: true, nik: true, npwp: true, address: true, city: true, companyName: true }
+    select: { id: true, nik: true, npwp: true, address: true, city: true, companyName: true, occupation: true }
   });
   if (!client) return { error: "Klien tidak ditemukan." };
 

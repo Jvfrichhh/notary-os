@@ -55,14 +55,15 @@ export interface ExtractedFields {
 }
 
 /** Kolom ekstraksi yang boleh disalin ke tabel clients (dengan persetujuan staff). */
-export const APPLICABLE_CLIENT_FIELDS = ["nik", "npwp", "address", "city", "companyName"] as const;
+export const APPLICABLE_CLIENT_FIELDS = ["nik", "npwp", "address", "city", "companyName", "occupation"] as const;
 export type ApplicableClientField = (typeof APPLICABLE_CLIENT_FIELDS)[number];
 export const CLIENT_FIELD_LABEL: Record<ApplicableClientField, string> = {
   nik: "NIK",
   npwp: "NPWP",
   address: "Alamat",
   city: "Kota",
-  companyName: "Nama perusahaan"
+  companyName: "Nama perusahaan",
+  occupation: "Pekerjaan"
 };
 
 export type MatchVerdict = "match" | "mismatch" | "unknown";

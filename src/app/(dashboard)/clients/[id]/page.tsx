@@ -124,6 +124,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
           </div>
           <InfoRow label="Kota" value={client.city} />
           <InfoRow label="NPWP" value={client.npwp} />
+          <InfoRow label="Pekerjaan" value={client.occupation} />
           {client.companyName && <InfoRow label="Perusahaan" value={client.companyName} />}
         </div>
         {client.notes && (

@@ -173,6 +173,8 @@ model Client {
   city         String?
   companyName  String?
   npwp         String?
+  /// Pekerjaan/profesi klien sesuai KTP (mis. Karyawan Swasta, Pelajar/Mahasiswa) -- untuk laporan tahunan PKJM.
+  occupation   String?
   notes        String?
   status       RecordStatus @default(ACTIVE)
   /// Persetujuan pemrosesan data pribadi (UU PDP): kapan & dicatat oleh siapa.

@@ -244,7 +244,7 @@ export function DeedForm({
   /** Diisi bila staf boleh "Simpan & Ajukan ke Notaris" dari halaman ini. */
   submitJobId?: string;
   /** Nama unduhan (akta PPAT: Lembar Pertama/Kedua). */
-  labels?: { minuta: string; salinan: string };
+  labels?: { minuta: string; salinan: string; "lembar-salinan"?: string };
 }) {
   const [data, setData] = useState<DeedData>(() => {
     // Daftar berulang tampil minimal sejumlah `min` item.
@@ -304,7 +304,7 @@ export function DeedForm({
     );
   };
 
-  const download = (variant: "minuta" | "salinan") => {
+  const download = (variant: "minuta" | "salinan" | "lembar-salinan") => {
     const go = () => (window.location.href = `/api/deeds/${draftId}/${variant}`);
     if (canEdit && dirty) save(go);
     else go();
@@ -357,6 +357,16 @@ export function DeedForm({
         >
           <Download className="h-4 w-4" /> Unduh {labels.salinan}<span className="hidden sm:inline"> (.docx)</span>
         </button>
+        {labels["lembar-salinan"] && (
+          <button
+            type="button"
+            onClick={() => download("lembar-salinan")}
+            disabled={pending}
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-status-overdue/50 px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" /> Unduh {labels["lembar-salinan"]}<span className="hidden sm:inline"> (.docx)</span>
+          </button>
+        )}
         <span className="col-span-2 text-center text-xs text-muted-foreground sm:text-left">{dirty ? "Ada perubahan belum disimpan" : status}</span>
       </div>
     </div>

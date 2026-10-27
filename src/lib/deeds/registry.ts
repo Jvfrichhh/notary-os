@@ -49,7 +49,7 @@ export function deedTemplateOptions(): { key: string; title: string; description
   return Object.values(DEED_TEMPLATES).map((t) => ({ key: t.key, title: t.ppat ? `${t.title} (PPAT)` : t.title, description: t.description }));
 }
 
-/** Label unduhan: akta notaris = Minuta/Salinan; akta PPAT = Lembar Pertama/Kedua. */
-export function variantLabels(t: DeedTemplate | null): { minuta: string; salinan: string } {
-  return t?.ppat ? { minuta: "Lembar Pertama", salinan: "Lembar Kedua" } : { minuta: "Minuta", salinan: "Salinan" };
+/** Label unduhan: akta notaris = Minuta/Salinan; akta PPAT = Lembar Pertama/Kedua/Salinan. */
+export function variantLabels(t: DeedTemplate | null): { minuta: string; salinan: string; "lembar-salinan"?: string } {
+  return t?.ppat ? { minuta: "Lembar Pertama", salinan: "Lembar Kedua", "lembar-salinan": "Lembar Salinan" } : { minuta: "Minuta", salinan: "Salinan" };
 }

@@ -20,7 +20,7 @@ export async function GET(_req: Request, ctx: Async<{ params: { draftId: string;
   if (!(await userHasPermission(session.user.id, PERMISSIONS.VIEW_JOBS))) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
-  const variant = params.variant === "salinan" ? "salinan" : params.variant === "minuta" ? "minuta" : null;
+  const variant = params.variant === "salinan" || params.variant === "minuta" || params.variant === "lembar-salinan" ? params.variant : null;
   if (!variant) return NextResponse.json({ error: "Varian tidak dikenal." }, { status: 400 });
 
   const draft = await prisma.deedDraft.findUnique({
@@ -29,13 +29,14 @@ export async function GET(_req: Request, ctx: Async<{ params: { draftId: string;
   });
   const template = draft ? getDeedTemplate(draft.templateKey) : null;
   if (!draft || !template) return NextResponse.json({ error: "Draft tidak ditemukan." }, { status: 404 });
+  if (variant === "lembar-salinan" && !template.ppat) return NextResponse.json({ error: "Varian tidak dikenal." }, { status: 400 });
   // Draft yang sudah disahkan = akta resmi -> hanya pemegang izin view_minuta.
   if ((draft.deedId || draft.ppatDeedId) && !(await userHasPermission(session.user.id, PERMISSIONS.VIEW_MINUTA))) {
     return NextResponse.json({ error: "Akta yang sudah disahkan hanya bisa diunduh oleh Notaris." }, { status: 403 });
   }
 
   const { buffer } = renderDeed(template, (draft.data ?? {}) as DeedData, variant);
-  const label = variantLabels(template)[variant].replace(/ /g, "_");
+  const label = (variantLabels(template)[variant] ?? "Salinan").replace(/ /g, "_");
   const fileName = `${label}_${template.title.replace(/[^A-Za-z0-9]+/g, "_")}_${draft.job.jobNumber}.docx`;
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

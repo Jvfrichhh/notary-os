@@ -82,6 +82,38 @@ export function tanggalHuruf(iso: string | null | undefined): string {
   return `${terbilang(p.d)} ${BULAN[p.m - 1]} ${terbilang(p.y)} (${dd}-${mm}-${p.y})`;
 }
 
+/** Gaya akta PPAT: "10-02-1984 (sepuluh Februari tahun seribu sembilan ratus delapan puluh empat)". */
+export function tanggalPpat(iso: string | null | undefined): string {
+  const p = parseDate(iso);
+  if (!p) return "[...] ([...])";
+  const dd = String(p.d).padStart(2, "0");
+  const mm = String(p.m).padStart(2, "0");
+  return `${dd}-${mm}-${p.y} (${terbilang(p.d)} ${BULAN[p.m - 1]} tahun ${terbilang(p.y)})`;
+}
+
+/** Kepala akta PPAT: "tanggal dua puluh bulan Oktober tahun dua ribu dua puluh enam (20-10-2026)". */
+export function tanggalKepalaPpat(iso: string | null | undefined): string {
+  const p = parseDate(iso);
+  if (!p) return "tanggal [...] bulan [...] tahun [...] ([...]-[...]-[...])";
+  return `tanggal ${terbilang(p.d)} bulan ${BULAN[p.m - 1]} tahun ${terbilang(p.y)} (${String(p.d).padStart(2, "0")}-${String(p.m).padStart(2, "0")}-${p.y})`;
+}
+
+/** "Pukul 10.00 WIB (sepuluh Waktu Indonesia Bagian Barat)". */
+export function pukulPpat(hhmm: string | null | undefined): string {
+  const m = /^(\d{1,2})[:.](\d{2})/.exec(hhmm ?? "");
+  if (!m) return "Pukul [...] WIB ([...] Waktu Indonesia Bagian Barat)";
+  const h = Number(m[1]);
+  const mi = Number(m[2]);
+  const words = mi === 0 ? terbilang(h) : `${terbilang(h)} lewat ${terbilang(mi)} menit`;
+  return `Pukul ${String(h).padStart(2, "0")}.${String(mi).padStart(2, "0")} WIB (${words} Waktu Indonesia Bagian Barat)`;
+}
+
+/** "Rp. 1.500.000.000,- (satu miliar lima ratus juta Rupiah)" (gaya templat AJB kantor). */
+export function rupiahPpat(n: number | null | undefined): string {
+  if (!n || !Number.isFinite(n) || n <= 0) return "Rp. [...],- ([...] Rupiah)";
+  return `Rp. ${formatThousands(n)},- (${terbilang(n)} Rupiah)`;
+}
+
 /** "21 Oktober 2026" (untuk tanggal yang cukup disebut dengan angka, mis. di kutipan dokumen). */
 export function tanggalSingkat(iso: string | null | undefined): string {
   const p = parseDate(iso);

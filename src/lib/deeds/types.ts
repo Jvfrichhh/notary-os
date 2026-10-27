@@ -1,5 +1,6 @@
 import type { Block } from "./layout";
 import type { DeedData, Person, SectionDef } from "./schema";
+import type { PBlock, PpatSignature, PpatVariant, ThumbSheet } from "./ppatDoc";
 
 export interface DeedTemplate {
   key: string;
@@ -29,6 +30,11 @@ export interface DeedTemplate {
     deedType: string;
     /** Data untuk Buku Daftar Akta PPAT. */
     register(data: DeedData): PpatRegisterData;
+    /** Isi akta dengan templat AJB kantor (Bookman, A4). Judul huruf besar, mis. "AKTA JUAL BELI". */
+    document(
+      data: DeedData,
+      variant: PpatVariant
+    ): { title: string; blocks: PBlock[]; signature: PpatSignature; thumbRows: ThumbSheet["rows"] };
   };
 }
 

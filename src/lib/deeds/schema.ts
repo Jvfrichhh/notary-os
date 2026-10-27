@@ -59,7 +59,8 @@ export const PERSON_FIELDS: { key: keyof Person; label: string; placeholder?: st
   { key: "kelurahan", label: "Kelurahan/Desa (lengkap)", placeholder: "Kelurahan Babakan" },
   { key: "kecamatan", label: "Kecamatan", placeholder: "Bogor Tengah" },
   { key: "kota", label: "Kota/Kabupaten (lengkap)", placeholder: "Kota Bogor" },
-  { key: "nik", label: "NIK" }
+  { key: "nik", label: "NIK" },
+  { key: "npwp", label: "NPWP (bila ada; dicantumkan di akta PPAT)" }
 ];
 
 export interface Person {
@@ -78,6 +79,7 @@ export interface Person {
   kecamatan?: string;
   kota?: string;
   nik?: string;
+  npwp?: string;
 }
 
 export type DeedData = Record<string, unknown>;

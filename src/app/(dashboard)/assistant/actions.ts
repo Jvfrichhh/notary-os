@@ -52,6 +52,16 @@ export async function askAssistantAction(history: ChatTurn[], question: string):
     });
     return { answer: res.answer, toolsUsed: res.toolsUsed };
   } catch (err) {
+    // Pertanyaan yang gagal (timeout/gangguan) tetap memakai kuota AI, jadi ikut
+    // dicatat agar batas 60/jam juga menghitungnya. Gagal mencatat tidak boleh
+    // menutupi pesan error aslinya.
+    await writeAuditLog({
+      userId: user.id,
+      action: "ai_assistant_asked",
+      entityType: "Assistant",
+      entityId: user.id,
+      newValue: { question: q.slice(0, 300), failed: true }
+    }).catch(() => undefined);
     if (err instanceof AiError) return { error: err.message };
     console.error("[ai] askAssistant gagal", err);
     return { error: "Asisten mengalami gangguan. Coba lagi." };

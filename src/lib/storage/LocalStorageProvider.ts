@@ -25,7 +25,7 @@ export class LocalStorageProvider implements FileStorageService {
     folder?: string;
   }): Promise<UploadResult> {
     const folder = params.folder ?? "misc";
-    const dir = path.join(this.basePath, folder);
+    const dir = path.join(/*turbopackIgnore: true*/ this.basePath, folder);
     await fs.mkdir(dir, { recursive: true });
 
     const safeName = `${randomUUID()}-${params.fileName.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
@@ -47,7 +47,7 @@ export class LocalStorageProvider implements FileStorageService {
   }
 
   async delete(storageKey: string): Promise<void> {
-    const fullPath = path.join(this.basePath, storageKey);
+    const fullPath = path.join(/*turbopackIgnore: true*/ this.basePath, storageKey);
     await fs.unlink(fullPath).catch(() => undefined);
   }
 
@@ -61,7 +61,7 @@ export class LocalStorageProvider implements FileStorageService {
 
   async headObject(storageKey: string): Promise<{ size: number; contentType: string | null } | null> {
     try {
-      const stat = await fs.stat(path.resolve(this.basePath, storageKey));
+      const stat = await fs.stat(path.resolve(/*turbopackIgnore: true*/ this.basePath, storageKey));
       return { size: stat.size, contentType: null };
     } catch {
       return null;
@@ -69,9 +69,9 @@ export class LocalStorageProvider implements FileStorageService {
   }
 
   async copyObject(fromKey: string, toKey: string): Promise<void> {
-    const dst = path.resolve(this.basePath, toKey);
+    const dst = path.resolve(/*turbopackIgnore: true*/ this.basePath, toKey);
     await fs.mkdir(path.dirname(dst), { recursive: true });
-    await fs.copyFile(path.resolve(this.basePath, fromKey), dst);
+    await fs.copyFile(path.resolve(/*turbopackIgnore: true*/ this.basePath, fromKey), dst);
   }
 
   async listObjects(): Promise<{ key: string; lastModified: Date | null }[]> {
@@ -84,7 +84,7 @@ export class LocalStorageProvider implements FileStorageService {
 
   async getObjectBuffer(storageKey: string): Promise<Buffer> {
     // Tolak path traversal (storageKey selalu "folder/uuid-nama").
-    const fullPath = path.resolve(this.basePath, storageKey);
+    const fullPath = path.resolve(/*turbopackIgnore: true*/ this.basePath, storageKey);
     if (!fullPath.startsWith(path.resolve(this.basePath) + path.sep)) {
       throw new Error("storageKey tidak valid.");
     }

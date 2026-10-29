@@ -35,7 +35,7 @@ export async function GET(_req: NextRequest, ctx: Async<{ params: { token: strin
     return NextResponse.json({ error: "Dokumen tidak ditemukan." }, { status: 404 });
   }
 
-  const fullPath = path.join(LOCAL_STORAGE_BASE_PATH, storageKey);
+  const fullPath = path.join(/*turbopackIgnore: true*/ LOCAL_STORAGE_BASE_PATH, storageKey);
 
   let buffer: Buffer;
   try {

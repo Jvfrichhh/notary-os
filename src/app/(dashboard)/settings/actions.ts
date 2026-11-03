@@ -23,7 +23,7 @@ export async function updateOwnProfile(_prev: ProfileState, formData: FormData):
   await writeAuditLog({ userId: user.id, action: "user_profile_updated", entityType: "User", entityId: user.id, previousValue: { name: before.name }, newValue: { name } });
   revalidatePath("/settings");
   revalidatePath("/", "layout");
-  return { ok: "Nama tersimpan. Tampil di seluruh aplikasi setelah masuk kembali atau muat ulang." };
+  return { ok: "Nama tersimpan dan sudah berlaku di seluruh aplikasi." };
 }
 
 /** Keluar dari semua perangkat lain: sesi lama digugurkan (sesi ini ikut gugur, diarahkan login lagi). */

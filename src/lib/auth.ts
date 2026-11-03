@@ -163,8 +163,11 @@ export const authOptions: NextAuthOptions = {
       // Akun internal: sesi ini masih yang berlaku? (dijalankan di server
       // setiap sesi dibaca; middleware Edge tidak memanggil callback ini).
       if (token.kind === "staff" && token.id && !token.revoked) {
-        const u = await prisma.user.findUnique({ where: { id: token.id }, select: { activeSessionId: true, isActive: true } });
+        const u = await prisma.user.findUnique({ where: { id: token.id }, select: { activeSessionId: true, isActive: true, name: true } });
         if (!u || !u.isActive || !token.sid || u.activeSessionId !== token.sid) token.revoked = true;
+        // Nama diambil segar dari DB (query yang sama) -> ganti nama di
+        // Pengaturan langsung tampil di bilah atas, sapaan, dll. tanpa login ulang.
+        else if (u.name && u.name !== token.name) token.name = u.name;
       }
       // Akun portal: password diganti/di-reset kantor sejak login -> sesi lama gugur.
       if (token.kind === "client" && token.id && !token.revoked) {
@@ -175,6 +178,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
+        if (typeof token.name === "string" && token.name) session.user.name = token.name;
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.kind = token.kind;

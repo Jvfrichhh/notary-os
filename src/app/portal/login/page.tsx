@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
 import { Suspense, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
@@ -59,7 +60,7 @@ function PortalLoginForm() {
   }
 
   return (
-    <div className="login-enter w-full max-w-sm rounded-xl border border-border bg-background p-6 shadow-[0_12px_32px_rgba(16,24,40,.08)] sm:p-8">
+    <div className="surface login-enter w-full max-w-sm p-6 sm:p-8">
       <div className="flex items-center gap-2.5">
         <img src="/brand/nexora-tile.png" alt="" className="h-11 w-11 rounded-md" />
         <span className="leading-tight">
@@ -145,7 +146,8 @@ function PortalLoginForm() {
 
 export default function PortalLoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4 py-8">
+      <GlassBackdrop />
       {/* useSearchParams butuh Suspense boundary saat prerender. */}
       <Suspense fallback={null}>
         <PortalLoginForm />

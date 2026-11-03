@@ -214,7 +214,7 @@ export default async function ReportsPage(props: Async<PageProps>) {
       {canViewStatutory && (
         <Link
           href={`/reports/client-occupation?year=${year}`}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-5 py-4 shadow-card hover:bg-muted/50"
+          className="surface press flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-muted/50"
         >
           <span>
             <span className="block text-sm font-bold text-foreground">Laporan Tahunan Pekerjaan / Profesi Klien (PKJM)</span>
@@ -231,7 +231,7 @@ export default async function ReportsPage(props: Async<PageProps>) {
           <div
             key={k.label}
             style={{ ["--d" as string]: `${i * 60}ms` }}
-            className="rise flex flex-col gap-2 rounded-xl border border-border bg-background p-4 shadow-card"
+            className="surface press rise flex flex-col gap-2 p-4"
           >
             <span className="text-[13px] font-semibold text-fg-3">{k.label}</span>
             <span className="text-3xl font-extrabold leading-none tracking-tight text-foreground"><CountUp value={k.value} delay={i * 60} /></span>
@@ -240,7 +240,7 @@ export default async function ReportsPage(props: Async<PageProps>) {
         ))}
         <div
           style={{ ["--d" as string]: "240ms" }}
-          className="rise col-span-2 flex flex-col gap-2 rounded-xl border border-danger-border bg-danger-soft p-4 lg:col-span-1">
+          className="surface press rise col-span-2 flex flex-col gap-2 border-danger-border bg-danger-soft p-4 lg:col-span-1">
           <span className="text-[13px] font-semibold text-danger-strong">Terlambat saat ini</span>
           <span className="text-3xl font-extrabold leading-none tracking-tight text-status-overdue">
             <CountUp value={overdueCount} delay={240} />

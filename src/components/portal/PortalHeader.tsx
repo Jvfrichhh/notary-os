@@ -15,7 +15,7 @@ export function PortalHeader({
   unreadCount: number;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="portal-top surface sticky top-0 z-40 rounded-none border-0 border-b border-border shadow-none">
       <div className="mx-auto flex h-16 max-w-4xl items-center justify-between gap-2 px-3 sm:px-6">
         <Link href="/portal" className="flex min-w-0 items-center gap-2.5">
           <img src="/brand/nexora-tile.png" alt="" className="h-9 w-9 shrink-0 rounded-md" />

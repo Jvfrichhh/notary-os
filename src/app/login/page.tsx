@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
@@ -57,6 +58,7 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas lg:flex-row">
+      <GlassBackdrop />
       <section className="flex flex-col justify-between gap-4 bg-brand-deep px-6 py-6 text-white sm:gap-6 sm:px-10 sm:py-8 lg:w-1/2 lg:gap-8 lg:p-14">
         <div className="flex items-center gap-3">
           <img src="/brand/nexora-mark.png" alt="" className="h-11 w-auto" />
@@ -78,7 +80,7 @@ function LoginForm() {
       </section>
 
       <div className="flex flex-1 items-center justify-center px-4 py-10">
-      <div className="login-enter w-full max-w-sm rounded-xl border border-border bg-background p-6 shadow-[0_12px_32px_rgba(16,24,40,.08)] sm:p-8">
+      <div className="surface login-enter w-full max-w-sm p-6 sm:p-8">
         <h1 className="text-[22px] font-extrabold text-foreground">Masuk</h1>
         <p className="mt-1 text-sm text-muted-foreground">Gunakan akun kantor Anda.</p>
 

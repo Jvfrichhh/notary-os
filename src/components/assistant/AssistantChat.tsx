@@ -76,7 +76,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-1 flex-col rounded-lg border border-border bg-background shadow-sm">
+    <div className="surface flex min-h-[60vh] flex-1 flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {bubbles.length === 0 && (
           <div className="space-y-3">

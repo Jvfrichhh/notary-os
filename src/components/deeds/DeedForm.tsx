@@ -313,14 +313,14 @@ export function DeedForm({
   return (
     <div className="space-y-6">
       {sections.map((s) => (
-        <fieldset key={s.title} disabled={!canEdit} className="min-w-0 space-y-3 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+        <fieldset key={s.title} disabled={!canEdit} className="surface min-w-0 space-y-3 p-4 sm:p-5">
           <legend className="px-1 text-sm font-semibold text-foreground">{s.title}</legend>
           {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
           <FieldGrid fields={s.fields} data={data} onChange={set} />
         </fieldset>
       ))}
 
-      <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-2 rounded-lg border border-border bg-background/95 p-2 shadow-sm backdrop-blur sm:flex sm:flex-wrap sm:items-center sm:p-3">
+      <div className="surface sticky bottom-0 z-10 grid grid-cols-2 gap-2 p-2 sm:flex sm:flex-wrap sm:items-center sm:p-3">
         {canEdit && (
           <button
             type="button"

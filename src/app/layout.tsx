@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/components/layout/ThemeToggle";
+import { SKIN_INIT_SCRIPT } from "@/components/skin/skin";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { UpdateNotice } from "@/components/pwa/UpdateNotice";
 
@@ -23,9 +24,9 @@ const FONT_URL = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wgh
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" data-skin="glass" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + SKIN_INIT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}

@@ -141,7 +141,7 @@ export default async function DeedDraftPage(props: Async<{
       )}
 
       {!finalized && (
-        <div className="rounded-lg border border-border bg-background p-4 shadow-sm">
+        <div className="surface p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-base font-bold text-foreground">Pemeriksaan oleh klien</h2>

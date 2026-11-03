@@ -158,11 +158,11 @@ function UserRow({ user, roles, isSelf }: { user: AdminUserRow; roles: RoleOptio
 export function UsersAdmin({ users, roles, currentUserId }: { users: AdminUserRow[]; roles: RoleOption[]; currentUserId: string }) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-border bg-background p-5 shadow-sm">
+      <div className="surface p-5">
         <h2 className="mb-3 text-base font-bold text-foreground">Tambah User Internal</h2>
         <CreateUserForm roles={roles} />
       </div>
-      <div className="rounded-lg border border-border bg-background p-5 shadow-sm">
+      <div className="surface p-5">
         <h2 className="mb-1 text-base font-bold text-foreground">Daftar User ({users.length})</h2>
         <p className="mb-3 text-xs text-muted-foreground">
           Akun Anda sendiri dan NOTARY aktif terakhir tidak bisa dinonaktifkan/diturunkan — supaya kantor tidak kehilangan akses.

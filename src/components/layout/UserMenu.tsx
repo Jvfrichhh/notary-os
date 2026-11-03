@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { KeyRound, LogOut } from "lucide-react";
+import { SkinToggle } from "@/components/skin/SkinToggle";
 
 const ROLE_LABEL: Record<string, string> = { NOTARY: "Notaris", ADMIN: "Admin", STAFF: "Staf", VIEWER: "Pengamat" };
 
@@ -22,13 +23,16 @@ const ICON_BTN =
  */
 export function UserMenu({ name, role }: { name: string; role: string }) {
   const [open, setOpen] = useState(false);
+  const [deskOpen, setDeskOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const deskRef = useRef<HTMLDivElement>(null);
   const roleLabel = ROLE_LABEL[role] ?? role;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && !deskOpen) return;
     const close = (e: MouseEvent | TouchEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (deskRef.current && !deskRef.current.contains(e.target as Node)) setDeskOpen(false);
     };
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", close);
@@ -39,7 +43,7 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
       document.removeEventListener("touchstart", close);
       document.removeEventListener("keydown", esc);
     };
-  }, [open]);
+  }, [open, deskOpen]);
 
   return (
     <>
@@ -69,6 +73,7 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
             >
               <KeyRound className="h-4 w-4" /> Ganti password
             </Link>
+            <SkinToggle className="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 text-left text-sm text-fg-2 hover:bg-muted" />
             <button
               type="button"
               role="menuitem"
@@ -81,9 +86,20 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
         )}
       </div>
 
-      {/* Laptop / PC */}
-      <div className="hidden items-center gap-1.5 sm:flex">
-        <div className="mr-1 flex items-center gap-2.5 rounded-full border border-border py-1 pl-1 pr-3">
+      {/* Laptop / PC: chip nama membuka menu kecil (tampilan), tombol lain tetap di bilah */}
+      <div ref={deskRef} className="relative hidden items-center gap-1.5 sm:flex">
+        {deskOpen && (
+          <div role="menu" className="absolute right-0 top-12 z-50 w-60 rounded-xl border border-border bg-background p-2 shadow-lg">
+            <SkinToggle className="flex w-full items-center gap-2.5 rounded-md px-2 py-2.5 text-left text-sm text-fg-2 hover:bg-muted" />
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setDeskOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={deskOpen}
+          title="Pengaturan tampilan"
+          className="mr-1 flex items-center gap-2.5 rounded-full border border-border py-1 pl-1 pr-3 text-left hover:bg-muted">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-extrabold text-primary">
             {initials(name)}
           </span>
@@ -91,7 +107,7 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
             <span className="block text-sm font-bold text-foreground">{name}</span>
             <span className="block text-xs text-muted-foreground">{roleLabel}</span>
           </span>
-        </div>
+        </button>
         <Link href="/account/password" className={ICON_BTN} title="Ganti password" aria-label="Ganti password">
           <KeyRound className="h-4 w-4" />
         </Link>

@@ -105,11 +105,30 @@ export function Sidebar({ sections }: SidebarProps) {
     };
   }, [open]);
 
+  // Dock HP: empat tujuan utama yang tersedia untuk user ini + tombol menu lengkap.
+  const DOCK_ORDER = ["/dashboard", "/jobs", "/clients", "/documents", "/payments", "/reports"];
+  const allItems = sections.flatMap((s) => s.items);
+  const dockItems = DOCK_ORDER.map((href) => allItems.find((i) => i.href === href)).filter((i): i is NavSectionConfig["items"][number] => !!i).slice(0, 4);
+
   return (
     <>
       <div className="hidden h-full lg:flex">
         <SidebarPanel sections={sections} pathname={pathname} />
       </div>
+      <nav className="mobile-dock surface" aria-label="Navigasi cepat">
+        {dockItems.map((item) => {
+          const Icon = ICONS[item.icon];
+          const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+          return (
+            <Link key={item.href} href={item.href} aria-label={item.label} className={isActive ? "active" : undefined}>
+              {Icon && <Icon className="h-[22px] w-[22px]" />}
+            </Link>
+          );
+        })}
+        <button type="button" aria-label="Menu lengkap" onClick={() => setOpen(true)}>
+          <Menu className="h-[22px] w-[22px]" />
+        </button>
+      </nav>
       {open && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div className="h-full max-w-[85vw] shadow-xl">
@@ -124,7 +143,7 @@ export function Sidebar({ sections }: SidebarProps) {
 
 function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionConfig[]; pathname: string | null; onClose?: () => void }) {
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-background">
+    <aside className="sidebar-panel surface flex h-full w-64 flex-col rounded-none border-0 border-r border-border shadow-none">
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <img src="/brand/nexora-tile.png" alt="" className="h-10 w-10 rounded-md" />
@@ -158,7 +177,7 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                      "nav-item flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                       isActive
                         ? "bg-primary-soft font-bold text-primary"
                         : "font-medium text-fg-3 hover:bg-muted hover:text-foreground"

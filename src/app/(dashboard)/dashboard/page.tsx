@@ -228,7 +228,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
               key={c.label}
               href={c.href}
               style={{ ["--d" as string]: `${i * 60}ms` }}
-              className="rise flex flex-col gap-2.5 rounded-xl border border-border bg-background p-4 shadow-card transition-shadow hover:shadow-md"
+              className="surface press rise flex flex-col gap-2.5 p-4 transition-shadow hover:shadow-md"
             >
               <span className="flex items-center justify-between gap-2">
                 <span className="text-[13px] font-semibold text-fg-3">{c.label}</span>
@@ -245,7 +245,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
 
       {canViewJobs && (
         <div className="flex flex-wrap items-start gap-5">
-          <section className="min-w-0 flex-[999_1_520px] overflow-hidden rounded-xl border border-border bg-background shadow-card">
+          <section className="surface min-w-0 flex-[999_1_520px] overflow-hidden">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <h2 className="text-base font-bold text-foreground">Pekerjaan Terbaru</h2>
               <Link href="/jobs" className="text-sm font-semibold text-primary hover:underline">
@@ -304,12 +304,12 @@ export default async function DashboardPage(props: Async<PageProps>) {
           </section>
 
           <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-5">
-          <section className="rounded-xl border border-border bg-background p-5 shadow-card">
+          <section className="surface p-5">
             <h2 className="mb-4 text-base font-bold text-foreground">Pekerjaan Berjalan per Status</h2>
             <DonutChart slices={statusSlices} centerLabel="pekerjaan berjalan" />
           </section>
 
-          <section className="rounded-xl border border-border bg-background p-5 shadow-card">
+          <section className="surface p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-bold text-foreground">Tenggat Terdekat</h2>
               <Link href="/deadlines" className="text-sm font-semibold text-primary hover:underline">

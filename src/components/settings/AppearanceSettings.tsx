@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-import { THEME_COOKIE, THEME_KEY } from "@/components/layout/ThemeToggle";
+import { persistTheme } from "@/components/layout/ThemeToggle";
 
 /** Pilihan mode terang/gelap (disimpan di browser + cookie, dibaca server saat render). */
 export function AppearanceSettings() {
@@ -11,13 +11,7 @@ export function AppearanceSettings() {
   function choose(next: boolean) {
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
-    const v = next ? "dark" : "light";
-    try {
-      localStorage.setItem(THEME_KEY, v);
-    } catch {
-      /* abaikan */
-    }
-    document.cookie = `${THEME_COOKIE}=${v};path=/;max-age=31536000;SameSite=Lax${location.protocol === "https:" ? ";Secure" : ""}`;
+    persistTheme(next ? "dark" : "light");
   }
   const opt = (value: boolean, label: string, Icon: typeof Sun, hint: string) => (
     <button

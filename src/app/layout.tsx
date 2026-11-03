@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { cookies } from "next/headers";
-import { THEME_COOKIE, THEME_INIT_SCRIPT } from "@/components/layout/ThemeToggle";
+import { DEFAULT_THEME, THEME_COOKIE, THEME_INIT_SCRIPT } from "@/lib/theme";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { UpdateNotice } from "@/components/pwa/UpdateNotice";
 
@@ -25,9 +25,10 @@ const FONT_URL = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wgh
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Mode terang/gelap dirender di server dari cookie supaya tidak berkedip dan
   // tidak "balik ke terang" setelah muat ulang.
-  const theme = (await cookies()).get(THEME_COOKIE)?.value;
+  const saved = (await cookies()).get(THEME_COOKIE)?.value;
+  const theme = saved === "dark" || saved === "light" ? saved : DEFAULT_THEME;
   return (
-    <html lang="id" data-skin="glass" className={theme === "dark" ? "dark" : undefined} suppressHydrationWarning>
+    <html lang="id" data-skin="glass" className={theme === "dark" ? "dark" : undefined} style={{ colorScheme: theme }} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

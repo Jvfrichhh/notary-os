@@ -2,23 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-
-/** Kunci penyimpanan pilihan tema di browser ("light" | "dark"). */
-export const THEME_KEY = "nexora:theme";
-
-/**
- * Dijalankan di <head> sebelum halaman tampil, supaya tidak "berkedip" putih:
- * pakai pilihan tersimpan, bila belum ada ikuti pengaturan perangkat.
- */
-export const THEME_COOKIE = "nexora-theme";
-
-/**
- * Server sudah merender class "dark" dari cookie (lihat app/layout.tsx), jadi
- * skrip ini hanya cadangan untuk kunjungan pertama tanpa cookie: ikuti pilihan
- * tersimpan di browser atau pengaturan perangkat, lalu tulis cookie-nya supaya
- * muat ulang berikutnya langsung benar dari server.
- */
-export const THEME_INIT_SCRIPT = `try{var d=document.documentElement,c=document.cookie.match(/(?:^|; )${THEME_COOKIE}=(dark|light)/);if(!c){var t=localStorage.getItem("${THEME_KEY}");if(t!=="dark"&&t!=="light")t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";d.classList.toggle("dark",t==="dark");document.cookie="${THEME_COOKIE}="+t+";path=/;max-age=31536000;SameSite=Lax"}}catch(e){}`;
+import { THEME_COOKIE, THEME_KEY } from "@/lib/theme";
 
 function persistTheme(theme: "dark" | "light") {
   try {
@@ -28,7 +12,10 @@ function persistTheme(theme: "dark" | "light") {
   }
   // Cookie dibaca server saat render berikutnya -> tidak pernah "balik ke terang" setelah muat ulang.
   document.cookie = `${THEME_COOKIE}=${theme};path=/;max-age=31536000;SameSite=Lax${location.protocol === "https:" ? ";Secure" : ""}`;
+  document.documentElement.style.colorScheme = theme;
 }
+
+export { persistTheme };
 
 /** Tombol ganti mode terang / gelap. Pilihan diingat di browser ini. */
 export function ThemeToggle({ className = "" }: { className?: string }) {

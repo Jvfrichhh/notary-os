@@ -662,3 +662,14 @@ html[data-skin="glass"] .portal-top {
   margin: 12px 12px 0;
   border-radius: 999px;
 }
+
+/* Daftar pilihan <select> bawaan browser: warnanya ikut tema (tidak abu-abu muda dengan teks terang di mode gelap). */
+select option,
+select optgroup {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+}
+select optgroup {
+  font-weight: 700;
+  color: rgb(var(--muted-foreground));
+}

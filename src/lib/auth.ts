@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { randomUUID } from "crypto";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isAllowedRedirectHost } from "@/lib/hosts";
 import {
@@ -12,6 +13,24 @@ import {
   passwordVersion,
   recordLoginFailure
 } from "@/lib/loginGuard";
+
+/**
+ * Koneksi DB kadang diputus pooler (P1017 "Server has closed the connection").
+ * Pengecekan sesi diulang SEKALI untuk error koneksi saja; error lain tetap
+ * dilempar (tetap fail-closed seperti sebelumnya).
+ */
+async function retryOnDbDisconnect<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const transient =
+      err instanceof Prisma.PrismaClientInitializationError ||
+      (err instanceof Prisma.PrismaClientKnownRequestError && ["P1001", "P1002", "P1017"].includes(err.code));
+    if (!transient) throw err;
+    await new Promise((r) => setTimeout(r, 200));
+    return fn();
+  }
+}
 
 /** Sesi berlaku 12 jam sejak aktivitas terakhir; setelah itu wajib login ulang. */
 const SESSION_MAX_AGE = 12 * 60 * 60;
@@ -163,7 +182,8 @@ export const authOptions: NextAuthOptions = {
       // Akun internal: sesi ini masih yang berlaku? (dijalankan di server
       // setiap sesi dibaca; middleware Edge tidak memanggil callback ini).
       if (token.kind === "staff" && token.id && !token.revoked) {
-        const u = await prisma.user.findUnique({ where: { id: token.id }, select: { activeSessionId: true, isActive: true, name: true } });
+        const id = token.id;
+        const u = await retryOnDbDisconnect(() => prisma.user.findUnique({ where: { id }, select: { activeSessionId: true, isActive: true, name: true } }));
         if (!u || !u.isActive || !token.sid || u.activeSessionId !== token.sid) token.revoked = true;
         // Nama diambil segar dari DB (query yang sama) -> ganti nama di
         // Pengaturan langsung tampil di bilah atas, sapaan, dll. tanpa login ulang.
@@ -171,7 +191,8 @@ export const authOptions: NextAuthOptions = {
       }
       // Akun portal: password diganti/di-reset kantor sejak login -> sesi lama gugur.
       if (token.kind === "client" && token.id && !token.revoked) {
-        const a = await prisma.clientAccount.findUnique({ where: { id: token.id }, select: { passwordHash: true, isActive: true } });
+        const id = token.id;
+        const a = await retryOnDbDisconnect(() => prisma.clientAccount.findUnique({ where: { id }, select: { passwordHash: true, isActive: true } }));
         if (!a || !a.isActive || !token.pwv || passwordVersion(a.passwordHash) !== token.pwv) token.revoked = true;
       }
       return token;

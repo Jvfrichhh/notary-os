@@ -5,7 +5,7 @@ import { PERMISSIONS } from "@/lib/permissionKeys";
  * lain yang mungkin ditambahkan nanti, mis. versi mobile).
  *
  * Setiap item punya aturan `permissions`:
- *   - `undefined`  -> tampil untuk semua user yang sudah login (Dashboard, Notifikasi)
+ *   - `undefined`  -> tampil untuk semua user yang sudah login (Dashboard)
  *   - `[a, b]`     -> tampil kalau user punya MINIMAL SATU dari permission itu
  *
  * Aturan di sini SENGAJA disamakan dengan `requirePermission(...)` di tiap
@@ -68,7 +68,7 @@ export const ADMIN_PAGE_PERMISSIONS: readonly string[] = [
 // Struktur sesuai Blueprint §4 — Information Architecture / Sidebar.
 export const NAV_SECTIONS: NavSectionConfig[] = [
   { items: [{ label: "Dashboard", href: "/dashboard", icon: "dashboard" }] },
-  { items: [{ label: "Notifikasi", href: "/notifications", icon: "bell" }] },
+  // Notifikasi tidak di menu samping: sudah ada lonceng di bilah atas (menuju /notifications).
   {
     title: "Data Klien",
     items: [

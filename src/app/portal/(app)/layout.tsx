@@ -6,7 +6,6 @@ import { NavigationProgress } from "@/components/motion/NavigationProgress";
 import { WELCOME_PENDING_SCRIPT, WelcomeOverlay } from "@/components/motion/WelcomeOverlay";
 import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
 import { GlassPointer } from "@/components/skin/GlassPointer";
-import { GlassLens } from "@/components/skin/GlassLens";
 
 // Layout membaca session + database -> selalu dinamis, tidak di-cache lintas klien.
 export const dynamic = "force-dynamic";
@@ -25,7 +24,6 @@ export default async function PortalLayout({ children }: { children: React.React
     <div className="min-h-screen bg-canvas">
       <GlassBackdrop />
       <GlassPointer />
-      <GlassLens />
       <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
       <WelcomeOverlay name={principal.displayName} subtitle="Portal Klien" />
       <Suspense>

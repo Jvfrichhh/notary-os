@@ -1,7 +1,6 @@
 "use client";
 
 import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
-import { GlassLens } from "@/components/skin/GlassLens";
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
@@ -60,7 +59,6 @@ function LoginForm() {
   return (
     <div className="flex min-h-screen flex-col bg-canvas lg:flex-row">
       <GlassBackdrop />
-      <GlassLens />
       <section className="flex flex-col justify-between gap-4 bg-brand-deep px-6 py-6 text-white sm:gap-6 sm:px-10 sm:py-8 lg:w-1/2 lg:gap-8 lg:p-14">
         <div className="flex items-center gap-3">
           <img src="/brand/nexora-mark.png" alt="" className="h-11 w-auto" />

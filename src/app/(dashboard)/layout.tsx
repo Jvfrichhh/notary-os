@@ -10,7 +10,6 @@ import { filterNavSections, NAV_SECTIONS } from "@/lib/navigation";
 import { isAiEnabled } from "@/lib/ai/client";
 import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
 import { GlassPointer } from "@/components/skin/GlassPointer";
-import { GlassLens } from "@/components/skin/GlassLens";
 
 // Layout membaca session -> selalu dinamis (tidak boleh di-cache lintas user).
 export const dynamic = "force-dynamic";
@@ -29,7 +28,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="app-frame flex min-h-screen bg-canvas lg:h-screen lg:overflow-hidden">
       <GlassBackdrop />
       <GlassPointer />
-      <GlassLens />
       <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
       <WelcomeOverlay name={user.name ?? "Pengguna"} subtitle={user.role === "NOTARY" ? "Notaris & PPAT" : "Staf Kantor Notaris"} />
       <Suspense>

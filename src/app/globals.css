@@ -480,67 +480,31 @@ html[data-skin="glass"].dark {
   --glass-shadow: 0 20px 50px -22px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 /* Tingkat kaca pilihan pengguna (Pengaturan > Tampilan). */
-/* Jernih: kaca bening ala widget iOS 27 "clear" — isi nyaris nol, latar tampak jelas,
-   dan yang membentuk panel adalah TEPI TEBAL yang membiaskan cahaya (pita terang
-   lebar di sisi atas-kiri & bawah-kanan) + cincin pembiasan yang mencerahkan latar
-   tepat di pinggir kaca. */
+/* Jernih: hampir tanpa isi — latar terlihat jelas lewat kaca; blur tipis + saturasi
+   tinggi, dan tepi/bibir lensa justru lebih tegas supaya panel tetap terbaca sebagai kaca. */
 html[data-skin="glass"][data-glass="clear"] {
-  --glass-a: 0.07;
-  --glass-2-a: 0.14;
-  --glass-blur: 10px;
-  --glass-sat: 190%;
-  --rim: rgba(8, 42, 33, 0.18);
-  --lens: rgba(255, 255, 255, 0.95);
-  --hair-soft: rgba(255, 255, 255, 0.55);
-  --hair: rgba(255, 255, 255, 1);
+  --glass-a: 0.12;
+  --glass-2-a: 0.16;
+  --glass-blur: 0px; /* tanpa blur: latar tampak tajam lewat kaca (kaca bening iOS) */
+  --glass-sat: 200%;
+  --rim: rgba(8, 42, 33, 0.22);
+  --lens: rgba(255, 255, 255, 0.9);
+  --hair-soft: rgba(255, 255, 255, 0.6);
 }
 html[data-skin="glass"].dark[data-glass="clear"] {
-  --glass-a: 0.10;
+  --glass-a: 0.14;
   --glass-2-a: 0.05;
-  --rim: rgba(0, 0, 0, 0.6);
-  --lens: rgba(255, 255, 255, 0.55);
-  --hair-soft: rgba(255, 255, 255, 0.22);
-  --hair: rgba(255, 255, 255, 0.6);
+  --rim: rgba(0, 0, 0, 0.7);
+  --lens: rgba(255, 255, 255, 0.32);
+  --hair-soft: rgba(255, 255, 255, 0.16);
 }
-/* Tepi tebal yang membiaskan: pita terang ±6px memudar ke dalam, paling kuat di atas-kiri,
-   kedua di bawah-kanan (seperti cahaya yang menembus ketebalan kaca). */
-html[data-skin="glass"][data-glass="clear"] .surface::before {
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.75),
-    inset 4px 4px 7px -3px var(--lens),
-    inset -4px -4px 7px -4px rgba(255, 255, 255, 0.7),
-    inset 0 0 22px -12px rgba(255, 255, 255, 0.9);
-  -webkit-mask: none;
-  mask: none;
-}
-html[data-skin="glass"].dark[data-glass="clear"] .surface::before {
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
-    inset 4px 4px 7px -3px var(--lens),
-    inset -4px -4px 7px -4px rgba(255, 255, 255, 0.3),
-    inset 0 0 22px -12px rgba(255, 255, 255, 0.35);
-}
-/* Cincin pembiasan: lapisan tipis di pinggir yang mencerahkan & menjenuhkan latar (efek lensa). */
 html[data-skin="glass"][data-glass="clear"] .surface::after {
   background:
-    radial-gradient(40% 34% at var(--mx) var(--my), rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0) 70%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0) 72%, rgba(255, 255, 255, 0.16) 100%);
-  -webkit-backdrop-filter: brightness(1.18) saturate(1.25) blur(1.5px);
-  backdrop-filter: brightness(1.18) saturate(1.25) blur(1.5px);
-  padding: 7px;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  mix-blend-mode: normal;
-  opacity: 1;
+    radial-gradient(46% 40% at var(--mx) var(--my), rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, 0.12) 100%);
 }
-html[data-skin="glass"].dark[data-glass="clear"] .surface::after {
-  -webkit-backdrop-filter: brightness(1.35) saturate(1.3) blur(1.5px);
-  backdrop-filter: brightness(1.35) saturate(1.3) blur(1.5px);
-}
-/* Teks di atas kaca jernih: bayangan cahaya tipis supaya tetap terbaca di latar yang berubah. */
-html[data-skin="glass"][data-glass="clear"] .surface { text-shadow: 0 0.5px 0 rgb(var(--background) / 0.4); }
+/* Teks di atas kaca jernih: sedikit bayangan cahaya supaya tetap terbaca di latar yang berubah. */
+html[data-skin="glass"][data-glass="clear"] .surface { text-shadow: 0 0.5px 0 rgb(var(--background) / 0.35); }
 html[data-skin="glass"][data-glass="clear"] .surface-opaque { --glass-a: 0.82; --glass-blur: 22px; }
 html[data-skin="glass"][data-glass="solid"] { --glass-a: 0.88; --glass-2-a: 0.55; --glass-blur: 30px; --glass-sat: 140%; }
 html[data-skin="glass"].dark[data-glass="solid"] { --glass-a: 0.86; --glass-2-a: 0.12; }
@@ -815,8 +779,8 @@ html[data-skin="glass"] :is(.text-xs, .text-\[11px\], .text-\[10px\]) { letter-s
 /* HP: blur lebih ringan supaya tidak berat. */
 @media (max-width: 640px) {
   html[data-skin="glass"] .surface {
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 6px)) saturate(160%);
-    backdrop-filter: blur(calc(var(--glass-blur) - 6px)) saturate(160%);
+    -webkit-backdrop-filter: blur(max(0px, calc(var(--glass-blur) - 6px))) saturate(160%);
+    backdrop-filter: blur(max(0px, calc(var(--glass-blur) - 6px))) saturate(160%);
     border-radius: 24px;
   }
   html[data-skin="glass"] .app-frame { padding: 12px; gap: 12px; }

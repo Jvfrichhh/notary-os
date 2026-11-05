@@ -480,32 +480,8 @@ html[data-skin="glass"].dark {
   --glass-shadow: 0 20px 50px -22px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 /* Tingkat kaca pilihan pengguna (Pengaturan > Tampilan). */
-/* Jernih: hampir tanpa isi — latar terlihat jelas lewat kaca; blur tipis + saturasi
-   tinggi, dan tepi/bibir lensa justru lebih tegas supaya panel tetap terbaca sebagai kaca. */
-html[data-skin="glass"][data-glass="clear"] {
-  --glass-a: 0.12;
-  --glass-2-a: 0.16;
-  --glass-blur: 0px; /* tanpa blur: latar tampak tajam lewat kaca (kaca bening iOS) */
-  --glass-sat: 200%;
-  --rim: rgba(8, 42, 33, 0.22);
-  --lens: rgba(255, 255, 255, 0.9);
-  --hair-soft: rgba(255, 255, 255, 0.6);
-}
-html[data-skin="glass"].dark[data-glass="clear"] {
-  --glass-a: 0.14;
-  --glass-2-a: 0.05;
-  --rim: rgba(0, 0, 0, 0.7);
-  --lens: rgba(255, 255, 255, 0.32);
-  --hair-soft: rgba(255, 255, 255, 0.16);
-}
-html[data-skin="glass"][data-glass="clear"] .surface::after {
-  background:
-    radial-gradient(46% 40% at var(--mx) var(--my), rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 70%),
-    linear-gradient(165deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, 0.12) 100%);
-}
-/* Teks di atas kaca jernih: sedikit bayangan cahaya supaya tetap terbaca di latar yang berubah. */
-html[data-skin="glass"][data-glass="clear"] .surface { text-shadow: 0 0.5px 0 rgb(var(--background) / 0.35); }
-html[data-skin="glass"][data-glass="clear"] .surface-opaque { --glass-a: 0.82; --glass-blur: 22px; }
+html[data-skin="glass"][data-glass="clear"] { --glass-a: 0.26; --glass-2-a: 0.20; --glass-blur: 16px; }
+html[data-skin="glass"].dark[data-glass="clear"] { --glass-a: 0.30; --glass-2-a: 0.06; }
 html[data-skin="glass"][data-glass="solid"] { --glass-a: 0.88; --glass-2-a: 0.55; --glass-blur: 30px; --glass-sat: 140%; }
 html[data-skin="glass"].dark[data-glass="solid"] { --glass-a: 0.86; --glass-2-a: 0.12; }
 
@@ -741,7 +717,6 @@ html[data-skin="glass"] .dock-lens {
   transition: transform 0.45s var(--spring);
 }
 html[data-skin="glass"].dark .dock-lens { background: rgb(var(--primary) / 0.18); }
-html[data-skin="glass"][data-glass="clear"] .dock-lens { background: rgb(var(--glass) / 0.55); }
 html[data-skin="glass"] .dock-action {
   pointer-events: auto;
   display: flex;
@@ -779,8 +754,8 @@ html[data-skin="glass"] :is(.text-xs, .text-\[11px\], .text-\[10px\]) { letter-s
 /* HP: blur lebih ringan supaya tidak berat. */
 @media (max-width: 640px) {
   html[data-skin="glass"] .surface {
-    -webkit-backdrop-filter: blur(max(0px, calc(var(--glass-blur) - 6px))) saturate(160%);
-    backdrop-filter: blur(max(0px, calc(var(--glass-blur) - 6px))) saturate(160%);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 6px)) saturate(160%);
+    backdrop-filter: blur(calc(var(--glass-blur) - 6px)) saturate(160%);
     border-radius: 24px;
   }
   html[data-skin="glass"] .app-frame { padding: 12px; gap: 12px; }

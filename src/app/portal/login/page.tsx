@@ -1,6 +1,7 @@
 "use client";
 
 import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
+import { GlassLens } from "@/components/skin/GlassLens";
 import { Suspense, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
@@ -148,6 +149,7 @@ export default function PortalLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4 py-8">
       <GlassBackdrop />
+      <GlassLens />
       {/* useSearchParams butuh Suspense boundary saat prerender. */}
       <Suspense fallback={null}>
         <PortalLoginForm />

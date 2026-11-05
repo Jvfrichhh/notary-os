@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-import { THEME_COOKIE, THEME_KEY } from "@/lib/theme";
+import { GLASS_COOKIE, GLASS_KEY, THEME_COOKIE, THEME_KEY, type GlassLevel } from "@/lib/theme";
 
 function persistTheme(theme: "dark" | "light") {
   try {
@@ -15,7 +15,18 @@ function persistTheme(theme: "dark" | "light") {
   document.documentElement.style.colorScheme = theme;
 }
 
-export { persistTheme };
+/** Simpan tingkat kaca (Jernih/Standar/Pekat) dan terapkan seketika. */
+function persistGlass(level: GlassLevel) {
+  try {
+    localStorage.setItem(GLASS_KEY, level);
+  } catch {
+    /* penyimpanan browser tidak tersedia */
+  }
+  document.cookie = `${GLASS_COOKIE}=${level};path=/;max-age=31536000;SameSite=Lax${location.protocol === "https:" ? ";Secure" : ""}`;
+  document.documentElement.dataset.glass = level;
+}
+
+export { persistTheme, persistGlass };
 
 /** Tombol ganti mode terang / gelap. Pilihan diingat di browser ini. */
 export function ThemeToggle({ className = "" }: { className?: string }) {

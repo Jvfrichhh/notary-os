@@ -435,102 +435,127 @@ button {
   }
 }
 
-/* --- Liquid Glass --- */
+/* --- Liquid Glass (gaya iOS 27) ---------------------------------------
+   Prinsip (HIG: materials/liquid-glass, WWDC "Designing Fluid Interfaces"):
+   - Kaca = lapisan fungsional yang MENGAMBANG di atas konten; kontennya
+     bergulir di bawahnya. Tidak ada kaca di atas kaca yang sama tebalnya.
+   - Bibir lensa: tepi luar sedikit GELAP + sorotan dalam TERANG (iOS 27:
+     "darkened edges, brighter highlights") supaya panel terpisah dari latar
+     tanpa garis keras; kilau besar dikurangi (iOS 27: "less glow").
+   - Tingkat transparansi bisa dipilih pengguna (data-glass: clear/regular/
+     solid; iOS 27 "Liquid Glass slider"); reduce-transparency & reduce-motion
+     dihormati. ------------------------------------------------------------- */
 html[data-skin="glass"] {
   --glass: 255 255 255;
-  --glass-a: 0.52;
-  --glass-2-a: 0.34;
-  --hair: rgba(255, 255, 255, 0.85);
-  --hair-2: rgba(8, 42, 33, 0.08);
-  --tint1: #a8e6cb;
-  --tint2: #e9d3a4;
-  --tint3: #b7dcff;
-  --canvas: 238 244 241;
-  --glass-shadow: 0 24px 60px -24px rgba(8, 42, 33, 0.25), 0 1px 2px rgba(8, 42, 33, 0.06);
+  --glass-a: 0.42;            /* isi panel (regular) */
+  --glass-2-a: 0.30;          /* isian/tombol sekunder */
+  --glass-blur: 22px;
+  --glass-sat: 170%;
+  --rim: rgba(8, 42, 33, 0.14);           /* tepi luar gelap tipis */
+  --hair: rgba(255, 255, 255, 0.95);      /* sorotan dalam (atas-kiri) */
+  --hair-soft: rgba(255, 255, 255, 0.45);
+  --lens: rgba(255, 255, 255, 0.55);      /* pendar bibir lensa */
+  --tint1: #9fe3c4;
+  --tint2: #f1d6a2;
+  --tint3: #a9d4ff;
+  --tint4: #ffd3e0;
+  --canvas: 236 243 240;
+  --glass-shadow: 0 18px 44px -22px rgba(8, 42, 33, 0.28), 0 2px 6px -2px rgba(8, 42, 33, 0.08);
+  --spring: cubic-bezier(0.34, 1.3, 0.64, 1); /* pegas: sedikit lewat lalu diam */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 html[data-skin="glass"].dark {
-  --glass: 16 30 26;
-  --glass-a: 0.55;
-  --glass-2-a: 0.06;
-  --hair: rgba(255, 255, 255, 0.22);
-  --hair-2: rgba(255, 255, 255, 0.07);
-  --tint1: #0b5e42;
-  --tint2: #5a4520;
-  --tint3: #123a63;
-  --canvas: 7 18 15;
-  --glass-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --glass: 14 26 23;
+  --glass-a: 0.46;
+  --glass-2-a: 0.08;
+  --rim: rgba(0, 0, 0, 0.55);
+  --hair: rgba(255, 255, 255, 0.30);
+  --hair-soft: rgba(255, 255, 255, 0.10);
+  --lens: rgba(255, 255, 255, 0.18);
+  --tint1: #0f6b4b;
+  --tint2: #6a4f1e;
+  --tint3: #164574;
+  --tint4: #5a2a44;
+  --canvas: 6 16 13;
+  --glass-shadow: 0 20px 50px -22px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.45);
 }
-/* Lapisan abu-abu (bg-muted) jadi tembus pandang supaya kaca tetap terlihat. */
-html[data-skin="glass"] .bg-muted {
-  background-color: rgb(var(--foreground) / 0.06);
-}
-html[data-skin="glass"] .hover\:bg-muted:hover,
-html[data-skin="glass"] .hover\:bg-muted\/50:hover {
-  background-color: rgb(var(--foreground) / 0.07);
-}
-html[data-skin="glass"] .divide-border > :not([hidden]) ~ :not([hidden]),
-html[data-skin="glass"] .border-border {
-  border-color: rgb(var(--foreground) / 0.09);
-}
+/* Tingkat kaca pilihan pengguna (Pengaturan > Tampilan). */
+html[data-skin="glass"][data-glass="clear"] { --glass-a: 0.26; --glass-2-a: 0.20; --glass-blur: 16px; }
+html[data-skin="glass"].dark[data-glass="clear"] { --glass-a: 0.30; --glass-2-a: 0.06; }
+html[data-skin="glass"][data-glass="solid"] { --glass-a: 0.88; --glass-2-a: 0.55; --glass-blur: 30px; --glass-sat: 140%; }
+html[data-skin="glass"].dark[data-glass="solid"] { --glass-a: 0.86; --glass-2-a: 0.12; }
 
-/* Latar bercahaya yang bergerak pelan (dirender oleh <GlassBackdrop/>). */
+/* Lapisan abu-abu (bg-muted) & garis jadi tembus pandang supaya kaca tetap terlihat. */
+html[data-skin="glass"] .bg-muted { background-color: rgb(var(--foreground) / 0.06); }
+html[data-skin="glass"] .hover\:bg-muted:hover,
+html[data-skin="glass"] .hover\:bg-muted\/50:hover { background-color: rgb(var(--foreground) / 0.08); }
+html[data-skin="glass"] .divide-border > :not([hidden]) ~ :not([hidden]),
+html[data-skin="glass"] .border-border { border-color: rgb(var(--foreground) / 0.09); }
+
+/* Latar: gradasi lembut + bentuk cahaya yang bergerak sangat pelan (ada yang dibiaskan kaca). */
 html[data-skin="glass"] .glass-bg {
   display: block;
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: rgb(var(--canvas));
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgb(var(--canvas)) 0%, rgb(var(--canvas)) 100%);
   pointer-events: none;
 }
 html[data-skin="glass"] .glass-bg > i {
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.8;
-  animation: glass-float 24s ease-in-out infinite;
+  filter: blur(70px);
+  opacity: 0.85;
+  animation: glass-float 36s ease-in-out infinite;
+  will-change: transform;
 }
-html[data-skin="glass"] .glass-bg > i:nth-child(1) { width: 640px; height: 640px; background: var(--tint1); left: -180px; top: -200px; }
-html[data-skin="glass"] .glass-bg > i:nth-child(2) { width: 520px; height: 520px; background: var(--tint2); right: -140px; top: 60px; animation-delay: -8s; opacity: 0.6; }
-html[data-skin="glass"] .glass-bg > i:nth-child(3) { width: 560px; height: 560px; background: var(--tint3); left: 32%; bottom: -260px; animation-delay: -16s; opacity: 0.5; }
+html[data-skin="glass"] .glass-bg > i:nth-child(1) { width: 680px; height: 680px; background: var(--tint1); left: -200px; top: -220px; }
+html[data-skin="glass"] .glass-bg > i:nth-child(2) { width: 520px; height: 520px; background: var(--tint2); right: -160px; top: 40px; animation-delay: -12s; opacity: 0.6; }
+html[data-skin="glass"] .glass-bg > i:nth-child(3) { width: 600px; height: 600px; background: var(--tint3); left: 30%; bottom: -280px; animation-delay: -24s; opacity: 0.55; }
+html[data-skin="glass"] .glass-bg > i:nth-child(4) { width: 260px; height: 260px; background: var(--tint4); left: 58%; top: 18%; animation-delay: -6s; opacity: 0.45; filter: blur(40px); }
 @keyframes glass-float {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(50px, -30px) scale(1.08); }
-  66% { transform: translate(-30px, 24px) scale(0.96); }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -24px) scale(1.06); }
+  66% { transform: translate(-24px, 20px) scale(0.97); }
 }
 
-/* Material kaca untuk panel. */
+/* ---- Material kaca untuk panel (.surface) ---- */
 html[data-skin="glass"] .surface {
   isolation: isolate;
   border: 0;
-  border-radius: 24px;
+  border-radius: 26px;
   background: rgb(var(--glass) / var(--glass-a));
-  -webkit-backdrop-filter: blur(26px) saturate(180%);
-  backdrop-filter: blur(26px) saturate(180%);
-  box-shadow: var(--glass-shadow), inset 0 0 0 1px var(--hair-2);
-  --mx: 35%;
-  --my: 15%;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  /* tepi: 0.5px gelap di luar (pemisah dari latar) + bibir lensa terang di dalam */
+  box-shadow:
+    var(--glass-shadow),
+    0 0 0 0.5px var(--rim),
+    inset 0 0 0 1px var(--hair-soft),
+    inset 0 1px 0 var(--hair),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  --mx: 30%;
+  --my: 0%;
 }
-/* Panel biasa diposisikan relatif (untuk lapisan ::before/::after); panel sticky/fixed mempertahankan posisinya. */
-html[data-skin="glass"] .surface:not(.sticky):not(.fixed):not(.mobile-dock):not(.absolute) {
-  position: relative;
-}
-/* garis rambut tepi: terang mengikuti cahaya, memudar ke bawah (bibir lensa) */
+html[data-skin="glass"] .surface:not(.sticky):not(.fixed):not(.mobile-dock):not(.absolute) { position: relative; }
+/* Pembiasan tepi ("lensing"): pita terang tipis yang menebal di sudut atas-kiri, menipis di bawah-kanan. */
 html[data-skin="glass"] .surface::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
   pointer-events: none;
   z-index: 2;
-  background: linear-gradient(160deg, var(--hair) 0%, rgba(255, 255, 255, 0.35) 30%, rgba(255, 255, 255, 0.06) 55%, rgba(255, 255, 255, 0.3) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
+  box-shadow:
+    inset 1px 1px 0 0 var(--lens),
+    inset 0 0 18px -10px var(--lens),
+    inset -1px -1px 0 0 rgba(255, 255, 255, 0.10);
+  -webkit-mask: radial-gradient(140% 120% at 0% 0%, #000 0%, rgba(0, 0, 0, 0.55) 45%, rgba(0, 0, 0, 0.25) 100%);
+  mask: radial-gradient(140% 120% at 0% 0%, #000 0%, rgba(0, 0, 0, 0.55) 45%, rgba(0, 0, 0, 0.25) 100%);
 }
-/* cahaya dalam lembut + kilau yang mengikuti kursor (--mx/--my dari GlassPointer) */
+/* Sorotan lembut dari atas + kilau kecil mengikuti kursor (iOS 27: lebih sedikit "glow"). */
 html[data-skin="glass"] .surface::after {
   content: "";
   position: absolute;
@@ -539,21 +564,14 @@ html[data-skin="glass"] .surface::after {
   pointer-events: none;
   z-index: 1;
   background:
-    radial-gradient(60% 50% at var(--mx) var(--my), rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 40%);
-  box-shadow: inset 0 0 40px -18px rgba(255, 255, 255, 0.9), inset 0 -20px 40px -34px rgba(8, 42, 33, 0.35);
+    radial-gradient(42% 36% at var(--mx) var(--my), rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 32%);
   mix-blend-mode: soft-light;
-  opacity: 0.95;
 }
-html[data-skin="glass"].dark .surface::after {
-  opacity: 0.55;
-  box-shadow: inset 0 0 40px -18px rgba(255, 255, 255, 0.35);
-}
-html[data-skin="glass"] .surface > * {
-  position: relative;
-  z-index: 3;
-}
-/* Isian & tombol sekunder: kaca tipis berbentuk pil/kapsul. */
+html[data-skin="glass"].dark .surface::after { opacity: 0.6; }
+html[data-skin="glass"] .surface > * { position: relative; z-index: 3; }
+
+/* Isian & tombol sekunder: kaca tipis berbentuk kapsul, cekung sedikit (inset) seperti kontrol iOS. */
 html[data-skin="glass"] .surface-2,
 html[data-skin="glass"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]).rounded-md,
 html[data-skin="glass"] select.rounded-md,
@@ -561,52 +579,48 @@ html[data-skin="glass"] textarea.rounded-md,
 html[data-skin="glass"] :is(button, a).rounded-md.border.border-border {
   border-color: transparent;
   background-color: rgb(var(--glass) / var(--glass-2-a));
-  box-shadow: inset 0 0 0 1px var(--hair-2);
+  box-shadow: inset 0 0 0 1px var(--hair-soft), inset 0 1px 2px rgba(8, 42, 33, 0.05), 0 0 0 0.5px var(--rim);
   border-radius: 14px;
+  transition: background-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), transform 0.35s var(--spring);
 }
-html[data-skin="glass"] :is(button, a).rounded-md.border.border-border {
-  border-radius: 999px;
-}
+html[data-skin="glass"] :is(button, a).rounded-md.border.border-border { border-radius: 999px; }
 html[data-skin="glass"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]).rounded-md:focus,
 html[data-skin="glass"] select.rounded-md:focus,
 html[data-skin="glass"] textarea.rounded-md:focus {
-  background-color: rgb(var(--glass) / calc(var(--glass-2-a) + 0.2));
+  background-color: rgb(var(--glass) / calc(var(--glass-2-a) + 0.22));
+  box-shadow: inset 0 0 0 1px var(--hair), 0 0 0 3px rgb(var(--primary) / 0.22);
 }
-/* Tombol utama: kapsul hijau dengan kilau atas. */
+/* Tombol utama: kapsul berwarna dengan bibir lensa (kaca berwarna, bukan plastik). */
 html[data-skin="glass"] :is(button, a).bg-primary.rounded-md,
 html[data-skin="glass"] :is(button, a).bg-primary.rounded-lg {
   border-radius: 999px;
-  background-image: linear-gradient(180deg, #0a8f68, #047857);
-  box-shadow: 0 10px 24px -12px rgba(4, 120, 87, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, #0a8f68, #047857);
+  box-shadow: 0 10px 22px -12px rgba(4, 120, 87, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 0 0 0.5px rgba(255, 255, 255, 0.25), 0 0 0 0.5px rgba(4, 120, 87, 0.5);
+  transition: transform 0.35s var(--spring), box-shadow 0.25s var(--ease-out), filter 0.2s;
 }
 html[data-skin="glass"].dark :is(button, a).bg-primary.rounded-md,
 html[data-skin="glass"].dark :is(button, a).bg-primary.rounded-lg {
-  background-image: linear-gradient(180deg, #3fdca3, #22b586);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, #3fdca3, #22b586);
+}
+/* Umpan balik tekan: langsung saat pointer turun (bukan saat dilepas), lalu kembali dengan pegas. */
+html[data-skin="glass"] :is(button, a, [role="button"]):not(.press):not(.nav-item):active {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+  filter: brightness(0.97);
 }
 /* Lencana & chip bulat jadi kaca tipis. */
 html[data-skin="glass"] .rounded-full.bg-primary-soft,
 html[data-skin="glass"] .rounded-full.bg-danger-soft,
-html[data-skin="glass"] .rounded-full.bg-warn-soft {
-  box-shadow: inset 0 0 0 1px var(--hair-2);
-}
-/* Kartu yang bisa ditekan: kenyal (pegas). */
-html[data-skin="glass"] .press {
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s;
-}
-html[data-skin="glass"] .press:hover {
-  transform: translateY(-2px);
-}
-html[data-skin="glass"] .press:active {
-  transform: scale(0.975);
-}
-/* Panel kerangka: sidebar mengambang & bilah atas kapsul. */
-html[data-skin="glass"] .app-frame {
-  background: transparent;
-  padding: 16px;
-  gap: 16px;
-}
+html[data-skin="glass"] .rounded-full.bg-warn-soft { box-shadow: inset 0 0 0 1px var(--hair-soft), 0 0 0 0.5px var(--rim); }
+/* Kartu yang bisa ditekan: naik sedikit saat disorot, mengecil saat ditekan (pegas). */
+html[data-skin="glass"] .press { transition: transform 0.45s var(--spring), box-shadow 0.35s var(--ease-out); }
+html[data-skin="glass"] .press:hover { transform: translateY(-2px); }
+html[data-skin="glass"] .press:active { transform: scale(0.975); transition-duration: 0.08s; }
+
+/* ---- Kerangka: sidebar mengambang, bilah atas kapsul ---- */
+html[data-skin="glass"] .app-frame { background: transparent; padding: 16px; gap: 16px; }
 html[data-skin="glass"] .sidebar-panel {
-  border-radius: 28px;
+  border-radius: 30px;
   border-right: 0;
   height: calc(100vh - 32px);
   height: calc(100dvh - 32px);
@@ -616,32 +630,137 @@ html[data-skin="glass"] .topbar-panel {
   border-bottom: 0;
   padding-left: 10px;
   padding-right: 10px;
-  top: 12px; /* bilah sticky di HP ikut jarak bingkai */
+  top: 12px;
 }
 @media (min-width: 1024px) {
-  html[data-skin="glass"] .topbar-panel {
-    top: auto;
-  }
+  html[data-skin="glass"] .topbar-panel { top: auto; }
 }
-html[data-skin="glass"] .topbar-panel .rounded-md {
-  border-radius: 999px;
-}
+html[data-skin="glass"] .topbar-panel .rounded-md { border-radius: 999px; }
+/* Item navigasi: kapsul; yang aktif = lensa kaca kecil + ikon terisi (gaya SF Symbols "fill"). */
 html[data-skin="glass"] .nav-item {
   border-radius: 14px;
+  transition: background-color 0.18s var(--ease-out), color 0.18s var(--ease-out), transform 0.35s var(--spring);
 }
+html[data-skin="glass"] .nav-item:active { transform: scale(0.98); transition-duration: 0.08s; }
+html[data-skin="glass"] .nav-item[aria-current="page"] {
+  background-color: rgb(var(--glass) / calc(var(--glass-2-a) + 0.25));
+  box-shadow: inset 0 0 0 1px var(--hair-soft), inset 0 1px 0 var(--hair), 0 0 0 0.5px var(--rim), 0 6px 14px -10px rgba(8, 42, 33, 0.35);
+}
+html[data-skin="glass"].dark .nav-item[aria-current="page"] { background-color: rgb(var(--primary) / 0.16); }
+html[data-skin="glass"] .nav-item[aria-current="page"] svg,
+html[data-skin="glass"] .mobile-dock .active svg { fill: currentColor; fill-opacity: 0.22; }
+/* Ikon: garis sedikit lebih tegas & ujung bulat (mendekati bobot SF Symbols Regular). */
+html[data-skin="glass"] svg.lucide { stroke-width: 1.85; }
+html[data-skin="glass"] .topbar-panel svg.lucide,
+html[data-skin="glass"] .mobile-dock svg.lucide,
+html[data-skin="glass"] .dock-action svg.lucide { stroke-width: 2; }
+
+/* ---- Dok HP: tab bar kapsul + tombol aksi bulat terpisah (seperti iOS 26/27) ---- */
+html[data-skin="glass"] .mobile-dock-wrap {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+}
+html[data-skin="glass"] .mobile-dock {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 4), 1fr);
+  gap: 0;
+  padding: 5px;
+  flex: 1 1 auto;
+  max-width: 400px;
+  border-radius: 999px;
+}
+html[data-skin="glass"] .mobile-dock a {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: auto;
+  height: 52px;
+  border-radius: 999px;
+  color: rgb(var(--muted-foreground));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: color 0.2s var(--ease-out), transform 0.3s var(--spring);
+  -webkit-tap-highlight-color: transparent;
+}
+html[data-skin="glass"] .mobile-dock a:active { transform: scale(0.94); transition-duration: 0.08s; }
+html[data-skin="glass"] .mobile-dock .active { background: none; color: rgb(var(--primary)); }
+/* Lensa aktif yang MELUNCUR antar tab (bukan hilang-muncul). */
+html[data-skin="glass"] .dock-lens {
+  position: absolute;
+  z-index: 1;
+  top: 5px;
+  bottom: 5px;
+  left: 5px;
+  width: calc((100% - 10px) / var(--n, 4));
+  border-radius: 999px;
+  background: rgb(var(--glass) / 0.75);
+  box-shadow: inset 0 0 0 1px var(--hair-soft), inset 0 1px 0 var(--hair), 0 0 0 0.5px var(--rim), 0 6px 16px -10px rgba(8, 42, 33, 0.5);
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform 0.45s var(--spring);
+}
+html[data-skin="glass"].dark .dock-lens { background: rgb(var(--primary) / 0.18); }
+html[data-skin="glass"] .dock-action {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  color: rgb(var(--foreground));
+  flex: 0 0 auto;
+  transition: transform 0.3s var(--spring);
+}
+html[data-skin="glass"] .dock-action:active { transform: scale(0.94); transition-duration: 0.08s; }
+@media (min-width: 1024px) {
+  html[data-skin="glass"] .mobile-dock-wrap { display: none; }
+}
+
+/* Popover/menu di atas konten: kaca lebih pekat supaya terbaca. */
+html[data-skin="glass"] .surface-opaque { --glass-a: 0.9; }
+html[data-skin="glass"].dark .surface-opaque { --glass-a: 0.88; }
+/* ---- Menu/popover: "materialize" — muncul dari pemicunya dengan skala + blur, bukan sekadar fade ---- */
+html[data-skin="glass"] .glass-pop {
+  transform-origin: var(--pop-origin, top right);
+  animation: glass-pop 0.42s var(--spring) both;
+}
+@keyframes glass-pop {
+  from { opacity: 0; transform: scale(0.92) translateY(-4px); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* ---- Tipografi di atas kaca ("vibrancy"): judul dirapatkan, teks kecil dilonggarkan sedikit ---- */
+html[data-skin="glass"] :is(h1, h2) { letter-spacing: -0.02em; text-wrap: balance; }
+html[data-skin="glass"] :is(.text-xs, .text-\[11px\], .text-\[10px\]) { letter-spacing: 0.01em; }
+
 /* HP: blur lebih ringan supaya tidak berat. */
 @media (max-width: 640px) {
   html[data-skin="glass"] .surface {
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    backdrop-filter: blur(18px) saturate(160%);
-    border-radius: 22px;
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 6px)) saturate(160%);
+    backdrop-filter: blur(calc(var(--glass-blur) - 6px)) saturate(160%);
+    border-radius: 24px;
   }
-  html[data-skin="glass"] .app-frame {
-    padding: 12px;
-    gap: 12px;
-  }
+  html[data-skin="glass"] .app-frame { padding: 12px; gap: 12px; }
 }
-/* Perangkat yang meminta kurangi transparansi/gerakan. */
+/* Perangkat yang meminta kurangi transparansi / kontras lebih / kurangi gerakan. */
 @media (prefers-reduced-transparency: reduce) {
   html[data-skin="glass"] .surface {
     background: rgb(var(--background));
@@ -649,19 +768,18 @@ html[data-skin="glass"] .nav-item {
     backdrop-filter: none;
   }
 }
+@media (prefers-contrast: more) {
+  html[data-skin="glass"] .surface { background: rgb(var(--background)); box-shadow: 0 0 0 1px rgb(var(--foreground) / 0.4); }
+  html[data-skin="glass"] .surface::before, html[data-skin="glass"] .surface::after { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
-  html[data-skin="glass"] .glass-bg > i {
-    animation: none;
-  }
-  html[data-skin="glass"] .press {
-    transition: none;
-  }
+  html[data-skin="glass"] .glass-bg > i { animation: none; }
+  html[data-skin="glass"] .press, html[data-skin="glass"] .dock-lens, html[data-skin="glass"] .nav-item { transition: none; }
+  html[data-skin="glass"] .glass-pop { animation: glass-fade 0.18s ease both; }
 }
+@keyframes glass-fade { from { opacity: 0; } to { opacity: 1; } }
 /* Bilah atas portal klien: kapsul mengambang dengan jarak dari tepi layar. */
-html[data-skin="glass"] .portal-top {
-  margin: 12px 12px 0;
-  border-radius: 999px;
-}
+html[data-skin="glass"] .portal-top { margin: 12px 12px 0; border-radius: 999px; }
 
 /* Daftar pilihan <select> bawaan browser: warnanya ikut tema (tidak abu-abu muda dengan teks terang di mode gelap). */
 select option,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Search } from "lucide-react";
 import type { SearchResultGroup } from "@/app/api/search/route";
@@ -112,7 +112,7 @@ export function GlobalSearchBar() {
       )}
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-lg border border-border bg-background shadow-lg">
+        <div className="surface surface-opaque glass-pop absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-lg border border-border bg-background shadow-lg" style={{ "--pop-origin": "top left" } as CSSProperties}>
           {isLoading && totalResults === 0 && (
             <p className="p-3 text-sm text-muted-foreground">Mencari...</p>
           )}

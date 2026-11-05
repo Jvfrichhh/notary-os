@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { NavIconKey, NavSectionConfig } from "@/lib/navigation";
@@ -107,28 +107,38 @@ export function Sidebar({ sections }: SidebarProps) {
 
   // Dock HP: empat tujuan utama yang tersedia untuk user ini + tombol menu lengkap.
   const DOCK_ORDER = ["/dashboard", "/jobs", "/clients", "/documents", "/payments", "/reports"];
+  const DOCK_LABEL: Record<string, string> = { "/dashboard": "Beranda", "/jobs": "Pekerjaan", "/clients": "Klien", "/documents": "Dokumen", "/payments": "Tagihan", "/reports": "Laporan" };
   const allItems = sections.flatMap((s) => s.items);
   const dockItems = DOCK_ORDER.map((href) => allItems.find((i) => i.href === href)).filter((i): i is NavSectionConfig["items"][number] => !!i).slice(0, 4);
+  const dockActive = dockItems.findIndex((i) => pathname === i.href || pathname?.startsWith(i.href + "/"));
 
   return (
     <>
       <div className="hidden h-full lg:flex">
         <SidebarPanel sections={sections} pathname={pathname} />
       </div>
-      <nav className="mobile-dock surface" aria-label="Navigasi cepat">
-        {dockItems.map((item) => {
-          const Icon = ICONS[item.icon];
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-          return (
-            <Link key={item.href} href={item.href} aria-label={item.label} className={isActive ? "active" : undefined}>
-              {Icon && <Icon className="h-[22px] w-[22px]" />}
-            </Link>
-          );
-        })}
-        <button type="button" aria-label="Menu lengkap" onClick={() => setOpen(true)}>
+      {/* Dok HP gaya iOS: tab bar kapsul (lensa aktif meluncur antar tab) + tombol menu bulat terpisah */}
+      <div className="mobile-dock-wrap">
+        <nav
+          className="mobile-dock surface"
+          aria-label="Navigasi cepat"
+          style={{ "--n": dockItems.length, "--i": Math.max(0, dockActive) } as CSSProperties}
+        >
+          {dockActive >= 0 && <span className="dock-lens" aria-hidden="true" />}
+          {dockItems.map((item, idx) => {
+            const Icon = ICONS[item.icon];
+            return (
+              <Link key={item.href} href={item.href} aria-label={item.label} aria-current={idx === dockActive ? "page" : undefined} className={idx === dockActive ? "active" : undefined}>
+                {Icon && <Icon className="h-[22px] w-[22px]" />}
+                <span>{DOCK_LABEL[item.href] ?? item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <button type="button" aria-label="Menu lengkap" className="dock-action surface" onClick={() => setOpen(true)}>
           <Menu className="h-[22px] w-[22px]" />
         </button>
-      </nav>
+      </div>
       {open && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div className="h-full max-w-[85vw] shadow-xl">

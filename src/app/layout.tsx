@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { cookies } from "next/headers";
-import { DEFAULT_THEME, THEME_COOKIE, THEME_INIT_SCRIPT } from "@/lib/theme";
+import { DEFAULT_GLASS, DEFAULT_THEME, GLASS_COOKIE, THEME_COOKIE, THEME_INIT_SCRIPT, isGlassLevel } from "@/lib/theme";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { UpdateNotice } from "@/components/pwa/UpdateNotice";
 
@@ -25,10 +25,13 @@ const FONT_URL = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wgh
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Mode terang/gelap dirender di server dari cookie supaya tidak berkedip dan
   // tidak "balik ke terang" setelah muat ulang.
-  const saved = (await cookies()).get(THEME_COOKIE)?.value;
+  const jar = await cookies();
+  const saved = jar.get(THEME_COOKIE)?.value;
   const theme = saved === "dark" || saved === "light" ? saved : DEFAULT_THEME;
+  const savedGlass = jar.get(GLASS_COOKIE)?.value;
+  const glass = isGlassLevel(savedGlass) ? savedGlass : DEFAULT_GLASS;
   return (
-    <html lang="id" data-skin="glass" className={theme === "dark" ? "dark" : undefined} style={{ colorScheme: theme }} suppressHydrationWarning>
+    <html lang="id" data-skin="glass" data-glass={glass} className={theme === "dark" ? "dark" : undefined} style={{ colorScheme: theme }} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

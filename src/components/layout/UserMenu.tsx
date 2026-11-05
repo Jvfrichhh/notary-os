@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { ChevronDown, KeyRound, LogOut, Settings } from "lucide-react";
 
@@ -60,7 +60,7 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
       </button>
 
       {open && (
-        <div role="menu" className="surface absolute right-0 top-12 z-50 w-60 p-2 shadow-lg" style={{ "--glass-a": 0.92 } as CSSProperties}>
+        <div role="menu" className="surface surface-opaque glass-pop absolute right-0 top-12 z-50 w-60 p-2 shadow-lg">
           <div className="border-b border-border px-2.5 pb-2.5 pt-1">
             <p className="truncate text-sm font-bold text-foreground">{name}</p>
             <p className="text-xs text-muted-foreground">{roleLabel}</p>

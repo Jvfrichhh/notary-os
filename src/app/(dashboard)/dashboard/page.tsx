@@ -1,5 +1,5 @@
 import { getT } from "@/lib/i18n/server";
-import { INTL_TAG, type Locale, type Translator } from "@/lib/i18n";
+import { type Locale, type Translator } from "@/lib/i18n";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -122,13 +122,11 @@ const MONTH_SHORT: Record<Locale, string[]> = {
   en: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 };
 
-/** Sapaan & tanggal menurut jam kantor (Asia/Jakarta), dalam bahasa pengguna. */
-function greeting(t: Translator, locale: Locale) {
-  const now = new Date();
-  const hour = (now.getUTCHours() + 7) % 24;
+/** Sapaan menurut jam kantor (Asia/Jakarta), dalam bahasa pengguna. Tanggal tampil di bilah atas. */
+function greeting(t: Translator) {
+  const hour = (new Date().getUTCHours() + 7) % 24;
   const salam = t(hour < 11 ? "dashboard.morning" : hour < 15 ? "dashboard.noon" : hour < 18 ? "dashboard.afternoon" : "dashboard.evening");
-  const tanggal = new Intl.DateTimeFormat(INTL_TAG[locale], { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }).format(now);
-  return { salam, tanggal };
+  return { salam };
 }
 
 interface PageProps {
@@ -157,7 +155,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
     canViewJobs ? getUpcomingTasks() : Promise.resolve([]),
     canViewJobs ? getStatusBreakdown(t) : Promise.resolve([])
   ]);
-  const { salam, tanggal } = greeting(t, locale);
+  const { salam } = greeting(t);
   const firstName = (user.name ?? "").trim().split(/\s+/)[0] || "";
 
   const cards = [
@@ -180,8 +178,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
     <div className="mx-auto max-w-[1200px] space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">{tanggal}</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-[28px]">
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-[28px]">
             {salam}{firstName ? `, ${firstName}` : ""}
           </h1>
         </div>

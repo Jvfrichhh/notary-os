@@ -1,7 +1,6 @@
 import { TopBarSearch } from "./TopBarSearch";
 import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
-import { ThemeToggle } from "./ThemeToggle";
 import { MobileMenuButton } from "./Sidebar";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -14,7 +13,6 @@ export async function TopBar() {
       <MobileMenuButton />
       <TopBarSearch />
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        <ThemeToggle />
         <NotificationBell />
         {session?.user && <UserMenu name={session.user.name ?? "User"} role={session.user.role} />}
       </div>

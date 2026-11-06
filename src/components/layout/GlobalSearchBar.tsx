@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useT } from "@/components/i18n/LocaleProvider";
 import { useRouter } from "next/navigation";
 import { Loader2, Search } from "lucide-react";
 import type { SearchResultGroup } from "@/app/api/search/route";
@@ -17,6 +18,7 @@ const MIN_QUERY_LENGTH = 2;
  */
 export function GlobalSearchBar() {
   const router = useRouter();
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -104,7 +106,7 @@ export function GlobalSearchBar() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setIsOpen(true)}
-        placeholder="Cari klien, pekerjaan, nomor akta..."
+        placeholder={t("topbar.searchPlaceholder")}
         className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       />
       {isLoading && (
@@ -120,7 +122,7 @@ export function GlobalSearchBar() {
             <p className="p-3 text-sm text-muted-foreground">Gagal memuat hasil pencarian. Coba lagi.</p>
           )}
           {!isLoading && !hasError && totalResults === 0 && (
-            <p className="p-3 text-sm text-muted-foreground">Tidak ada hasil untuk &quot;{trimmedQuery}&quot;.</p>
+            <p className="p-3 text-sm text-muted-foreground">{t("topbar.noResults", { q: trimmedQuery })}</p>
           )}
           {!hasError &&
             groups.map((group) => (

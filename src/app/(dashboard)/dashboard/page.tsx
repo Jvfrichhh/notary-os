@@ -1,3 +1,5 @@
+import { getT } from "@/lib/i18n/server";
+import { INTL_TAG, type Locale, type Translator } from "@/lib/i18n";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -89,22 +91,22 @@ async function getUpcomingTasks() {
 
 /** Pekerjaan berjalan per status, urut sesuai alur kerja (warna mengikuti status, bukan peringkat). */
 const STATUS_SLICES = [
-  { status: "INBOX", label: "Baru masuk", color: "var(--series-blue)" },
-  { status: "IN_PROGRESS", label: "Sedang diproses", color: "var(--series-orange)" },
-  { status: "WAITING_FOR_CLIENT", label: "Menunggu klien", color: "var(--series-aqua)" },
-  { status: "WAITING_FOR_DOCUMENT", label: "Menunggu dokumen", color: "var(--series-yellow)" },
-  { status: "REVIEW", label: "Menunggu persetujuan", color: "var(--series-magenta)" },
-  { status: "READY_FOR_SIGNING", label: "Siap tanda tangan", color: "var(--series-violet)" }
+  { status: "INBOX", color: "var(--series-blue)" },
+  { status: "IN_PROGRESS", color: "var(--series-orange)" },
+  { status: "WAITING_FOR_CLIENT", color: "var(--series-aqua)" },
+  { status: "WAITING_FOR_DOCUMENT", color: "var(--series-yellow)" },
+  { status: "REVIEW", color: "var(--series-magenta)" },
+  { status: "READY_FOR_SIGNING", color: "var(--series-violet)" }
 ] as const;
 
-async function getStatusBreakdown() {
+async function getStatusBreakdown(t: Translator) {
   const rows = await prisma.job.groupBy({
     by: ["status"],
     _count: { _all: true },
     where: { recordStatus: "ACTIVE", status: { notIn: ["COMPLETED", "CANCELLED"] } }
   });
   const count = new Map(rows.map((r) => [r.status as string, r._count._all]));
-  return STATUS_SLICES.map((s) => ({ label: s.label, color: s.color, value: count.get(s.status) ?? 0, href: `/jobs?status=${s.status}` }));
+  return STATUS_SLICES.map((s) => ({ label: t(`dashboard.status.${s.status}`), color: s.color, value: count.get(s.status) ?? 0, href: `/jobs?status=${s.status}` }));
 }
 
 const DEADLINE_TONE = {
@@ -115,14 +117,17 @@ const DEADLINE_TONE = {
   archived: "bg-muted text-foreground"
 } as const;
 
-const MONTH_SHORT = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
+const MONTH_SHORT: Record<Locale, string[]> = {
+  id: ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"],
+  en: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+};
 
-/** Sapaan & tanggal menurut jam kantor (Asia/Jakarta). */
-function greeting() {
+/** Sapaan & tanggal menurut jam kantor (Asia/Jakarta), dalam bahasa pengguna. */
+function greeting(t: Translator, locale: Locale) {
   const now = new Date();
   const hour = (now.getUTCHours() + 7) % 24;
-  const salam = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 18 ? "Selamat sore" : "Selamat malam";
-  const tanggal = new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }).format(now);
+  const salam = t(hour < 11 ? "dashboard.morning" : hour < 15 ? "dashboard.noon" : hour < 18 ? "dashboard.afternoon" : "dashboard.evening");
+  const tanggal = new Intl.DateTimeFormat(INTL_TAG[locale], { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }).format(now);
   return { salam, tanggal };
 }
 
@@ -137,6 +142,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
   // untuk pemilik view_visits (semua role bawaan punya keduanya; ini menjaga
   // konsistensi kalau nanti ada role kustom dengan izin lebih sempit).
   const user = await requireUser();
+  const { t, locale } = await getT();
   const permissions = await getUserPermissions(user.id);
   const canViewJobs = permissions.has(PERMISSIONS.VIEW_JOBS);
   const canCreateJobs = permissions.has(PERMISSIONS.CREATE_JOBS);
@@ -149,23 +155,23 @@ export default async function DashboardPage(props: Async<PageProps>) {
     canViewJobs ? getJobStats(user.id) : Promise.resolve(null),
     canViewJobs ? getRecentJobs() : Promise.resolve([]),
     canViewJobs ? getUpcomingTasks() : Promise.resolve([]),
-    canViewJobs ? getStatusBreakdown() : Promise.resolve([])
+    canViewJobs ? getStatusBreakdown(t) : Promise.resolve([])
   ]);
-  const { salam, tanggal } = greeting();
+  const { salam, tanggal } = greeting(t, locale);
   const firstName = (user.name ?? "").trim().split(/\s+/)[0] || "";
 
   const cards = [
     ...(jobStats
       ? [
-          { label: "Total Pekerjaan", value: jobStats.totalJobs, hint: "Semua yang tercatat", dot: "bg-[#98A2B3]", href: "/jobs" },
-          { label: "Sedang Diproses", value: jobStats.inProgress, hint: "Dikerjakan staf", dot: "bg-[#2E90FA]", href: "/jobs?status=IN_PROGRESS" },
-          { label: "Tenggat Hari Ini", value: jobStats.dueToday, hint: "Perlu dicek hari ini", dot: "bg-[#F79009]", href: "/deadlines" },
-          { label: "Terlambat", value: jobStats.overdue, hint: "Lewat target", dot: "bg-[#F04438]", href: "/deadlines" },
-          { label: "Selesai", value: jobStats.completed, hint: "Sudah rampung", dot: "bg-[#12B76A]", href: "/jobs?status=COMPLETED" },
+          { label: t("dashboard.totalJobs"), value: jobStats.totalJobs, hint: t("dashboard.totalJobsHint"), dot: "bg-[#98A2B3]", href: "/jobs" },
+          { label: t("dashboard.inProgress"), value: jobStats.inProgress, hint: t("dashboard.inProgressHint"), dot: "bg-[#2E90FA]", href: "/jobs?status=IN_PROGRESS" },
+          { label: t("dashboard.dueToday"), value: jobStats.dueToday, hint: t("dashboard.dueTodayHint"), dot: "bg-[#F79009]", href: "/deadlines" },
+          { label: t("dashboard.overdue"), value: jobStats.overdue, hint: t("dashboard.overdueHint"), dot: "bg-[#F04438]", href: "/deadlines" },
+          { label: t("dashboard.completed"), value: jobStats.completed, hint: t("dashboard.completedHint"), dot: "bg-[#12B76A]", href: "/jobs?status=COMPLETED" },
           // Notaris: antrean persetujuan; staf: pekerjaan yang menjadi tanggungannya.
           canCreateJobs
-            ? { label: "Menunggu Persetujuan", value: jobStats.waitingReview, hint: "Perlu dicek Notaris", dot: "bg-[#7A5AF8]", href: "/jobs?status=REVIEW" }
-            : { label: "Job Saya", value: jobStats.myOpen, hint: "Tanggung jawab Anda", dot: "bg-[#7A5AF8]", href: "/jobs?mine=1" }
+            ? { label: t("dashboard.waitingReview"), value: jobStats.waitingReview, hint: t("dashboard.waitingReviewHint"), dot: "bg-[#7A5AF8]", href: "/jobs?status=REVIEW" }
+            : { label: t("dashboard.myJobs"), value: jobStats.myOpen, hint: t("dashboard.myJobsHint"), dot: "bg-[#7A5AF8]", href: "/jobs?mine=1" }
         ]
       : [])
   ];
@@ -185,14 +191,14 @@ export default async function DashboardPage(props: Async<PageProps>) {
             className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground shadow-card hover:opacity-90"
           >
             <Plus className="h-4 w-4" strokeWidth={2.6} />
-            Klien &amp; Pekerjaan Baru
+            {t("dashboard.newClientJob")}
           </Link>
         )}
       </div>
 
       {searchParams.password === "changed" && (
         <div className="rounded-lg border border-success-border bg-primary-soft px-4 py-3 text-sm font-medium text-status-on-track">
-          Password berhasil diganti.
+          {t("dashboard.passwordChanged")}
         </div>
       )}
 
@@ -207,17 +213,14 @@ export default async function DashboardPage(props: Async<PageProps>) {
               <p key={a}>{a}</p>
             ))}
           </div>
-          <span className="shrink-0 font-bold text-status-due-today">Buka →</span>
+          <span className="shrink-0 font-bold text-status-due-today">{t("common.open")}</span>
         </Link>
       )}
 
       {accessDenied && (
         <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger-border bg-danger-soft px-4 py-3 text-sm text-foreground">
           <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-status-overdue" />
-          <p>
-            Anda tidak memiliki akses ke halaman yang diminta, sehingga dialihkan ke Dashboard. Hubungi
-            Notaris/Admin jika Anda merasa seharusnya memiliki akses tersebut.
-          </p>
+          <p>{t("dashboard.accessDenied")}</p>
         </div>
       )}
 
@@ -247,16 +250,16 @@ export default async function DashboardPage(props: Async<PageProps>) {
         <div className="flex flex-wrap items-start gap-5">
           <section className="surface min-w-0 flex-[999_1_520px] overflow-hidden">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <h2 className="text-base font-bold text-foreground">Pekerjaan Terbaru</h2>
+              <h2 className="text-base font-bold text-foreground">{t("dashboard.recentJobs")}</h2>
               <Link href="/jobs" className="text-sm font-semibold text-primary hover:underline">
-                Lihat semua
+                {t("dashboard.seeAll")}
               </Link>
             </div>
             {recentJobs.length === 0 ? (
               <div className="p-5">
                 <EmptyState
-                  title="Belum ada pekerjaan."
-                  actionLabel={canCreateJobs ? "Tambah Klien & Pekerjaan" : undefined}
+                  title={t("dashboard.noJobs")}
+                  actionLabel={canCreateJobs ? t("dashboard.addClientJob") : undefined}
                   actionHref={canCreateJobs ? "/clients/new" : undefined}
                 />
               </div>
@@ -265,16 +268,16 @@ export default async function DashboardPage(props: Async<PageProps>) {
                 <table className="table-stack w-full min-w-[620px] text-sm">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-[0.04em] text-muted-foreground">
-                      <th className="px-5 py-3 font-bold">Pekerjaan</th>
-                      <th className="px-3 py-3 font-bold">Klien</th>
-                      <th className="px-3 py-3 font-bold">Status</th>
-                      <th className="px-5 py-3 font-bold">Target</th>
+                      <th className="px-5 py-3 font-bold">{t("dashboard.colJob")}</th>
+                      <th className="px-3 py-3 font-bold">{t("dashboard.colClient")}</th>
+                      <th className="px-3 py-3 font-bold">{t("dashboard.colStatus")}</th>
+                      <th className="px-5 py-3 font-bold">{t("dashboard.colTarget")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentJobs.map((job) => (
                       <tr key={job.id} className="border-t border-muted hover:bg-canvas">
-                        <td data-label="Pekerjaan" className="px-5 py-3.5">
+                        <td data-label={t("dashboard.colJob")} className="px-5 py-3.5">
                           <Link href={`/jobs/${job.id}`} className="font-semibold text-foreground hover:text-primary">
                             {job.serviceType?.name ?? job.description ?? job.jobNumber}
                           </Link>
@@ -282,13 +285,13 @@ export default async function DashboardPage(props: Async<PageProps>) {
                             {job.jobNumber} · PIC {job.pic?.name ?? "-"}
                           </p>
                         </td>
-                        <td data-label="Klien" className="px-3 py-3.5 text-fg-2">{job.client.fullName}</td>
-                        <td data-label="Status" className="px-3 py-3.5">
+                        <td data-label={t("dashboard.colClient")} className="px-3 py-3.5 text-fg-2">{job.client.fullName}</td>
+                        <td data-label={t("dashboard.colStatus")} className="px-3 py-3.5">
                           <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-fg-2">
                             {formatStatusLabel(job.status)}
                           </span>
                         </td>
-                        <td data-label="Target" className="whitespace-nowrap px-5 py-3.5">
+                        <td data-label={t("dashboard.colTarget")} className="whitespace-nowrap px-5 py-3.5">
                           {job.deadline ? (
                             <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatDate(job.deadline)} />
                           ) : (
@@ -305,35 +308,35 @@ export default async function DashboardPage(props: Async<PageProps>) {
 
           <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-5">
           <section className="surface p-5">
-            <h2 className="mb-4 text-base font-bold text-foreground">Pekerjaan Berjalan per Status</h2>
-            <DonutChart slices={statusSlices} centerLabel="pekerjaan berjalan" />
+            <h2 className="mb-4 text-base font-bold text-foreground">{t("dashboard.byStatus")}</h2>
+            <DonutChart slices={statusSlices} centerLabel={t("dashboard.donutCenter")} />
           </section>
 
           <section className="surface p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-bold text-foreground">Tenggat Terdekat</h2>
+              <h2 className="text-base font-bold text-foreground">{t("dashboard.upcoming")}</h2>
               <Link href="/deadlines" className="text-sm font-semibold text-primary hover:underline">
-                Semua
+                {t("dashboard.all")}
               </Link>
             </div>
             {upcoming.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Tidak ada tenggat dalam 2 minggu ke depan.</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.noUpcoming")}</p>
             ) : (
               <ul className="space-y-4">
-                {upcoming.map((t) => {
-                  const d = t.dueDate!;
+                {upcoming.map((task) => {
+                  const d = task.dueDate!;
                   const tone = classifyDeadline(d, "IN_PROGRESS");
                   return (
-                    <li key={t.id}>
-                      <Link href={`/jobs/${t.job.id}`} className="flex items-start gap-3 hover:opacity-90">
+                    <li key={task.id}>
+                      <Link href={`/jobs/${task.job.id}`} className="flex items-start gap-3 hover:opacity-90">
                         <span className={`w-12 shrink-0 rounded-md py-1.5 text-center ${DEADLINE_TONE[tone]}`}>
                           <span className="block text-lg font-extrabold leading-tight">{d.getUTCDate()}</span>
-                          <span className="block text-[11px] font-bold">{MONTH_SHORT[d.getUTCMonth()]}</span>
+                          <span className="block text-[11px] font-bold">{MONTH_SHORT[locale][d.getUTCMonth()]}</span>
                         </span>
                         <span className="min-w-0">
-                          <span className="block text-sm font-semibold text-foreground">{t.title}</span>
+                          <span className="block text-sm font-semibold text-foreground">{task.title}</span>
                           <span className="mt-0.5 block text-xs text-muted-foreground">
-                            {t.job.jobNumber} · {t.assignee?.name ?? "Belum ditugaskan"}
+                            {task.job.jobNumber} · {task.assignee?.name ?? t("dashboard.unassigned")}
                           </span>
                         </span>
                       </Link>

@@ -7,6 +7,7 @@ import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { OfficeIllustration } from "@/components/motion/OfficeIllustration";
+import { useT } from "@/components/i18n/LocaleProvider";
 
 // useSearchParams butuh Suspense agar halaman login tetap bisa dirender statis.
 export default function LoginPage() {
@@ -18,6 +19,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const t = useT();
   const router = useRouter();
   const replaced = useSearchParams().get("reason") === "elsewhere";
   const [email, setEmail] = useState("");
@@ -41,8 +43,8 @@ function LoginForm() {
       setLoading(false);
       setError(
         res.error === "TOO_MANY_ATTEMPTS"
-          ? "Terlalu banyak percobaan gagal. Tunggu 15 menit lalu coba lagi."
-          : "Email atau password salah."
+          ? t("login.tooMany")
+          : t("login.wrong")
       );
       return;
     }
@@ -70,10 +72,10 @@ function LoginForm() {
         <OfficeIllustration className="mx-auto w-full max-w-[230px] sm:max-w-[420px] lg:max-w-[520px]" />
         <div className="max-w-md">
           <p className="text-xl font-extrabold leading-tight tracking-tight sm:text-3xl">
-            Semua pekerjaan kantor notaris, rapi di satu tempat.
+            {t("login.heroTitle")}
           </p>
           <p className="mt-3 hidden text-base leading-relaxed text-white/85 sm:block">
-            Klien, pekerjaan, draft akta, arsip protokol, dan tenggat — terpantau setiap hari.
+            {t("login.heroSub")}
           </p>
         </div>
         <p className="hidden text-sm text-white/80 xl:block">Kantor Notaris &amp; PPAT Ari Yudani Aprianti, S.H., M.Kn. · Kota Bogor</p>
@@ -81,12 +83,12 @@ function LoginForm() {
 
       <div className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="surface login-enter w-full max-w-sm p-6 sm:p-8">
-        <h1 className="text-[22px] font-extrabold text-foreground">Masuk</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Gunakan akun kantor Anda.</p>
+        <h1 className="text-[22px] font-extrabold text-foreground">{t("login.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("login.subtitle")}</p>
 
         {replaced && (
           <p className="mt-4 rounded-md border border-status-due-soon/40 bg-status-due-soon/10 px-3 py-2 text-sm text-foreground">
-            Akun Anda login di perangkat/browser lain, jadi sesi di sini dikeluarkan. Satu akun hanya bisa aktif di satu tempat.
+            {t("login.replaced")}
           </p>
         )}
 
@@ -99,7 +101,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1.5 h-12 w-full rounded-md border border-input px-3.5 text-[15px] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
-              placeholder="Masukkan Email Anda"
+              placeholder={t("login.emailPlaceholder")}
             />
           </div>
 
@@ -112,12 +114,12 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-12 w-full rounded-md border border-input px-3.5 pr-11 text-[15px] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
-                placeholder="Masukkan Password"
+                placeholder={t("login.passwordPlaceholder")}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
                 aria-pressed={showPassword}
                 tabIndex={-1}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
@@ -134,7 +136,7 @@ function LoginForm() {
             disabled={loading}
             className="h-12 w-full rounded-md bg-primary text-[15px] font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "Memproses..." : "Masuk"}
+            {loading ? t("common.processing") : t("login.submit")}
           </button>
         </form>
 

@@ -461,7 +461,13 @@ html[data-skin="glass"] {
   --tint4: #ffd3e0;
   --canvas: 236 243 240;
   --glass-shadow: 0 18px 44px -22px rgba(8, 42, 33, 0.28), 0 2px 6px -2px rgba(8, 42, 33, 0.08);
-  --spring: cubic-bezier(0.34, 1.3, 0.64, 1); /* pegas: sedikit lewat lalu diam */
+  /* Pegas ala Apple (WWDC "Designing Fluid Interfaces"): kurva linear() dihitung dari
+     persamaan pegas sungguhan. --spring = teredam kritis (damping 1, response 0.4s):
+     tidak melewati target — bawaan untuk UI. --spring-bounce = damping 0.8: sedikit
+     lewat lalu diam — hanya untuk gerakan yang membawa momentum (lempar/geser). */
+  --spring: linear(0, 0.03 3.57%, 0.101 7.14%, 0.193 10.7%, 0.291 14.3%, 0.387 17.9%, 0.477 21.4%, 0.559 25%, 0.631 28.6%, 0.694 32.1%, 0.747 35.7%, 0.793 39.3%, 0.831 42.9%, 0.862 46.4%, 0.888 50%, 0.91 53.6%, 0.927 57.1%, 0.942 60.7%, 0.953 64.3%, 0.963 67.9%, 0.97 71.4%, 0.976 75%, 0.981 78.6%, 0.985 82.1%, 0.988 85.7%, 0.991 89.3%, 0.993 92.9%, 0.995 96.4%, 1);
+  --spring-bounce: linear(0, 0.033 3.57%, 0.114 7.14%, 0.221 10.7%, 0.337 14.3%, 0.453 17.9%, 0.561 21.4%, 0.658 25%, 0.741 28.6%, 0.81 32.1%, 0.866 35.7%, 0.91 39.3%, 0.944 42.9%, 0.97 46.4%, 0.988 50%, 1 53.6%, 1.008 57.1%, 1.012 60.7%, 1.015 64.3%, 1.015 67.9%, 1.015 71.4%, 1.013 75%, 1.012 78.6%, 1.01 82.1%, 1.008 85.7%, 1.006 89.3%, 1.005 92.9%, 1.004 96.4%, 1);
+  --spring-dur: 0.48s;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 html[data-skin="glass"].dark {
@@ -581,7 +587,7 @@ html[data-skin="glass"] :is(button, a).rounded-md.border.border-border {
   background-color: rgb(var(--glass) / var(--glass-2-a));
   box-shadow: inset 0 0 0 1px var(--hair-soft), inset 0 1px 2px rgba(8, 42, 33, 0.05), 0 0 0 0.5px var(--rim);
   border-radius: 14px;
-  transition: background-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), transform 0.35s var(--spring);
+  transition: background-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), transform var(--spring-dur) var(--spring);
 }
 html[data-skin="glass"] :is(button, a).rounded-md.border.border-border { border-radius: 999px; }
 html[data-skin="glass"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]).rounded-md:focus,
@@ -596,7 +602,7 @@ html[data-skin="glass"] :is(button, a).bg-primary.rounded-lg {
   border-radius: 999px;
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, #0a8f68, #047857);
   box-shadow: 0 10px 22px -12px rgba(4, 120, 87, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 0 0 0.5px rgba(255, 255, 255, 0.25), 0 0 0 0.5px rgba(4, 120, 87, 0.5);
-  transition: transform 0.35s var(--spring), box-shadow 0.25s var(--ease-out), filter 0.2s;
+  transition: transform var(--spring-dur) var(--spring), box-shadow 0.25s var(--ease-out), filter 0.2s;
 }
 html[data-skin="glass"].dark :is(button, a).bg-primary.rounded-md,
 html[data-skin="glass"].dark :is(button, a).bg-primary.rounded-lg {
@@ -613,7 +619,7 @@ html[data-skin="glass"] .rounded-full.bg-primary-soft,
 html[data-skin="glass"] .rounded-full.bg-danger-soft,
 html[data-skin="glass"] .rounded-full.bg-warn-soft { box-shadow: inset 0 0 0 1px var(--hair-soft), 0 0 0 0.5px var(--rim); }
 /* Kartu yang bisa ditekan: naik sedikit saat disorot, mengecil saat ditekan (pegas). */
-html[data-skin="glass"] .press { transition: transform 0.45s var(--spring), box-shadow 0.35s var(--ease-out); }
+html[data-skin="glass"] .press { transition: transform var(--spring-dur) var(--spring), box-shadow 0.35s var(--ease-out); }
 html[data-skin="glass"] .press:hover { transform: translateY(-2px); }
 html[data-skin="glass"] .press:active { transform: scale(0.975); transition-duration: 0.08s; }
 
@@ -639,7 +645,7 @@ html[data-skin="glass"] .topbar-panel .rounded-md { border-radius: 999px; }
 /* Item navigasi: kapsul; yang aktif = lensa kaca kecil + ikon terisi (gaya SF Symbols "fill"). */
 html[data-skin="glass"] .nav-item {
   border-radius: 14px;
-  transition: background-color 0.18s var(--ease-out), color 0.18s var(--ease-out), transform 0.35s var(--spring);
+  transition: background-color 0.18s var(--ease-out), color 0.18s var(--ease-out), transform var(--spring-dur) var(--spring);
 }
 html[data-skin="glass"] .nav-item:active { transform: scale(0.98); transition-duration: 0.08s; }
 html[data-skin="glass"] .nav-item[aria-current="page"] {
@@ -697,7 +703,7 @@ html[data-skin="glass"] .mobile-dock a {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  transition: color 0.2s var(--ease-out), transform 0.3s var(--spring);
+  transition: color 0.2s var(--ease-out), transform var(--spring-dur) var(--spring);
   -webkit-tap-highlight-color: transparent;
 }
 html[data-skin="glass"] .mobile-dock a:active { transform: scale(0.94); transition-duration: 0.08s; }
@@ -714,7 +720,7 @@ html[data-skin="glass"] .dock-lens {
   background: rgb(var(--glass) / 0.75);
   box-shadow: inset 0 0 0 1px var(--hair-soft), inset 0 1px 0 var(--hair), 0 0 0 0.5px var(--rim), 0 6px 16px -10px rgba(8, 42, 33, 0.5);
   transform: translateX(calc(var(--i, 0) * 100%));
-  transition: transform 0.45s var(--spring);
+  transition: transform var(--spring-dur) var(--spring);
 }
 html[data-skin="glass"].dark .dock-lens { background: rgb(var(--primary) / 0.18); }
 html[data-skin="glass"] .dock-action {
@@ -727,7 +733,7 @@ html[data-skin="glass"] .dock-action {
   border-radius: 999px;
   color: rgb(var(--foreground));
   flex: 0 0 auto;
-  transition: transform 0.3s var(--spring);
+  transition: transform var(--spring-dur) var(--spring);
 }
 html[data-skin="glass"] .dock-action:active { transform: scale(0.94); transition-duration: 0.08s; }
 @media (min-width: 1024px) {
@@ -740,12 +746,31 @@ html[data-skin="glass"].dark .surface-opaque { --glass-a: 0.88; }
 /* ---- Menu/popover: "materialize" — muncul dari pemicunya dengan skala + blur, bukan sekadar fade ---- */
 html[data-skin="glass"] .glass-pop {
   transform-origin: var(--pop-origin, top right);
-  animation: glass-pop 0.42s var(--spring) both;
+  animation: glass-pop var(--spring-dur) var(--spring) both;
 }
 @keyframes glass-pop {
   from { opacity: 0; transform: scale(0.92) translateY(-4px); filter: blur(6px); }
   to { opacity: 1; transform: none; filter: blur(0); }
 }
+
+/* ---- Perpindahan halaman: konten baru muncul naik sedikit dengan pegas (bukan loncat) ---- */
+html[data-skin="glass"] .page-enter { animation: page-enter var(--spring-dur) var(--spring) both; }
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.995); }
+  to { opacity: 1; transform: none; }
+}
+/* ---- Laci menu HP: masuk/keluar lewat jalur yang sama (konsistensi spasial), bisa digeser 1:1 ---- */
+html[data-skin="glass"] .drawer-scrim { animation: drawer-scrim 0.3s var(--ease-out) both; }
+html[data-skin="glass"] .drawer-scrim.is-closing { animation: drawer-scrim 0.25s var(--ease-out) reverse both; }
+@keyframes drawer-scrim { from { opacity: 0; } to { opacity: 1; } }
+html[data-skin="glass"] .drawer-panel { animation: drawer-in var(--spring-dur) var(--spring) both; will-change: transform; touch-action: pan-y; }
+html[data-skin="glass"] .drawer-panel.is-closing { animation: drawer-out 0.3s var(--ease-out) both; }
+html[data-skin="glass"] .drawer-panel.is-dragging { animation: none; transition: none; }
+html[data-skin="glass"] .drawer-panel.is-settling { animation: none; transition: transform var(--spring-dur) var(--spring); }
+@keyframes drawer-in { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes drawer-out { from { transform: var(--drawer-x, none); } to { transform: translateX(-104%); } }
+/* ---- Ganti tema: transisi silang halus (View Transitions), bukan lompatan terang/gelap ---- */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.35s; animation-timing-function: var(--ease-out, ease); }
 
 /* ---- Tipografi di atas kaca ("vibrancy"): judul dirapatkan, teks kecil dilonggarkan sedikit ---- */
 html[data-skin="glass"] :is(h1, h2) { letter-spacing: -0.02em; text-wrap: balance; }
@@ -775,7 +800,8 @@ html[data-skin="glass"] :is(.text-xs, .text-\[11px\], .text-\[10px\]) { letter-s
 @media (prefers-reduced-motion: reduce) {
   html[data-skin="glass"] .glass-bg > i { animation: none; }
   html[data-skin="glass"] .press, html[data-skin="glass"] .dock-lens, html[data-skin="glass"] .nav-item { transition: none; }
-  html[data-skin="glass"] .glass-pop { animation: glass-fade 0.18s ease both; }
+  html[data-skin="glass"] .glass-pop, html[data-skin="glass"] .page-enter, html[data-skin="glass"] .drawer-panel { animation: glass-fade 0.18s ease both; }
+  html[data-skin="glass"] .drawer-panel.is-closing { animation: glass-fade 0.15s ease reverse both; }
 }
 @keyframes glass-fade { from { opacity: 0; } to { opacity: 1; } }
 /* Bilah atas portal klien: kapsul mengambang dengan jarak dari tepi layar. */

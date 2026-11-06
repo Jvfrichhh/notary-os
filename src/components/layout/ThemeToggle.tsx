@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { GLASS_COOKIE, GLASS_KEY, THEME_COOKIE, THEME_KEY, type GlassLevel } from "@/lib/theme";
+import { useT } from "@/components/i18n/LocaleProvider";
 
 function persistTheme(theme: "dark" | "light") {
   try {
@@ -26,11 +27,23 @@ function persistGlass(level: GlassLevel) {
   document.documentElement.dataset.glass = level;
 }
 
-export { persistTheme, persistGlass };
+/**
+ * Ganti tema dengan transisi silang (View Transitions) alih-alih lompatan
+ * terang/gelap yang menyilaukan; browser lama / reduce-motion langsung ganti.
+ */
+function applyThemeSmoothly(apply: () => void) {
+  const d = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (typeof d.startViewTransition === "function" && !reduce) d.startViewTransition(apply);
+  else apply();
+}
+
+export { persistTheme, persistGlass, applyThemeSmoothly };
 
 /** Tombol ganti mode terang / gelap. Pilihan diingat di browser ini. */
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const [dark, setDark] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
@@ -39,16 +52,18 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   function toggle() {
     const next = !dark;
     setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    persistTheme(next ? "dark" : "light");
+    applyThemeSmoothly(() => {
+      document.documentElement.classList.toggle("dark", next);
+      persistTheme(next ? "dark" : "light");
+    });
   }
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={dark ? "Ganti ke mode terang" : "Ganti ke mode gelap"}
-      title={dark ? "Mode terang" : "Mode gelap"}
+      aria-label={dark ? t("topbar.toLight") : t("topbar.toDark")}
+      title={dark ? t("topbar.toLight") : t("topbar.toDark")}
       className={`flex h-10 w-10 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${className}`}
     >
       {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

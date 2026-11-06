@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { ChevronDown, KeyRound, LogOut, Settings } from "lucide-react";
-
-const ROLE_LABEL: Record<string, string> = { NOTARY: "Notaris", ADMIN: "Admin", STAFF: "Staf", VIEWER: "Pengamat" };
+import { useT } from "@/components/i18n/LocaleProvider";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -21,7 +20,8 @@ const ITEM = "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-lef
 export function UserMenu({ name, role }: { name: string; role: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const roleLabel = ROLE_LABEL[role] ?? role;
+  const t = useT();
+  const roleLabel = t(`roles.${role}`) === `roles.${role}` ? role : t(`roles.${role}`);
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +46,7 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={`Menu akun ${name}`}
+        aria-label={t("topbar.accountMenu", { name })}
         className="press flex items-center gap-2.5 rounded-full border border-border py-1 pl-1 pr-1 hover:bg-muted sm:pr-2.5"
       >
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-extrabold text-primary">
@@ -67,13 +67,13 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
           </div>
           <div className="mt-1.5 space-y-0.5">
             <Link href="/settings" role="menuitem" onClick={() => setOpen(false)} className={ITEM}>
-              <Settings className="h-4 w-4" /> Pengaturan
+              <Settings className="h-4 w-4" /> {t("topbar.settings")}
             </Link>
             <Link href="/account/password" role="menuitem" onClick={() => setOpen(false)} className={ITEM}>
-              <KeyRound className="h-4 w-4" /> Ganti password
+              <KeyRound className="h-4 w-4" /> {t("topbar.changePassword")}
             </Link>
             <button type="button" role="menuitem" onClick={() => signOut({ callbackUrl: "/login" })} className={ITEM}>
-              <LogOut className="h-4 w-4" /> Keluar
+              <LogOut className="h-4 w-4" /> {t("topbar.logout")}
             </button>
           </div>
         </div>

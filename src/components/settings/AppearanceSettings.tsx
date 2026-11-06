@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-import { persistGlass, persistTheme } from "@/components/layout/ThemeToggle";
+import { applyThemeSmoothly, persistGlass, persistTheme } from "@/components/layout/ThemeToggle";
+import { useT } from "@/components/i18n/LocaleProvider";
 import { DEFAULT_GLASS, isGlassLevel, type GlassLevel } from "@/lib/theme";
 
 /** Pilihan mode terang/gelap (disimpan di browser + cookie, dibaca server saat render). */
@@ -18,10 +19,13 @@ export function AppearanceSettings() {
     setGlass(level);
     persistGlass(level);
   }
+  const t = useT();
   function choose(next: boolean) {
     setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    persistTheme(next ? "dark" : "light");
+    applyThemeSmoothly(() => {
+      document.documentElement.classList.toggle("dark", next);
+      persistTheme(next ? "dark" : "light");
+    });
   }
   const opt = (value: boolean, label: string, Icon: typeof Sun, hint: string) => (
     <button
@@ -38,22 +42,22 @@ export function AppearanceSettings() {
     </button>
   );
   const GLASS_OPTS: { value: GlassLevel; label: string; hint: string }[] = [
-    { value: "clear", label: "Jernih", hint: "Paling tembus pandang" },
-    { value: "regular", label: "Standar", hint: "Seimbang (bawaan)" },
-    { value: "solid", label: "Pekat", hint: "Hampir buram, paling mudah dibaca" }
+    { value: "clear", label: t("settings.glassClear"), hint: t("settings.glassClearHint") },
+    { value: "regular", label: t("settings.glassRegular"), hint: t("settings.glassRegularHint") },
+    { value: "solid", label: t("settings.glassSolid"), hint: t("settings.glassSolidHint") }
   ];
   return (
     <div className="space-y-5">
       <div>
-        <p className="mb-2 text-sm font-medium text-foreground">Mode</p>
+        <p className="mb-2 text-sm font-medium text-foreground">{t("settings.mode")}</p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          {opt(false, "Terang", Sun, "Kaca putih di atas latar hijau muda")}
-          {opt(true, "Gelap", Moon, "Kaca hijau-hitam, nyaman di malam hari")}
+          {opt(false, t("settings.light"), Sun, t("settings.lightHint"))}
+          {opt(true, t("settings.dark"), Moon, t("settings.darkHint"))}
         </div>
       </div>
       <div>
-        <p className="mb-2 text-sm font-medium text-foreground">Tingkat kaca</p>
-        <div role="radiogroup" aria-label="Tingkat kaca" className="surface-2 inline-flex w-full rounded-full p-1 sm:w-auto">
+        <p className="mb-2 text-sm font-medium text-foreground">{t("settings.glassLevel")}</p>
+        <div role="radiogroup" aria-label={t("settings.glassLevel")} className="surface-2 inline-flex w-full rounded-full p-1 sm:w-auto">
           {GLASS_OPTS.map((o) => (
             <button
               key={o.value}
@@ -68,7 +72,7 @@ export function AppearanceSettings() {
             </button>
           ))}
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Seberapa tembus pandang panel kaca. Bila perangkat menyetel &quot;kurangi transparansi&quot;, panel otomatis buram.</p>
+        <p className="mt-2 text-xs text-muted-foreground">{t("settings.glassNote")}</p>
       </div>
     </div>
   );

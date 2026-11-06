@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/LocaleProvider";
 import type { NavIconKey, NavSectionConfig } from "@/lib/navigation";
 import {
   LayoutDashboard,
@@ -60,10 +61,11 @@ const OPEN_MENU_EVENT = "nexora:open-menu";
 
 /** Tombol garis tiga di bilah atas (HP/tablet); membuka laci menu Sidebar. */
 export function MobileMenuButton() {
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label="Buka menu"
+      aria-label={t("nav.openMenu")}
       onClick={() => window.dispatchEvent(new Event(OPEN_MENU_EVENT))}
       className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-muted lg:hidden"
     >
@@ -87,14 +89,95 @@ interface SidebarProps {
  */
 export function Sidebar({ sections }: SidebarProps) {
   const pathname = usePathname();
+  const t = useT();
   const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(false), [pathname]);
+  const [closing, setClosing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ id: number; startX: number; x: number; hist: { x: number; t: number }[]; active: boolean } | null>(null);
+
+  /** Tutup laci: keluar lewat jalur masuknya (ke kiri), lalu lepas dari DOM. */
+  const closeDrawer = useCallback(() => {
+    if (!open || closing) return;
+    setClosing(true);
+    const panel = panelRef.current;
+    const done = () => {
+      setOpen(false);
+      setClosing(false);
+    };
+    if (!panel) return done();
+    const onEnd = () => {
+      panel.removeEventListener("animationend", onEnd);
+      done();
+    };
+    panel.addEventListener("animationend", onEnd);
+    window.setTimeout(onEnd, 400); // jaga-jaga bila animasi dimatikan
+  }, [open, closing]);
+  const pathRef = useRef(pathname);
+  useEffect(() => {
+    if (pathRef.current !== pathname) {
+      pathRef.current = pathname;
+      setOpen(false);
+      setClosing(false);
+    }
+  }, [pathname]);
   // Tombol menu ada di bilah atas (MobileMenuButton) dan mengirim event ini.
   useEffect(() => {
-    const show = () => setOpen(true);
+    const show = () => {
+      setClosing(false);
+      setOpen(true);
+    };
     window.addEventListener(OPEN_MENU_EVENT, show);
     return () => window.removeEventListener(OPEN_MENU_EVENT, show);
   }, []);
+
+  /* Geser laci 1:1 dengan jari (mengikuti posisi pegang), lalu saat dilepas:
+     proyeksikan momentum (rumus deselerasi Apple) -> tutup bila lemparan/posisi
+     melewati sepertiga lebar, kalau tidak kembali dengan pegas. */
+  const onDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    drag.current = { id: e.pointerId, startX: e.clientX, x: 0, hist: [{ x: e.clientX, t: e.timeStamp }], active: false };
+  };
+  const onDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    const panel = panelRef.current;
+    if (!d || d.id !== e.pointerId || !panel) return;
+    const dx = e.clientX - d.startX;
+    d.hist.push({ x: e.clientX, t: e.timeStamp });
+    if (d.hist.length > 6) d.hist.shift();
+    if (!d.active) {
+      if (dx > -10) return; // histeresis 10px sebelum dianggap geser ke kiri
+      d.active = true;
+      panel.setPointerCapture(e.pointerId);
+      panel.classList.add("is-dragging");
+      panel.classList.remove("is-settling");
+    }
+    // ke kanan ditahan (rubber-band), ke kiri 1:1
+    const x = dx < 0 ? dx : (dx * 0.25 * 120) / (120 + 0.25 * dx);
+    d.x = x;
+    panel.style.transform = `translateX(${x}px)`;
+  };
+  const onDragEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    const panel = panelRef.current;
+    drag.current = null;
+    if (!d || !panel || !d.active) return;
+    panel.classList.remove("is-dragging");
+    const a = d.hist[0];
+    const b = d.hist[d.hist.length - 1];
+    const v = b.t > a.t ? ((b.x - a.x) / (b.t - a.t)) * 1000 : 0; // px/s
+    const project = (v / 1000) * (0.998 / (1 - 0.998));
+    const width = panel.offsetWidth;
+    const target = d.x + project;
+    if (target < -width / 3 || v < -600) {
+      panel.style.setProperty("--drawer-x", `translateX(${d.x}px)`);
+      panel.style.transform = "";
+      closeDrawer();
+    } else {
+      panel.classList.add("is-settling");
+      panel.style.transform = "translateX(0px)";
+      window.setTimeout(() => panel.classList.remove("is-settling"), 500);
+    }
+  };
   // Kunci scroll halaman saat laci menu terbuka.
   useEffect(() => {
     if (!open) return;
@@ -107,7 +190,6 @@ export function Sidebar({ sections }: SidebarProps) {
 
   // Dock HP: empat tujuan utama yang tersedia untuk user ini + tombol menu lengkap.
   const DOCK_ORDER = ["/dashboard", "/jobs", "/clients", "/documents", "/payments", "/reports"];
-  const DOCK_LABEL: Record<string, string> = { "/dashboard": "Beranda", "/jobs": "Pekerjaan", "/clients": "Klien", "/documents": "Dokumen", "/payments": "Tagihan", "/reports": "Laporan" };
   const allItems = sections.flatMap((s) => s.items);
   const dockItems = DOCK_ORDER.map((href) => allItems.find((i) => i.href === href)).filter((i): i is NavSectionConfig["items"][number] => !!i).slice(0, 4);
   const dockActive = dockItems.findIndex((i) => pathname === i.href || pathname?.startsWith(i.href + "/"));
@@ -121,37 +203,51 @@ export function Sidebar({ sections }: SidebarProps) {
       <div className="mobile-dock-wrap">
         <nav
           className="mobile-dock surface"
-          aria-label="Navigasi cepat"
+          aria-label={t("nav.quickNav")}
           style={{ "--n": dockItems.length, "--i": Math.max(0, dockActive) } as CSSProperties}
         >
           {dockActive >= 0 && <span className="dock-lens" aria-hidden="true" />}
           {dockItems.map((item, idx) => {
             const Icon = ICONS[item.icon];
             return (
-              <Link key={item.href} href={item.href} aria-label={item.label} aria-current={idx === dockActive ? "page" : undefined} className={idx === dockActive ? "active" : undefined}>
+              <Link key={item.href} href={item.href} aria-label={navLabel(t, item)} aria-current={idx === dockActive ? "page" : undefined} className={idx === dockActive ? "active" : undefined}>
                 {Icon && <Icon className="h-[22px] w-[22px]" />}
-                <span>{DOCK_LABEL[item.href] ?? item.label}</span>
+                <span>{t(`nav.dock.${item.href}`)}</span>
               </Link>
             );
           })}
         </nav>
-        <button type="button" aria-label="Menu lengkap" className="dock-action surface" onClick={() => setOpen(true)}>
+        <button type="button" aria-label={t("nav.fullMenu")} className="dock-action surface" onClick={() => setOpen(true)}>
           <Menu className="h-[22px] w-[22px]" />
         </button>
       </div>
-      {open && (
+      {(open || closing) && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="h-full max-w-[85vw] shadow-xl">
-            <SidebarPanel sections={sections} pathname={pathname} onClose={() => setOpen(false)} />
+          <div
+            ref={panelRef}
+            className={cn("drawer-panel h-full max-w-[85vw] shadow-xl", closing && "is-closing")}
+            onPointerDown={onDragStart}
+            onPointerMove={onDragMove}
+            onPointerUp={onDragEnd}
+            onPointerCancel={onDragEnd}
+          >
+            <SidebarPanel sections={sections} pathname={pathname} onClose={closeDrawer} />
           </div>
-          <button type="button" aria-label="Tutup menu" className="flex-1 bg-black/40" onClick={() => setOpen(false)} />
+          <button type="button" aria-label={t("nav.closeMenu")} className={cn("drawer-scrim flex-1 bg-black/40", closing && "is-closing")} onClick={closeDrawer} />
         </div>
       )}
     </>
   );
 }
 
+/** Label menu sesuai bahasa; bila belum ada terjemahan, pakai label konfigurasi. */
+function navLabel(t: ReturnType<typeof useT>, item: { href: string; label: string }): string {
+  const v = t(`nav.${item.href}`);
+  return v === `nav.${item.href}` ? item.label : v;
+}
+
 function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionConfig[]; pathname: string | null; onClose?: () => void }) {
+  const t = useT();
   return (
     <aside className="sidebar-panel surface flex h-full w-64 flex-col rounded-none border-0 border-r border-border shadow-none">
       <div className="flex h-16 items-center justify-between px-4">
@@ -159,11 +255,11 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
           <img src="/brand/nexora-tile.png" alt="" className="h-10 w-10 rounded-md" />
           <span className="leading-tight">
             <span className="block text-[15px] font-extrabold tracking-[0.14em] text-foreground">NEXORA</span>
-            <span className="block text-xs text-muted-foreground">Kantor Notaris &amp; PPAT</span>
+            <span className="block text-xs text-muted-foreground">{t("nav.tagline")}</span>
           </span>
         </Link>
         {onClose && (
-          <button type="button" aria-label="Tutup menu" onClick={onClose} className="rounded-md p-2 text-muted-foreground hover:bg-muted">
+          <button type="button" aria-label={t("nav.closeMenu")} onClick={onClose} className="rounded-md p-2 text-muted-foreground hover:bg-muted">
             <X className="h-4 w-4" />
           </button>
         )}
@@ -174,7 +270,7 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
           <div key={section.title ?? `section-${idx}`}>
             {section.title && (
               <p className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-                {section.title}
+                {t(`nav.sections.${section.title}`)}
               </p>
             )}
             <div className="space-y-0.5">
@@ -194,7 +290,7 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
                     )}
                   >
                     {Icon && <Icon className="h-[18px] w-[18px] shrink-0" />}
-                    {item.label}
+                    {navLabel(t, item)}
                   </Link>
                 );
               })}

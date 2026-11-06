@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { cookies } from "next/headers";
 import { DEFAULT_GLASS, DEFAULT_THEME, GLASS_COOKIE, THEME_COOKIE, THEME_INIT_SCRIPT, isGlassLevel } from "@/lib/theme";
+import { LocaleProvider } from "@/components/i18n/LocaleProvider";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { UpdateNotice } from "@/components/pwa/UpdateNotice";
 
@@ -30,8 +32,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const theme = saved === "dark" || saved === "light" ? saved : DEFAULT_THEME;
   const savedGlass = jar.get(GLASS_COOKIE)?.value;
   const glass = isGlassLevel(savedGlass) ? savedGlass : DEFAULT_GLASS;
+  const savedLang = jar.get(LOCALE_COOKIE)?.value;
+  const locale = isLocale(savedLang) ? savedLang : DEFAULT_LOCALE;
   return (
-    <html lang="id" data-skin="glass" data-glass={glass} className={theme === "dark" ? "dark" : undefined} style={{ colorScheme: theme }} suppressHydrationWarning>
+    <html lang={locale} data-skin="glass" data-glass={glass} className={theme === "dark" ? "dark" : undefined} style={{ colorScheme: theme }} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -40,9 +44,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="stylesheet" href={FONT_URL} />
       </head>
       <body>
-        {children}
-        <RegisterServiceWorker />
-        <UpdateNotice />
+        <LocaleProvider locale={locale}>
+          {children}
+          <RegisterServiceWorker />
+          <UpdateNotice />
+        </LocaleProvider>
       </body>
     </html>
   );

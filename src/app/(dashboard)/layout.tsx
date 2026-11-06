@@ -10,6 +10,7 @@ import { filterNavSections, NAV_SECTIONS } from "@/lib/navigation";
 import { isAiEnabled } from "@/lib/ai/client";
 import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
 import { GlassPointer } from "@/components/skin/GlassPointer";
+import { PageTransition } from "@/components/motion/PageTransition";
 
 // Layout membaca session -> selalu dinamis (tidak boleh di-cache lintas user).
 export const dynamic = "force-dynamic";
@@ -37,7 +38,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Sidebar sections={sections} />
       <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden">
         <TopBar />
-        <main className="flex-1 p-4 pb-24 sm:p-6 lg:overflow-y-auto lg:pb-6">{children}</main>
+        <main className="flex-1 p-4 pb-24 sm:p-6 lg:overflow-y-auto lg:pb-6">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );

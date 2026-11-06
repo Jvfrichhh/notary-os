@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { OPEN_SEARCH_EVENT } from "./MobileSearchSheet";
+import { OPEN_SEARCH_EVENT } from "./TopBarSearch";
 import { useT } from "@/components/i18n/LocaleProvider";
 import type { NavIconKey, NavSectionConfig } from "@/lib/navigation";
 import {

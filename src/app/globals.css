@@ -642,6 +642,10 @@ html[data-skin="glass"] .topbar-panel {
   html[data-skin="glass"] .topbar-panel { top: auto; }
 }
 html[data-skin="glass"] .topbar-panel .rounded-md { border-radius: 999px; }
+/* HP: saat kotak pencarian dibuka dari dok, ikon kanan disembunyikan supaya kotaknya lega. */
+@media (max-width: 1023px) {
+  .topbar-panel[data-search-open] > div:last-child { display: none; }
+}
 /* Item navigasi: kapsul; yang aktif = lensa kaca kecil + ikon terisi (gaya SF Symbols "fill"). */
 html[data-skin="glass"] .nav-item {
   border-radius: 14px;

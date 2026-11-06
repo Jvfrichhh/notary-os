@@ -1,5 +1,4 @@
-import { GlobalSearchBar } from "./GlobalSearchBar";
-import { MobileSearchSheet } from "./MobileSearchSheet";
+import { TopBarSearch } from "./TopBarSearch";
 import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "./ThemeToggle";
@@ -13,9 +12,7 @@ export async function TopBar() {
   return (
     <header className="topbar-panel surface sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-2 rounded-none border-0 border-b border-border px-3 shadow-none sm:gap-3 sm:px-4 lg:static lg:px-8">
       <MobileMenuButton />
-      <GlobalSearchBar className="hidden lg:block" />
-      <span className="flex-1 lg:hidden" />
-      <MobileSearchSheet />
+      <TopBarSearch />
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <ThemeToggle />
         <NotificationBell />

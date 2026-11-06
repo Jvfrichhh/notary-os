@@ -26,6 +26,7 @@ export const en: Dict = {
     "/admin": "Users, Roles & Audit Log",
     "/backup": "Backup & Protocol Export",
     dock: { "/dashboard": "Home", "/jobs": "Matters", "/clients": "Clients", "/documents": "Documents", "/payments": "Billing", "/reports": "Reports" },
+    search: "Search",
     quickNav: "Quick navigation",
     fullMenu: "Full menu",
     openMenu: "Open menu",

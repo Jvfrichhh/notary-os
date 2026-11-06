@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { OPEN_SEARCH_EVENT } from "./MobileSearchSheet";
 import { useT } from "@/components/i18n/LocaleProvider";
 import type { NavIconKey, NavSectionConfig } from "@/lib/navigation";
 import {
@@ -26,6 +27,7 @@ import {
   ScrollText,
   Bell,
   Menu,
+  Search,
   X,
   CalendarCheck,
   Database,
@@ -200,11 +202,12 @@ export function Sidebar({ sections }: SidebarProps) {
         <SidebarPanel sections={sections} pathname={pathname} />
       </div>
       {/* Dok HP gaya iOS: tab bar kapsul (lensa aktif meluncur antar tab) + tombol menu bulat terpisah */}
+      {/* Dok HP gaya iOS: satu kapsul kaca — 4 tujuan utama + Cari; lensa aktif meluncur antar tab */}
       <div className="mobile-dock-wrap">
         <nav
           className="mobile-dock surface"
           aria-label={t("nav.quickNav")}
-          style={{ "--n": dockItems.length, "--i": Math.max(0, dockActive) } as CSSProperties}
+          style={{ "--n": dockItems.length + 1, "--i": Math.max(0, dockActive) } as CSSProperties}
         >
           {dockActive >= 0 && <span className="dock-lens" aria-hidden="true" />}
           {dockItems.map((item, idx) => {
@@ -216,10 +219,11 @@ export function Sidebar({ sections }: SidebarProps) {
               </Link>
             );
           })}
+          <button type="button" aria-label={t("nav.search")} onClick={() => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT))}>
+            <Search className="h-[22px] w-[22px]" />
+            <span>{t("nav.search")}</span>
+          </button>
         </nav>
-        <button type="button" aria-label={t("nav.fullMenu")} className="dock-action surface" onClick={() => setOpen(true)}>
-          <Menu className="h-[22px] w-[22px]" />
-        </button>
       </div>
       {(open || closing) && (
         <div className="fixed inset-0 z-50 flex lg:hidden">

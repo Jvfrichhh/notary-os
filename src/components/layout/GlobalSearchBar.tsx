@@ -16,7 +16,7 @@ const MIN_QUERY_LENGTH = 2;
  * di UI) -- komponen ini hanya debounce input & render hasil yang sudah
  * dikelompokkan per entity.
  */
-export function GlobalSearchBar() {
+export function GlobalSearchBar({ autoFocus = false, className = "" }: { autoFocus?: boolean; className?: string }) {
   const router = useRouter();
   const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -99,13 +99,14 @@ export function GlobalSearchBar() {
   const totalResults = groups.reduce((n, g) => n + g.items.length, 0);
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
+    <div ref={containerRef} className={`relative w-full max-w-md ${className}`}>
       <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <input
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setIsOpen(true)}
+        autoFocus={autoFocus}
         placeholder={t("topbar.searchPlaceholder")}
         className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       />

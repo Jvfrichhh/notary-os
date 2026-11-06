@@ -685,10 +685,10 @@ html[data-skin="glass"] .mobile-dock {
   gap: 0;
   padding: 5px;
   flex: 1 1 auto;
-  max-width: 400px;
+  max-width: 440px;
   border-radius: 999px;
 }
-html[data-skin="glass"] .mobile-dock a {
+html[data-skin="glass"] .mobile-dock :is(a, button) {
   position: relative;
   z-index: 2;
   display: flex;
@@ -706,7 +706,7 @@ html[data-skin="glass"] .mobile-dock a {
   transition: color 0.2s var(--ease-out), transform var(--spring-dur) var(--spring);
   -webkit-tap-highlight-color: transparent;
 }
-html[data-skin="glass"] .mobile-dock a:active { transform: scale(0.94); transition-duration: 0.08s; }
+html[data-skin="glass"] .mobile-dock :is(a, button):active { transform: scale(0.94); transition-duration: 0.08s; }
 html[data-skin="glass"] .mobile-dock .active { background: none; color: rgb(var(--primary)); }
 /* Lensa aktif yang MELUNCUR antar tab (bukan hilang-muncul). */
 html[data-skin="glass"] .dock-lens {

@@ -33,6 +33,7 @@ export const id = {
     "/admin": "Pengguna, Peran & Log Audit",
     "/backup": "Backup & Ekspor Protokol",
     dock: { "/dashboard": "Beranda", "/jobs": "Pekerjaan", "/clients": "Klien", "/documents": "Dokumen", "/payments": "Tagihan", "/reports": "Laporan" },
+    search: "Cari",
     quickNav: "Navigasi cepat",
     fullMenu: "Menu lengkap",
     openMenu: "Buka menu",

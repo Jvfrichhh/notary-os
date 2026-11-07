@@ -54,12 +54,13 @@ export function TopBarSearch() {
   return (
     <>
       <GlobalSearchBar className="hidden lg:block" />
-      {/* HP: tanggal dan kotak cari berbagi satu sel grid, jadi saling menggantikan di tempat yang sama. */}
+      {/* HP: tanggal dan kotak cari berbagi satu sel grid, jadi saling menggantikan di tempat yang sama.
+          Pengguna "kurangi gerakan": hanya memudar, tanpa geser/skala. */}
       <div className="grid min-w-0 flex-1 lg:hidden">
         <div
           aria-hidden={open}
           className={cn(
-            "col-start-1 row-start-1 flex min-w-0 items-center justify-center truncate text-[15px] font-semibold tracking-tight text-foreground transition-[opacity,transform]",
+            "col-start-1 row-start-1 flex min-w-0 items-center justify-center truncate text-[15px] font-semibold tracking-tight text-foreground transition-[opacity,transform] motion-reduce:translate-y-0 motion-reduce:scale-100",
             open ? "pointer-events-none -translate-y-2 scale-95 opacity-0" : "translate-y-0 scale-100 opacity-100"
           )}
           style={SWAP}
@@ -70,7 +71,7 @@ export function TopBarSearch() {
           ref={wrapRef}
           inert={!open}
           className={cn(
-            "col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 transition-[opacity,transform]",
+            "col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 transition-[opacity,transform] motion-reduce:translate-y-0 motion-reduce:scale-100",
             open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-2 scale-95 opacity-0"
           )}
           style={SWAP}

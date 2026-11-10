@@ -321,6 +321,35 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     tasks: BASE_TASKS
   },
   {
+    name: "Akta Pengakuan Penitipan Uang",
+    category: "Perjanjian",
+    description: "Pengakuan menerima uang titipan dan kewajiban mengembalikannya kepada penitip.",
+    deedKey: "penitipan_uang",
+    checklist: [
+      { label: "KTP Pihak Pertama (Penerima Titipan)" },
+      { label: "KTP Pihak Kedua (Penitip)" },
+      { label: "NPWP Para Pihak", isRequired: false },
+      { label: "Bukti Penyerahan Uang (kuitansi / bukti transfer)", isRequired: false },
+      { label: "Dokumen Dasar Penitipan (perjanjian/transaksi terkait)", isRequired: false },
+      { label: "Akta Pendirian & SK (bila badan usaha)", isRequired: false }
+    ],
+    tasks: BASE_TASKS
+  },
+  {
+    name: "Akta Pembatalan",
+    category: "Perjanjian",
+    description: "Pembatalan akta/perjanjian atas kesepakatan para pihak, berikut pengembalian uang atau dokumen.",
+    deedKey: "pembatalan",
+    checklist: [
+      { label: "KTP Seluruh Pihak dalam Akta yang Dibatalkan" },
+      { label: "Salinan Akta / Asli Perjanjian yang Dibatalkan" },
+      { label: "Bukti Pembayaran yang Sudah Dilakukan (bila ada pengembalian uang)", isRequired: false },
+      { label: "Surat Kuasa / Surat Keterangan Waris (bila diwakili atau pihak telah meninggal)", isRequired: false },
+      { label: "Akta Pendirian & SK (bila badan usaha)", isRequired: false }
+    ],
+    tasks: [...BASE_TASKS, "Beri catatan pembatalan pada minuta akta asal"]
+  },
+  {
     name: "Akta Kerjasama Usaha",
     category: "Perjanjian",
     description: "Perjanjian kerja sama usaha antar pihak.",

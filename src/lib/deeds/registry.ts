@@ -15,6 +15,8 @@ import { pendirianFirma } from "./templates/pendirianFirma";
 import { pendirianKoperasi } from "./templates/pendirianKoperasi";
 import { baPembetulan } from "./templates/baPembetulan";
 import { pengakuanHutang } from "./templates/pengakuanHutang";
+import { penitipanUang } from "./templates/penitipanUang";
+import { pembatalan } from "./templates/pembatalan";
 import { pendirianCv } from "./templates/pendirianCv";
 import { pendirianYayasan } from "./templates/pendirianYayasan";
 
@@ -32,6 +34,7 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     pascaNikah,
     fidusia,
     pengakuanHutang,
+    penitipanUang,
     kerjasamaUsaha,
     kerjasamaInvestasi,
     pendirianPt,
@@ -42,6 +45,7 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     pendirianFirma,
     pendirianKoperasi,
     baPembetulan,
+    pembatalan,
     ajbPpat,
     hibahPpat,
     tukarMenukarPpat,

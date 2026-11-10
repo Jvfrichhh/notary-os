@@ -9,6 +9,7 @@ import { getJakartaToday, toDateInput } from "@/lib/format";
 import { nextPpatSequence } from "@/lib/ppat";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ const ERR: Record<string, string> = {
 };
 
 export default async function NewPpatPage(props: Async<{ searchParams: { jobId?: string; err?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_REPERTORIUM);
   const today = getJakartaToday();
@@ -35,12 +37,12 @@ export default async function NewPpatPage(props: Async<{ searchParams: { jobId?:
     <div className="max-w-4xl space-y-6">
       <div>
         <Link href={job ? `/jobs/${job.id}` : "/ppat"} className="text-xs text-muted-foreground hover:text-foreground">
-          ← {job ? `${job.jobNumber} · ${job.client.fullName}` : "Buku Daftar Akta PPAT"}
+          ← {job ? `${job.jobNumber} · ${job.client.fullName}` : tp("Buku Daftar Akta PPAT")}
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Daftarkan Akta PPAT</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Daftarkan Akta PPAT")}</h1>
         <p className="text-sm text-muted-foreground">
-          Setelah akta ditandatangani. Sistem memberi nomor urut tahun berjalan, membuat tugas penyampaian ke Kantor Pertanahan (7 hari kerja)
-          {job ? ", dan menyelesaikan pekerjaan ini" : ""}.
+          {tp("Setelah akta ditandatangani. Sistem memberi nomor urut tahun berjalan, membuat tugas penyampaian ke Kantor Pertanahan (7 hari kerja)")}
+          {job ? tp(", dan menyelesaikan pekerjaan ini") : ""}.
         </p>
       </div>
       {searchParams.err && ERR[searchParams.err] && (

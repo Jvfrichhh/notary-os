@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default async function ProtesPage(props: Async<{ searchParams?: { q?: string; err?: string; ok?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
@@ -129,16 +130,16 @@ export default async function ProtesPage(props: Async<{ searchParams?: { q?: str
               <label>
                 <span className="mb-1 block text-xs text-muted-foreground">{t("records.protes.fInstrument")}</span>
                 <select name="instrumentType" required defaultValue="Wesel" className={field}>
-                  <option>Wesel</option>
-                  <option>Cek</option>
-                  <option>Surat Sanggup</option>
+                  <option value="Wesel">{tp("Wesel")}</option>
+                  <option value="Cek">{tp("Cek")}</option>
+                  <option value="Surat Sanggup">{tp("Surat Sanggup")}</option>
                 </select>
               </label>
               <label>
                 <span className="mb-1 block text-xs text-muted-foreground">{t("records.protes.fReason")}</span>
                 <select name="reason" required defaultValue="Non-pembayaran" className={field}>
-                  <option>Non-pembayaran</option>
-                  <option>Non-akseptasi</option>
+                  <option value="Non-pembayaran">{tp("Non-pembayaran")}</option>
+                  <option value="Non-akseptasi">{tp("Non-akseptasi")}</option>
                 </select>
               </label>
               <label>
@@ -147,7 +148,7 @@ export default async function ProtesPage(props: Async<{ searchParams?: { q?: str
               </label>
               <label>
                 <span className="mb-1 block text-xs text-muted-foreground">{t("records.protes.fAmount")}</span>
-                <input name="amount" inputMode="numeric" placeholder="mis. 50000000" className={field} />
+                <input name="amount" inputMode="numeric" placeholder={tp("mis. 50000000")} className={field} />
               </label>
               <label className="sm:col-span-2">
                 <span className="mb-1 block text-xs text-muted-foreground">{t("records.common.notes")}</span>

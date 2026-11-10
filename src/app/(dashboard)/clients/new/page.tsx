@@ -4,10 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { createClient } from "@/app/(dashboard)/clients/actions";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewClientPage() {
+  const { tp } = await getT();
   const user = await requirePermission(PERMISSIONS.CREATE_CLIENTS);
   const canCreateJobs = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
   const canBill = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
@@ -32,9 +34,9 @@ export default async function NewClientPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Tambah Klien</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Tambah Klien")}</h1>
         <p className="text-sm text-muted-foreground">
-          Nomor client{canCreateJobs ? " dan nomor job" : ""} dibuat otomatis saat disimpan.
+          {tp("Nomor client")}{canCreateJobs ? tp(" dan nomor job") : ""} {tp("dibuat otomatis saat disimpan.")}
         </p>
       </div>
 

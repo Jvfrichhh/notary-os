@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/format";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ function actorLabel(userName: string | null | undefined, action: string): string
 }
 
 export default async function AdminAuditLogPage(props: Async<PageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.VIEW_AUDIT_LOG);
 
@@ -86,16 +88,16 @@ export default async function AdminAuditLogPage(props: Async<PageProps>) {
     <div className="space-y-6">
       <div>
         <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">
-          ← Admin
+          {tp("← Admin")}
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Audit Log</h1>
-        <p className="text-sm text-muted-foreground">Catatan append-only: tidak bisa diubah atau dihapus dari aplikasi. {total} catatan cocok.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Audit Log")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Catatan append-only: tidak bisa diubah atau dihapus dari aplikasi.")} {total} {tp("catatan cocok.")}</p>
       </div>
 
       <Card>
         <form method="get" className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <select name="entity" defaultValue={entity} className={selectCls}>
-            <option value="">Semua entitas</option>
+            <option value="">{tp("Semua entitas")}</option>
             {entityTypes.map((e) => (
               <option key={e.entityType} value={e.entityType}>
                 {e.entityType}
@@ -103,20 +105,20 @@ export default async function AdminAuditLogPage(props: Async<PageProps>) {
             ))}
           </select>
           <select name="action" defaultValue={action} className={selectCls}>
-            <option value="">Semua aksi</option>
+            <option value="">{tp("Semua aksi")}</option>
             {actions.map((a) => (
               <option key={a.action} value={a.action}>
                 {a.action}
               </option>
             ))}
           </select>
-          <input name="q" defaultValue={q} placeholder="Cari nama pelaku / ID entitas" className={selectCls + " flex-1"} />
+          <input name="q" defaultValue={q} placeholder={tp("Cari nama pelaku / ID entitas")} className={selectCls + " flex-1"} />
           <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-            Filter
+            {tp("Filter")}
           </button>
           {(entity || action || q) && (
             <Link href="/admin/audit-log" className="text-xs text-muted-foreground hover:text-foreground">
-              Reset
+              {tp("Reset")}
             </Link>
           )}
         </form>
@@ -125,30 +127,30 @@ export default async function AdminAuditLogPage(props: Async<PageProps>) {
       <Card className="overflow-x-auto p-0">
         {logs.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="Tidak ada catatan yang cocok." />
+            <EmptyState title={tp("Tidak ada catatan yang cocok.")} />
           </div>
         ) : (
           <table className="table-stack w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-3">Waktu</th>
-                <th className="px-4 py-3">Pelaku</th>
-                <th className="px-4 py-3">Aksi</th>
-                <th className="px-4 py-3">Entitas</th>
-                <th className="px-4 py-3">Perubahan</th>
+                <th className="px-4 py-3">{tp("Waktu")}</th>
+                <th className="px-4 py-3">{tp("Pelaku")}</th>
+                <th className="px-4 py-3">{tp("Aksi")}</th>
+                <th className="px-4 py-3">{tp("Entitas")}</th>
+                <th className="px-4 py-3">{tp("Perubahan")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {logs.map((l) => (
                 <tr key={l.id} className="align-top">
-                  <td data-label="Waktu" className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">{formatDateTime(l.timestamp)}</td>
-                  <td data-label="Pelaku" className="whitespace-nowrap px-4 py-2 text-foreground">{actorLabel(l.user?.name, l.action)}</td>
-                  <td data-label="Aksi" className="whitespace-nowrap px-4 py-2 font-mono text-xs text-foreground">{l.action}</td>
-                  <td data-label="Entitas" className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">
+                  <td data-label={tp("Waktu")} className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">{formatDateTime(l.timestamp)}</td>
+                  <td data-label={tp("Pelaku")} className="whitespace-nowrap px-4 py-2 text-foreground">{actorLabel(l.user?.name, l.action)}</td>
+                  <td data-label={tp("Aksi")} className="whitespace-nowrap px-4 py-2 font-mono text-xs text-foreground">{l.action}</td>
+                  <td data-label={tp("Entitas")} className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">
                     {l.entityType}
                     <span className="block font-mono text-[10px]">{l.entityId}</span>
                   </td>
-                  <td data-label="Perubahan" className="px-4 py-2 text-xs text-muted-foreground">{summarizeChange(l.previousValue, l.newValue)}</td>
+                  <td data-label={tp("Perubahan")} className="px-4 py-2 text-xs text-muted-foreground">{summarizeChange(l.previousValue, l.newValue)}</td>
                 </tr>
               ))}
             </tbody>
@@ -160,17 +162,17 @@ export default async function AdminAuditLogPage(props: Async<PageProps>) {
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           {page > 1 ? (
             <Link href={qs({ page: page - 1 })} className="text-primary hover:underline">
-              ← Sebelumnya
+              {tp("← Sebelumnya")}
             </Link>
           ) : (
             <span />
           )}
           <span className="text-xs text-muted-foreground">
-            Halaman {page} / {totalPages}
+            {tp("Halaman")} {page} / {totalPages}
           </span>
           {page < totalPages ? (
             <Link href={qs({ page: page + 1 })} className="text-primary hover:underline">
-              Berikutnya →
+              {tp("Berikutnya →")}
             </Link>
           ) : (
             <span />

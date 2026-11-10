@@ -7,10 +7,12 @@ import { Card } from "@/components/ui/Card";
 import { formatDate, formatStatusLabel } from "@/lib/format";
 import { archiveWaarmerking, restoreWaarmerking } from "@/app/(dashboard)/waarmerking/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function WaarmerkingDetailPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_WAARMERKING);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_WAARMERKING);
@@ -25,14 +27,14 @@ export default async function WaarmerkingDetailPage(props: Async<{ params: { id:
     <div className="max-w-2xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Waarmerking</p>
+          <p className="text-xs font-medium text-muted-foreground">{tp("Waarmerking")}</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{record.number}</h1>
           <p className="text-sm text-muted-foreground">{formatDate(record.date)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(record.status)}</span>
           {record.recordStatus === "ARCHIVED" && (
-            <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">Diarsipkan</span>
+            <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">{tp("Diarsipkan")}</span>
           )}
         </div>
       </div>
@@ -40,7 +42,7 @@ export default async function WaarmerkingDetailPage(props: Async<{ params: { id:
       <Card>
         <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-muted-foreground">Klien</dt>
+            <dt className="text-xs text-muted-foreground">{tp("Klien")}</dt>
             <dd>
               <Link href={`/clients/${record.client.id}`} className="text-primary hover:underline">
                 {record.client.fullName}
@@ -48,29 +50,29 @@ export default async function WaarmerkingDetailPage(props: Async<{ params: { id:
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Jenis Layanan</dt>
+            <dt className="text-xs text-muted-foreground">{tp("Jenis Layanan")}</dt>
             <dd className="text-foreground">{record.serviceType ?? "-"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">PIC</dt>
+            <dt className="text-xs text-muted-foreground">{tp("PIC")}</dt>
             <dd className="text-foreground">{record.pic?.name ?? "-"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">Dokumen Terkait</dt>
+            <dt className="text-xs text-muted-foreground">{tp("Dokumen Terkait")}</dt>
             <dd>
               {record.document ? (
                 <a href={`/api/documents/${record.document.id}/download`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
                   {record.document.fileName}
                 </a>
               ) : (
-                <span className="text-muted-foreground">Belum ada file</span>
+                <span className="text-muted-foreground">{tp("Belum ada file")}</span>
               )}
             </dd>
           </div>
         </dl>
         {record.notes && (
           <div className="mt-4">
-            <dt className="text-xs text-muted-foreground">Catatan</dt>
+            <dt className="text-xs text-muted-foreground">{tp("Catatan")}</dt>
             <dd className="text-sm text-foreground">{record.notes}</dd>
           </div>
         )}
@@ -79,18 +81,18 @@ export default async function WaarmerkingDetailPage(props: Async<{ params: { id:
       {canEdit && (
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/waarmerking/${record.id}/edit`} className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
-            Edit
+            {tp("Edit")}
           </Link>
           {record.recordStatus === "ACTIVE" ? (
             <form action={archiveWaarmerking.bind(null, record.id)}>
               <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10">
-                Arsipkan
+                {tp("Arsipkan")}
               </button>
             </form>
           ) : (
             <form action={restoreWaarmerking.bind(null, record.id)}>
               <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                Pulihkan
+                {tp("Pulihkan")}
               </button>
             </form>
           )}

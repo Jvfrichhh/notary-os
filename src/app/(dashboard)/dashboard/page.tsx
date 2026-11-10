@@ -139,6 +139,7 @@ interface PageProps {
 }
 
 export default async function DashboardPage(props: Async<PageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   // Dashboard terbuka untuk semua user login, tapi isinya mengikuti izin:
   // ringkasan job hanya untuk pemilik view_jobs, hitungan kunjungan hanya
@@ -284,7 +285,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
                             {job.serviceType?.name ?? job.description ?? job.jobNumber}
                           </Link>
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {job.jobNumber} · PIC {job.pic?.name ?? "-"}
+                            {job.jobNumber} {tp("· PIC")} {job.pic?.name ?? "-"}
                           </p>
                         </td>
                         <td data-label={t("dashboard.colClient")} className="px-3 py-3.5 text-fg-2">{job.client.fullName}</td>

@@ -6,8 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { PaymentForm } from "@/components/payments/PaymentForm";
 import { updatePayment } from "@/app/(dashboard)/payments/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditPaymentPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_FINANCE);
 
@@ -18,7 +20,7 @@ export default async function EditPaymentPage(props: Async<{ params: { id: strin
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Ubah Pembayaran</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Ubah Pembayaran")}</h1>
       <Card>
         <PaymentForm
           action={action}

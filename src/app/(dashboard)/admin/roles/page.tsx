@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAnyPermission } from "@/lib/session";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 // salah klik bisa mengunci akses kantor sendiri. Perubahan izin dilakukan
 // lewat seed/migrasi yang ditinjau.
 export default async function AdminRolesPage() {
+  const { tp } = await getT();
   await requireAnyPermission([PERMISSIONS.MANAGE_ROLES, PERMISSIONS.MANAGE_USERS]);
 
   const [roles, permissions] = await Promise.all([
@@ -29,20 +31,20 @@ export default async function AdminRolesPage() {
     <div className="space-y-6">
       <div>
         <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">
-          ← Admin
+          {tp("← Admin")}
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Roles &amp; Permissions</h1>
-        <p className="text-sm text-muted-foreground">Matriks izin saat ini (baca saja). Perubahan izin dilakukan lewat kode yang ditinjau.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Roles & Permissions")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Matriks izin saat ini (baca saja). Perubahan izin dilakukan lewat kode yang ditinjau.")}</p>
       </div>
       <Card className="overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <th className="px-4 py-3">Permission</th>
+              <th className="px-4 py-3">{tp("Permission")}</th>
               {roles.map((r) => (
                 <th key={r.id} className="px-4 py-3 text-center">
                   {r.name}
-                  <div className="text-[10px] font-normal normal-case">{r._count.users} user</div>
+                  <div className="text-[10px] font-normal normal-case">{r._count.users} {tp("user")}</div>
                 </th>
               ))}
             </tr>

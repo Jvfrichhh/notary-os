@@ -5,10 +5,12 @@ import { requireAnyPermission } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
 import { ADMIN_PAGE_PERMISSIONS } from "@/lib/navigation";
 import { Card } from "@/components/ui/Card";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
+  const { tp } = await getT();
   const user = await requireAnyPermission(ADMIN_PAGE_PERMISSIONS);
   const perms = await getUserPermissions(user.id);
 
@@ -54,8 +56,8 @@ export default async function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Admin</h1>
-        <p className="text-sm text-muted-foreground">Users, Roles &amp; Audit Log</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Admin")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Users, Roles & Audit Log")}</p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {sections.map((s) => (

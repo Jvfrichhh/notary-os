@@ -6,8 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { updateClient } from "@/app/(dashboard)/clients/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditClientPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_CLIENTS);
 
@@ -20,7 +22,7 @@ export default async function EditClientPage(props: Async<{ params: { id: string
     <div className="max-w-2xl space-y-6">
       <div>
         <p className="text-xs font-medium text-muted-foreground">{client.clientNumber}</p>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Edit {client.fullName}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Edit")} {client.fullName}</h1>
       </div>
 
       <Card>

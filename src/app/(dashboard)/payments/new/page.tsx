@@ -5,12 +5,14 @@ import { Card } from "@/components/ui/Card";
 import { PaymentForm } from "@/components/payments/PaymentForm";
 import { createPayment } from "@/app/(dashboard)/payments/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 interface PageProps {
   searchParams: { clientId?: string; jobId?: string };
 }
 
 export default async function NewPaymentPage(props: Async<PageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_FINANCE);
 
@@ -34,7 +36,7 @@ export default async function NewPaymentPage(props: Async<PageProps>) {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Buat Tagihan</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Buat Tagihan")}</h1>
       <Card>
         <PaymentForm action={createPayment} clients={clients} jobs={jobs} lockedClient={lockedClient} lockedJob={lockedJob} cancelHref="/payments" />
       </Card>

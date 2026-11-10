@@ -8,6 +8,7 @@ import { formatDate } from "@/lib/format";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
 import { updateDerivativeDocument, archiveSalinan, restoreSalinan } from "@/app/(dashboard)/archive/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default async function SalinanDetailPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
@@ -31,37 +33,37 @@ export default async function SalinanDetailPage(props: Async<{ params: { id: str
     <div className="max-w-3xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Salinan</p>
-          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">Akta {salinan.deed.deedNumber}</h1>
+          <p className="text-xs font-medium text-muted-foreground">{tp("Salinan")}</p>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{tp("Akta")} {salinan.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {salinan.deed.deedType} · {formatDate(salinan.deed.deedDate)}
           </p>
         </div>
         {salinan.recordStatus === "ARCHIVED" && (
-          <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">Diarsipkan</span>
+          <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">{tp("Diarsipkan")}</span>
         )}
       </div>
 
       <div className="flex flex-wrap gap-3 text-sm">
         <Link href={`/archive/deed/${salinan.deed.id}`} className="text-primary hover:underline">
-          ← Kembali ke Akta
+          {tp("← Kembali ke Akta")}
         </Link>
         <Link href={`/clients/${salinan.deed.client.id}`} className="text-primary hover:underline">
-          Lihat Klien
+          {tp("Lihat Klien")}
         </Link>
         {salinan.deed.job && (
           <Link href={`/jobs/${salinan.deed.job.id}`} className="text-primary hover:underline">
-            Lihat Pekerjaan
+            {tp("Lihat Pekerjaan")}
           </Link>
         )}
       </div>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold text-foreground">Dokumen</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Dokumen")}</h2>
         {canEdit ? (
           <form action={updateDerivativeDocument.bind(null, "salinan", salinan.id)} className="space-y-3">
             <select name="documentId" defaultValue={salinan.documentId ?? ""} className={fieldClass}>
-              <option value="">— Belum ada file terkait —</option>
+              <option value="">{tp("— Belum ada file terkait —")}</option>
               {documents.map((doc) => (
                 <option key={doc.id} value={doc.id}>
                   {doc.fileName}
@@ -69,7 +71,7 @@ export default async function SalinanDetailPage(props: Async<{ params: { id: str
               ))}
             </select>
             <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-              Simpan
+              {tp("Simpan")}
             </button>
           </form>
         ) : salinan.document ? (
@@ -77,7 +79,7 @@ export default async function SalinanDetailPage(props: Async<{ params: { id: str
             {salinan.document.fileName}
           </a>
         ) : (
-          <p className="text-sm text-muted-foreground">Belum ada file.</p>
+          <p className="text-sm text-muted-foreground">{tp("Belum ada file.")}</p>
         )}
         {canEdit && salinan.document && (
           <a
@@ -86,24 +88,24 @@ export default async function SalinanDetailPage(props: Async<{ params: { id: str
             rel="noreferrer"
             className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
           >
-            Buka file saat ini
+            {tp("Buka file saat ini")}
           </a>
         )}
       </Card>
 
       {canEdit && (
         <Card>
-          <h2 className="mb-2 text-base font-bold text-foreground">Arsip</h2>
+          <h2 className="mb-2 text-base font-bold text-foreground">{tp("Arsip")}</h2>
           {salinan.recordStatus === "ACTIVE" ? (
             <form action={archiveSalinan.bind(null, salinan.id)}>
               <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                Arsipkan Salinan
+                {tp("Arsipkan Salinan")}
               </button>
             </form>
           ) : (
             <form action={restoreSalinan.bind(null, salinan.id)}>
               <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                Pulihkan Salinan
+                {tp("Pulihkan Salinan")}
               </button>
             </form>
           )}

@@ -6,8 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { WasiatForm } from "@/components/wasiat/WasiatForm";
 import { updateWasiat } from "@/app/(dashboard)/wasiat/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditWasiatPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_WASIAT);
 
@@ -25,7 +27,7 @@ export default async function EditWasiatPage(props: Async<{ params: { id: string
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Ubah Wasiat</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Ubah Wasiat")}</h1>
       <Card>
         <WasiatForm
           action={action}

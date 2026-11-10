@@ -5,12 +5,14 @@ import { Card } from "@/components/ui/Card";
 import { DeedForm } from "@/components/archive/DeedForm";
 import { createDeed } from "@/app/(dashboard)/archive/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 interface NewDeedPageProps {
   searchParams: { jobId?: string; clientId?: string };
 }
 
 export default async function NewDeedPage(props: Async<NewDeedPageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_MINUTA);
 
@@ -41,8 +43,8 @@ export default async function NewDeedPage(props: Async<NewDeedPageProps>) {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Akta Baru</h1>
-        <p className="text-sm text-muted-foreground">Satu pekerjaan boleh punya lebih dari satu akta.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Akta Baru")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Satu pekerjaan boleh punya lebih dari satu akta.")}</p>
       </div>
 
       <Card>

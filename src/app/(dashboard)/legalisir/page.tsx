@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default async function LegalisirPage(props: Async<{ searchParams?: { q?: string; err?: string; ok?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_LEGALISASI);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_LEGALISASI);
@@ -113,7 +114,7 @@ export default async function LegalisirPage(props: Async<{ searchParams?: { q?: 
               </label>
               <label className="sm:col-span-2">
                 <span className="mb-1 block text-xs text-muted-foreground">{t("records.legalisir.fDocument")}</span>
-                <input name="documentTitle" required minLength={2} maxLength={300} placeholder="mis. Ijazah S1 atas nama ..., Sertipikat Hak Milik Nomor ..." className={field} />
+                <input name="documentTitle" required minLength={2} maxLength={300} placeholder={tp("mis. Ijazah S1 atas nama ..., Sertipikat Hak Milik Nomor ...")} className={field} />
               </label>
               <label>
                 <span className="mb-1 block text-xs text-muted-foreground">{t("records.legalisir.requester")}</span>

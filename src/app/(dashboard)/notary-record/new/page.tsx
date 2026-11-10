@@ -7,12 +7,14 @@ import { RepertoriumForm } from "@/components/notary-record/RepertoriumForm";
 import { createRepertorium } from "@/app/(dashboard)/notary-record/actions";
 import { formatDate } from "@/lib/format";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 interface NewRepertoriumPageProps {
   searchParams: { deedId?: string };
 }
 
 export default async function NewRepertoriumPage(props: Async<NewRepertoriumPageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_REPERTORIUM);
 
@@ -39,12 +41,12 @@ export default async function NewRepertoriumPage(props: Async<NewRepertoriumPage
     if (alreadyRecorded) {
       return (
         <div className="max-w-2xl space-y-4">
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Catat Repertorium</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Catat Repertorium")}</h1>
           <p className="text-sm text-muted-foreground">
-            Akta ini sudah tercatat di Repertorium ({alreadyRecorded.year}/{String(alreadyRecorded.sequenceNumber).padStart(4, "0")}).
+            {tp("Akta ini sudah tercatat di Repertorium (")}{alreadyRecorded.year}/{String(alreadyRecorded.sequenceNumber).padStart(4, "0")}).
           </p>
           <Link href={`/notary-record/${alreadyRecorded.id}`} className="text-sm font-medium text-primary hover:underline">
-            Lihat Repertorium
+            {tp("Lihat Repertorium")}
           </Link>
         </div>
       );
@@ -54,9 +56,9 @@ export default async function NewRepertoriumPage(props: Async<NewRepertoriumPage
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Catat Repertorium</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Catat Repertorium")}</h1>
         <p className="text-sm text-muted-foreground">
-          Nomor urut dibuat otomatis per tahun. Detail akta diambil dari Akta yang dipilih.
+          {tp("Nomor urut dibuat otomatis per tahun. Detail akta diambil dari Akta yang dipilih.")}
         </p>
       </div>
 

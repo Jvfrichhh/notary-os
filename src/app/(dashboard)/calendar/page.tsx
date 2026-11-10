@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { classifyDeadline, getJakartaToday, type DeadlineTone } from "@/lib/format";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 // Sama dengan token warna di StatusBadge, dipakai di sini karena chip kalender
 // perlu label custom (nomor job) sehingga tidak bisa pakai komponen StatusBadge langsung.
@@ -31,6 +32,7 @@ interface CalendarPageProps {
 }
 
 export default async function CalendarPage(props: Async<CalendarPageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.VIEW_JOBS);
 
@@ -114,8 +116,8 @@ export default async function CalendarPage(props: Async<CalendarPageProps>) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Kalender</h1>
-          <p className="text-sm text-muted-foreground">Tenggat pekerjaan dan janji temu dalam sebulan</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Kalender")}</h1>
+          <p className="text-sm text-muted-foreground">{tp("Tenggat pekerjaan dan janji temu dalam sebulan")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -137,7 +139,7 @@ export default async function CalendarPage(props: Async<CalendarPageProps>) {
       </div>
 
       <Card className="!p-3">
-        <p className="mb-2 text-xs text-muted-foreground sm:hidden">Geser ke samping untuk melihat seluruh minggu.</p>
+        <p className="mb-2 text-xs text-muted-foreground sm:hidden">{tp("Geser ke samping untuk melihat seluruh minggu.")}</p>
         <div className="-mx-1 overflow-x-auto px-1">
         <div className="min-w-[640px]">
         <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-muted-foreground">
@@ -195,7 +197,7 @@ export default async function CalendarPage(props: Async<CalendarPageProps>) {
                         )
                       )}
                       {events.length > 3 && (
-                        <p className="text-[10px] text-muted-foreground">+{events.length - 3} lagi</p>
+                        <p className="text-[10px] text-muted-foreground">+{events.length - 3} {tp("lagi")}</p>
                       )}
                     </div>
                   </>
@@ -209,7 +211,7 @@ export default async function CalendarPage(props: Async<CalendarPageProps>) {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Tenggat pekerjaan: 🔴 terlambat · 🟠 jatuh tempo hari ini · 🟡 segera jatuh tempo · 🟢 sesuai jadwal. 🔵 Janji temu. Klik untuk buka detail terkait.
+        {tp("Tenggat pekerjaan: 🔴 terlambat · 🟠 jatuh tempo hari ini · 🟡 segera jatuh tempo · 🟢 sesuai jadwal. 🔵 Janji temu. Klik untuk buka detail terkait.")}
       </p>
     </div>
   );

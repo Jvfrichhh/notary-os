@@ -7,8 +7,10 @@ import { MinutaForm } from "@/components/archive/MinutaForm";
 import { createMinuta } from "@/app/(dashboard)/archive/actions";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export default async function NewMinutaPage(props: Async<{ searchParams: { deedId?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_MINUTA);
 
@@ -23,8 +25,8 @@ export default async function NewMinutaPage(props: Async<{ searchParams: { deedI
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Minuta Baru</h1>
-        <p className="text-sm text-muted-foreground">Akta {deed.deedNumber}</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Minuta Baru")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Akta")} {deed.deedNumber}</p>
       </div>
 
       <Card>

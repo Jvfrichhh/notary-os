@@ -8,12 +8,14 @@ import { formatDate } from "@/lib/format";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
 import { updateMinuta, archiveMinuta, restoreMinuta } from "@/app/(dashboard)/archive/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default async function MinutaDetailPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
@@ -37,41 +39,41 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
     <div className="max-w-3xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Minuta</p>
-          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">Akta {minuta.deed.deedNumber}</h1>
+          <p className="text-xs font-medium text-muted-foreground">{tp("Minuta")}</p>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{tp("Akta")} {minuta.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {minuta.deed.deedType} · {formatDate(minuta.deed.deedDate)}
           </p>
         </div>
         {minuta.recordStatus === "ARCHIVED" && (
           <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">
-            Diarsipkan
+            {tp("Diarsipkan")}
           </span>
         )}
       </div>
 
       <div className="flex flex-wrap gap-3 text-sm">
         <Link href={`/archive/deed/${minuta.deed.id}`} className="text-primary hover:underline">
-          ← Kembali ke Akta
+          {tp("← Kembali ke Akta")}
         </Link>
         <Link href={`/clients/${minuta.deed.client.id}`} className="text-primary hover:underline">
-          Lihat Klien
+          {tp("Lihat Klien")}
         </Link>
         {minuta.deed.job && (
           <Link href={`/jobs/${minuta.deed.job.id}`} className="text-primary hover:underline">
-            Lihat Pekerjaan
+            {tp("Lihat Pekerjaan")}
           </Link>
         )}
       </div>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold text-foreground">Metadata</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Metadata")}</h2>
         {canEdit ? (
           <form action={updateMinuta.bind(null, minuta.id)} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Dokumen (Document Vault)</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">{tp("Dokumen (Document Vault)")}</label>
               <select name="documentId" defaultValue={minuta.documentId ?? ""} className={fieldClass}>
-                <option value="">— Belum ada file terkait —</option>
+                <option value="">{tp("— Belum ada file terkait —")}</option>
                 {documents.map((doc) => (
                   <option key={doc.id} value={doc.id}>
                     {doc.fileName}
@@ -85,14 +87,14 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
                   rel="noreferrer"
                   className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
                 >
-                  Buka file saat ini
+                  {tp("Buka file saat ini")}
                 </a>
               )}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Scan minuta bertanda tangan</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">{tp("Scan minuta bertanda tangan")}</label>
               <select name="signedDocumentId" defaultValue={minuta.signedDocumentId ?? ""} className={fieldClass}>
-                <option value="">— Belum ada scan —</option>
+                <option value="">{tp("— Belum ada scan —")}</option>
                 {documents.map((doc) => (
                   <option key={doc.id} value={doc.id}>
                     {doc.fileName}
@@ -100,8 +102,7 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
                 ))}
               </select>
               <p className="mt-1 text-xs text-muted-foreground">
-                Setelah akta ditandatangani, pindai minuta (PDF) lalu unggah ke Document Vault pada pekerjaan/akta ini, kemudian pilih di sini. Minuta asli
-                tetap disimpan fisik dalam bundel.
+                {tp("Setelah akta ditandatangani, pindai minuta (PDF) lalu unggah ke Document Vault pada pekerjaan/akta ini, kemudian pilih di sini. Minuta asli tetap disimpan fisik dalam bundel.")}
               </p>
               {minuta.signedDocumentId && (
                 <a
@@ -110,14 +111,14 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
                   rel="noreferrer"
                   className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
                 >
-                  Buka scan bertanda tangan
+                  {tp("Buka scan bertanda tangan")}
                 </a>
               )}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Repertorium</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">{tp("Repertorium")}</label>
               <select name="repertoriumId" defaultValue={minuta.repertoriumId ?? ""} className={fieldClass}>
-                <option value="">— Belum ditautkan —</option>
+                <option value="">{tp("— Belum ditautkan —")}</option>
                 {repertoriumOptions.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.year}/{String(r.sequenceNumber).padStart(4, "0")} — {r.appearerName}
@@ -126,38 +127,38 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
               </select>
               {repertoriumOptions.length === 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Belum ada Repertorium untuk akta ini.{" "}
+                  {tp("Belum ada Repertorium untuk akta ini.")}{" "}
                   <Link href={`/notary-record/new?deedId=${minuta.deed.id}`} className="text-primary hover:underline">
-                    Catat sekarang
+                    {tp("Catat sekarang")}
                   </Link>
                   .
                 </p>
               )}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Catatan</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">{tp("Catatan")}</label>
               <textarea name="notes" rows={3} defaultValue={minuta.notes ?? ""} className={fieldClass} />
             </div>
             <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-              Simpan Perubahan
+              {tp("Simpan Perubahan")}
             </button>
           </form>
         ) : (
           <dl className="space-y-2 text-sm">
             <div>
-              <dt className="text-xs text-muted-foreground">File</dt>
+              <dt className="text-xs text-muted-foreground">{tp("File")}</dt>
               <dd>
                 {minuta.document ? (
                   <a href={`/api/documents/${minuta.document.id}/download`} target="_blank" rel="noreferrer" className="break-all text-primary hover:underline">
                     {minuta.document.fileName}
                   </a>
                 ) : (
-                  "Belum ada file"
+                  tp("Belum ada file")
                 )}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Repertorium</dt>
+              <dt className="text-xs text-muted-foreground">{tp("Repertorium")}</dt>
               <dd className="text-foreground">
                 {minuta.repertorium ? (
                   <Link href={`/notary-record/${minuta.repertorium.id}`} className="text-primary hover:underline">
@@ -169,7 +170,7 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Catatan</dt>
+              <dt className="text-xs text-muted-foreground">{tp("Catatan")}</dt>
               <dd className="text-foreground">{minuta.notes ?? "-"}</dd>
             </div>
           </dl>
@@ -178,17 +179,17 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
 
       {canEdit && (
         <Card>
-          <h2 className="mb-2 text-base font-bold text-foreground">Arsip</h2>
+          <h2 className="mb-2 text-base font-bold text-foreground">{tp("Arsip")}</h2>
           {minuta.recordStatus === "ACTIVE" ? (
             <form action={archiveMinuta.bind(null, minuta.id)}>
               <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                Arsipkan Minuta
+                {tp("Arsipkan Minuta")}
               </button>
             </form>
           ) : (
             <form action={restoreMinuta.bind(null, minuta.id)}>
               <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                Pulihkan Minuta
+                {tp("Pulihkan Minuta")}
               </button>
             </form>
           )}

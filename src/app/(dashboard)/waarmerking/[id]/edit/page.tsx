@@ -6,8 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { ServiceRecordForm } from "@/components/serviceRecords/ServiceRecordForm";
 import { updateWaarmerking } from "@/app/(dashboard)/waarmerking/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditWaarmerkingPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_WAARMERKING);
 
@@ -28,7 +30,7 @@ export default async function EditWaarmerkingPage(props: Async<{ params: { id: s
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Edit Waarmerking {record.number}</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Edit Waarmerking")} {record.number}</h1>
       <Card>
         <ServiceRecordForm
           action={action}

@@ -4,8 +4,10 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { WasiatForm } from "@/components/wasiat/WasiatForm";
 import { createWasiat } from "@/app/(dashboard)/wasiat/actions";
+import { getT } from "@/lib/i18n/server";
 
 export default async function NewWasiatPage() {
+  const { tp } = await getT();
   await requirePermission(PERMISSIONS.EDIT_WASIAT);
 
   const [clients, jobs, documents] = await Promise.all([
@@ -21,7 +23,7 @@ export default async function NewWasiatPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Catat Wasiat</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Catat Wasiat")}</h1>
       <Card>
         <WasiatForm action={createWasiat} clients={clients} jobs={jobs} documents={documents} cancelHref="/wasiat" />
       </Card>

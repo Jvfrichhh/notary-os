@@ -7,8 +7,10 @@ import { DerivativeForm } from "@/components/archive/DerivativeForm";
 import { createGrosse } from "@/app/(dashboard)/archive/actions";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export default async function NewGrossePage(props: Async<{ searchParams: { deedId?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.EDIT_MINUTA);
 
@@ -23,13 +25,13 @@ export default async function NewGrossePage(props: Async<{ searchParams: { deedI
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Grosse Baru</h1>
-        <p className="text-sm text-muted-foreground">Akta {deed.deedNumber}</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Grosse Baru")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Akta")} {deed.deedNumber}</p>
       </div>
       <Card>
         <DerivativeForm
           action={createGrosse}
-          label="Grosse"
+          label={tp("Grosse")}
           deeds={[]}
           documents={documents}
           lockedDeed={{ id: deed.id, label: `${deed.deedNumber} — ${deed.deedType}` }}

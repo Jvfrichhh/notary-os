@@ -8,6 +8,7 @@ import { formatDate, formatStatusLabel } from "@/lib/format";
 import { getDocumentOptionsForDeed } from "@/lib/archiveDocuments";
 import { updateDerivativeDocument, updateDerivativeStatus, archiveGrosse, restoreGrosse } from "@/app/(dashboard)/archive/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default async function GrosseDetailPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
@@ -32,8 +34,8 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
     <div className="max-w-3xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Grosse</p>
-          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">Akta {record.deed.deedNumber}</h1>
+          <p className="text-xs font-medium text-muted-foreground">{tp("Grosse")}</p>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{tp("Akta")} {record.deed.deedNumber}</h1>
           <p className="text-sm text-muted-foreground">
             {record.deed.deedType} · {formatDate(record.deed.deedDate)}
           </p>
@@ -41,31 +43,31 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(record.status)}</span>
           {record.recordStatus === "ARCHIVED" && (
-            <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">Diarsipkan</span>
+            <span className="rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">{tp("Diarsipkan")}</span>
           )}
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3 text-sm">
         <Link href={`/archive/deed/${record.deed.id}`} className="text-primary hover:underline">
-          ← Kembali ke Akta
+          {tp("← Kembali ke Akta")}
         </Link>
         <Link href={`/clients/${record.deed.client.id}`} className="text-primary hover:underline">
-          Lihat Klien
+          {tp("Lihat Klien")}
         </Link>
         {record.deed.job && (
           <Link href={`/jobs/${record.deed.job.id}`} className="text-primary hover:underline">
-            Lihat Pekerjaan
+            {tp("Lihat Pekerjaan")}
           </Link>
         )}
       </div>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold text-foreground">Dokumen</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Dokumen")}</h2>
         {canEdit ? (
           <form action={updateDerivativeDocument.bind(null, "grosse", record.id)} className="space-y-3">
             <select name="documentId" defaultValue={record.documentId ?? ""} className={fieldClass}>
-              <option value="">— Belum ada file terkait —</option>
+              <option value="">{tp("— Belum ada file terkait —")}</option>
               {documents.map((doc) => (
                 <option key={doc.id} value={doc.id}>
                   {doc.fileName}
@@ -73,7 +75,7 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
               ))}
             </select>
             <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-              Simpan
+              {tp("Simpan")}
             </button>
           </form>
         ) : record.document ? (
@@ -81,7 +83,7 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
             {record.document.fileName}
           </a>
         ) : (
-          <p className="text-sm text-muted-foreground">Belum ada file.</p>
+          <p className="text-sm text-muted-foreground">{tp("Belum ada file.")}</p>
         )}
         {canEdit && record.document && (
           <a
@@ -90,7 +92,7 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
             rel="noreferrer"
             className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
           >
-            Buka file saat ini
+            {tp("Buka file saat ini")}
           </a>
         )}
       </Card>
@@ -98,7 +100,7 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {canEdit && (
           <Card>
-            <h2 className="mb-2 text-base font-bold text-foreground">Status</h2>
+            <h2 className="mb-2 text-base font-bold text-foreground">{tp("Status")}</h2>
             <form action={updateDerivativeStatus.bind(null, "grosse", record.id)} className="space-y-2">
               <select name="status" defaultValue={record.status} className={fieldClass}>
                 {STATUS_OPTIONS.map((s) => (
@@ -108,7 +110,7 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
                 ))}
               </select>
               <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                Simpan Status
+                {tp("Simpan Status")}
               </button>
             </form>
           </Card>
@@ -116,17 +118,17 @@ export default async function GrosseDetailPage(props: Async<{ params: { id: stri
 
         {canEdit && (
           <Card>
-            <h2 className="mb-2 text-base font-bold text-foreground">Arsip</h2>
+            <h2 className="mb-2 text-base font-bold text-foreground">{tp("Arsip")}</h2>
             {record.recordStatus === "ACTIVE" ? (
               <form action={archiveGrosse.bind(null, record.id)}>
                 <button type="submit" className="w-full rounded-md border border-border py-2 text-sm font-medium text-foreground hover:bg-muted">
-                  Arsipkan Grosse
+                  {tp("Arsipkan Grosse")}
                 </button>
               </form>
             ) : (
               <form action={restoreGrosse.bind(null, record.id)}>
                 <button type="submit" className="w-full rounded-md border border-border py-2 text-sm font-medium text-foreground hover:bg-muted">
-                  Pulihkan Grosse
+                  {tp("Pulihkan Grosse")}
                 </button>
               </form>
             )}

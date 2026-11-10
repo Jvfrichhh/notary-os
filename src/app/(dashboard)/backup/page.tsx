@@ -6,6 +6,7 @@ import { formatDateTime, formatFileSize, getJakartaYear } from "@/lib/format";
 import { listArchives } from "@/lib/compliance/backup";
 import { createBackupNow, exportProtocol } from "@/app/(dashboard)/backup/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 // Ekspor protokol mengambil banyak file dari storage; beri waktu lebih.
@@ -19,6 +20,7 @@ const ERR: Record<string, string> = {
 
 /** Backup database & ekspor protokol notaris (khusus Notaris). */
 export default async function BackupPage(props: Async<{ searchParams: { ok?: string; err?: string; missing?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.MANAGE_USERS);
   const archives = await listArchives();
@@ -30,22 +32,21 @@ export default async function BackupPage(props: Async<{ searchParams: { ok?: str
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Backup & Ekspor Protokol</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Backup & Ekspor Protokol")}</h1>
         <p className="text-sm text-muted-foreground">
-          Protokol notaris wajib disimpan selamanya. Sistem membuat backup database otomatis tiap minggu; unduh secara berkala dan simpan di luar
-          cloud (harddisk kantor / Google Drive kantor).
+          {tp("Protokol notaris wajib disimpan selamanya. Sistem membuat backup database otomatis tiap minggu; unduh secara berkala dan simpan di luar cloud (harddisk kantor / Google Drive kantor).")}
         </p>
         {/* Versi mesin server: untuk memastikan pembaruan keamanan Node.js sudah aktif. */}
-        <p className="mt-1 text-xs text-muted-foreground">Versi Node.js server: {process.version}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{tp("Versi Node.js server:")} {process.version}</p>
       </div>
 
       {searchParams.ok === "backup" && (
-        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm">Backup dibuat. Unduh dari daftar di bawah.</div>
+        <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm">{tp("Backup dibuat. Unduh dari daftar di bawah.")}</div>
       )}
       {searchParams.ok === "export" && (
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm">
-          Ekspor protokol selesai. Unduh dari daftar di bawah.
-          {searchParams.missing && searchParams.missing !== "0" && ` ${searchParams.missing} file Minuta/Salinan tidak tersedia (lihat BACA_SAYA.txt di dalam ZIP).`}
+          {tp("Ekspor protokol selesai. Unduh dari daftar di bawah.")}
+          {searchParams.missing && searchParams.missing !== "0" && tp(" {0} file Minuta/Salinan tidak tersedia (lihat BACA_SAYA.txt di dalam ZIP).", [searchParams.missing])}
         </div>
       )}
       {searchParams.err && ERR[searchParams.err] && (
@@ -56,24 +57,24 @@ export default async function BackupPage(props: Async<{ searchParams: { ok?: str
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
-          <h2 className="mb-1 text-base font-bold text-foreground">Backup database</h2>
+          <h2 className="mb-1 text-base font-bold text-foreground">{tp("Backup database")}</h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            Seluruh data (klien, pekerjaan, akta, repertorium, dsb.) dalam satu file ZIP. Otomatis setiap 7 hari.
+            {tp("Seluruh data (klien, pekerjaan, akta, repertorium, dsb.) dalam satu file ZIP. Otomatis setiap 7 hari.")}
           </p>
           <p className={`mb-3 text-sm ${stale ? "text-status-overdue" : "text-foreground"}`}>
-            Backup terakhir: {lastBackup ? formatDateTime(lastBackup.timestamp) : "belum pernah"}
+            {tp("Backup terakhir:")} {lastBackup ? formatDateTime(lastBackup.timestamp) : tp("belum pernah")}
           </p>
           <form action={createBackupNow}>
             <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-              Buat backup sekarang
+              {tp("Buat backup sekarang")}
             </button>
           </form>
         </Card>
 
         <Card>
-          <h2 className="mb-1 text-base font-bold text-foreground">Ekspor protokol per tahun</h2>
+          <h2 className="mb-1 text-base font-bold text-foreground">{tp("Ekspor protokol per tahun")}</h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            File Word Minuta & Salinan semua akta tahun itu + Repertorium, Klapper, dan daftar Legalisasi/Waarmerking/Wasiat.
+            {tp("File Word Minuta & Salinan semua akta tahun itu + Repertorium, Klapper, dan daftar Legalisasi/Waarmerking/Wasiat.")}
           </p>
           <form action={exportProtocol} className="flex items-center gap-2">
             <select name="year" className="rounded-md border border-border bg-background px-3 py-2 text-sm">
@@ -84,7 +85,7 @@ export default async function BackupPage(props: Async<{ searchParams: { ok?: str
               ))}
             </select>
             <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-              Ekspor
+              {tp("Ekspor")}
             </button>
           </form>
         </Card>
@@ -92,11 +93,11 @@ export default async function BackupPage(props: Async<{ searchParams: { ok?: str
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-base font-bold text-foreground">Riwayat backup & ekspor</h2>
-          <p className="text-xs text-muted-foreground">File berisi data pribadi klien; simpan di tempat aman dan jangan dibagikan.</p>
+          <h2 className="text-base font-bold text-foreground">{tp("Riwayat backup & ekspor")}</h2>
+          <p className="text-xs text-muted-foreground">{tp("File berisi data pribadi klien; simpan di tempat aman dan jangan dibagikan.")}</p>
         </div>
         {archives.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-muted-foreground">Belum ada backup.</p>
+          <p className="px-5 py-4 text-sm text-muted-foreground">{tp("Belum ada backup.")}</p>
         ) : (
           <ul className="divide-y divide-border text-sm">
             {archives.map((a) => {
@@ -105,17 +106,17 @@ export default async function BackupPage(props: Async<{ searchParams: { ok?: str
                 <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
                   <div className="min-w-0">
                     <p className="font-medium text-foreground">
-                      {a.action === "backup_created" ? `Backup database${v.trigger === "otomatis" ? " (otomatis)" : ""}` : `Protokol tahun ${v.year}`}
+                      {a.action === "backup_created" ? tp("Backup database{0}", [v.trigger === "otomatis" ? " (otomatis)" : ""]) : tp("Protokol tahun {0}", [v.year])}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDateTime(a.timestamp)} · {a.user?.name ?? "Sistem"}
+                      {formatDateTime(a.timestamp)} · {a.user?.name ?? tp("Sistem")}
                       {v.size ? ` · ${formatFileSize(v.size)}` : ""}
-                      {a.action === "protocol_exported" && v.deeds !== undefined ? ` · ${v.deeds} akta` : ""}
-                      {a.action === "backup_created" && v.rows !== undefined ? ` · ${v.rows} baris data` : ""}
+                      {a.action === "protocol_exported" && v.deeds !== undefined ? tp(" · {0} akta", [v.deeds]) : ""}
+                      {a.action === "backup_created" && v.rows !== undefined ? tp(" · {0} baris data", [v.rows]) : ""}
                     </p>
                   </div>
                   <a href={`/api/archive-file?key=${encodeURIComponent(a.entityId)}`} className="text-sm font-medium text-primary hover:underline">
-                    Unduh
+                    {tp("Unduh")}
                   </a>
                 </li>
               );

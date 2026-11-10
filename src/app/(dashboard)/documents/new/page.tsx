@@ -5,12 +5,14 @@ import { Card } from "@/components/ui/Card";
 import { DocumentForm } from "@/components/documents/DocumentForm";
 import { uploadDocument } from "@/app/(dashboard)/documents/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 interface NewDocumentPageProps {
   searchParams: { clientId?: string; jobId?: string };
 }
 
 export default async function NewDocumentPage(props: Async<NewDocumentPageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.UPLOAD_DOCUMENTS);
 
@@ -45,8 +47,8 @@ export default async function NewDocumentPage(props: Async<NewDocumentPageProps>
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Unggah Dokumen</h1>
-        <p className="text-sm text-muted-foreground">Versi awal (v1) akan otomatis dicatat.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Unggah Dokumen")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Versi awal (v1) akan otomatis dicatat.")}</p>
       </div>
 
       <Card>

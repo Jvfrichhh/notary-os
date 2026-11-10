@@ -3,10 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/session";
 import { PERMISSIONS } from "@/lib/permissions";
 import { UsersAdmin } from "@/components/admin/UsersAdmin";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  const { tp } = await getT();
   const me = await requirePermission(PERMISSIONS.MANAGE_USERS);
 
   const [users, roles] = await Promise.all([
@@ -21,10 +23,10 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <div>
         <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">
-          ← Admin
+          {tp("← Admin")}
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Users</h1>
-        <p className="text-sm text-muted-foreground">Akun internal kantor (bukan akun portal klien — itu dikelola di halaman masing-masing klien).</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Users")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Akun internal kantor (bukan akun portal klien — itu dikelola di halaman masing-masing klien).")}</p>
       </div>
       <UsersAdmin
         currentUserId={me.id}

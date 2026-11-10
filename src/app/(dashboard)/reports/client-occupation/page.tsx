@@ -7,6 +7,7 @@ import { CountUp } from "@/components/motion/CountUp";
 import { formatDateJakarta, getJakartaToday } from "@/lib/format";
 import { EMPTY_CATEGORY, gatherClientOccupation, parsePeriod } from "@/lib/reports/clientOccupation";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
  * pemegang hak laporan Notaris (view_repertorium) -- sama dengan laporan MPD.
  */
 export default async function ClientOccupationReportPage(props: Async<{ searchParams: { year?: string; missing?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
 
@@ -35,18 +37,18 @@ export default async function ClientOccupationReportPage(props: Async<{ searchPa
     <div className="mx-auto max-w-[1200px] space-y-6">
       <div>
         <Link href="/reports" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
-          <ArrowLeft className="h-4 w-4" /> Laporan
+          <ArrowLeft className="h-4 w-4" /> {tp("Laporan")}
         </Link>
       </div>
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Pekerjaan / Profesi Klien</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Pekerjaan / Profesi Klien")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Laporan tahunan PKJM: jumlah klien per jenis pekerjaan (karyawan swasta, pelajar/mahasiswa, tidak bekerja, dst.), {period === "all" ? "seluruh klien terdaftar" : `klien yang terdaftar tahun ${period}`}.
+            {tp("Laporan tahunan PKJM: jumlah klien per jenis pekerjaan (karyawan swasta, pelajar/mahasiswa, tidak bekerja, dst.),")} {period === "all" ? tp("seluruh klien terdaftar") : tp("klien yang terdaftar tahun {0}", [period])}.
           </p>
         </div>
-        <nav aria-label="Pilih periode" className="flex flex-wrap gap-1 rounded-md border border-border bg-background p-1 text-sm shadow-card">
+        <nav aria-label={tp("Pilih periode")} className="flex flex-wrap gap-1 rounded-md border border-border bg-background p-1 text-sm shadow-card">
           {options.map((o) => (
             <Link
               key={o.key}
@@ -62,13 +64,13 @@ export default async function ClientOccupationReportPage(props: Async<{ searchPa
 
       <div className="flex flex-wrap gap-2">
         <a href={dl("docx")} className="inline-flex h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90">
-          <Download className="h-4 w-4" /> Unduh Word (.docx)
+          <Download className="h-4 w-4" /> {tp("Unduh Word (.docx)")}
         </a>
         <a href={dl("xlsx")} className="inline-flex h-11 items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-bold text-foreground hover:bg-muted">
-          <FileSpreadsheet className="h-4 w-4" /> Unduh Excel (.xlsx)
+          <FileSpreadsheet className="h-4 w-4" /> {tp("Unduh Excel (.xlsx)")}
         </a>
         <p className="w-full text-xs text-muted-foreground">
-          Word: surat laporan bertanda tangan Notaris + rekap + daftar klien. Excel: rekap dan daftar untuk diolah. Setiap unduhan tercatat di log audit.
+          {tp("Word: surat laporan bertanda tangan Notaris + rekap + daftar klien. Excel: rekap dan daftar untuk diolah. Setiap unduhan tercatat di log audit.")}
         </p>
       </div>
 
@@ -95,21 +97,21 @@ export default async function ClientOccupationReportPage(props: Async<{ searchPa
       {d.missing > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warn-border bg-warn-soft px-4 py-3 text-sm text-warn-strong">
           <span>
-            <strong>{d.missing} klien</strong> belum ada data pekerjaannya, jadi di laporan masuk kelompok &ldquo;Belum diisi&rdquo;. Lengkapi lewat tombol ubah di tiap klien.
+            <strong>{d.missing} {tp("klien")}</strong> {tp("belum ada data pekerjaannya, jadi di laporan masuk kelompok “Belum diisi”. Lengkapi lewat tombol ubah di tiap klien.")}
           </span>
           <Link
             href={`/reports/client-occupation?year=${yearParam}${onlyMissing ? "" : "&missing=1"}`}
             className="font-bold underline-offset-2 hover:underline"
           >
-            {onlyMissing ? "Tampilkan semua klien" : "Tampilkan yang belum diisi"}
+            {onlyMissing ? tp("Tampilkan semua klien") : tp("Tampilkan yang belum diisi")}
           </Link>
         </div>
       )}
 
       <Card>
-        <h2 className="text-base font-bold text-foreground">Rekap per jenis pekerjaan</h2>
+        <h2 className="text-base font-bold text-foreground">{tp("Rekap per jenis pekerjaan")}</h2>
         {d.total === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">Belum ada klien pada periode ini.</p>
+          <p className="mt-3 text-sm text-muted-foreground">{tp("Belum ada klien pada periode ini.")}</p>
         ) : (
           <ul className="mt-4 space-y-3">
             {d.summary.map((s, i) => (
@@ -134,28 +136,28 @@ export default async function ClientOccupationReportPage(props: Async<{ searchPa
 
       <Card className="!p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <h2 className="text-base font-bold text-foreground">{onlyMissing ? "Klien yang belum diisi pekerjaannya" : "Daftar klien"}</h2>
-          <span className="text-xs text-muted-foreground">{listed.length} klien</span>
+          <h2 className="text-base font-bold text-foreground">{onlyMissing ? tp("Klien yang belum diisi pekerjaannya") : tp("Daftar klien")}</h2>
+          <span className="text-xs text-muted-foreground">{listed.length} {tp("klien")}</span>
         </div>
         {listed.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-muted-foreground">Tidak ada klien untuk ditampilkan.</p>
+          <p className="px-5 py-10 text-center text-sm text-muted-foreground">{tp("Tidak ada klien untuk ditampilkan.")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Klien</th>
-                  <th className="px-4 py-3 font-medium">Pekerjaan / Profesi</th>
-                  <th className="px-4 py-3 font-medium">Kota</th>
-                  <th className="px-4 py-3 font-medium">Terdaftar</th>
-                  <th className="px-4 py-3 font-medium">Pekerjaan di kantor</th>
+                  <th className="px-4 py-3 font-medium">{tp("Klien")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Pekerjaan / Profesi")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Kota")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Terdaftar")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Pekerjaan di kantor")}</th>
                   <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {listed.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/50">
-                    <td data-label="Klien" className="px-4 py-3">
+                    <td data-label={tp("Klien")} className="px-4 py-3">
                       <Link href={`/clients/${c.id}`} className="font-medium text-foreground hover:underline">
                         {c.fullName}
                       </Link>
@@ -164,16 +166,16 @@ export default async function ClientOccupationReportPage(props: Async<{ searchPa
                         {c.companyName && c.companyName !== c.fullName ? ` · ${c.companyName}` : ""}
                       </p>
                     </td>
-                    <td data-label="Pekerjaan / Profesi" className={`px-4 py-3 ${c.category === EMPTY_CATEGORY ? "font-semibold text-warn-strong" : "text-foreground"}`}>
+                    <td data-label={tp("Pekerjaan / Profesi")} className={`px-4 py-3 ${c.category === EMPTY_CATEGORY ? "font-semibold text-warn-strong" : "text-foreground"}`}>
                       {c.category}
-                      {c.occupation && c.occupation.trim() !== c.category && <span className="block text-xs text-muted-foreground">isian: {c.occupation}</span>}
+                      {c.occupation && c.occupation.trim() !== c.category && <span className="block text-xs text-muted-foreground">{tp("isian:")} {c.occupation}</span>}
                     </td>
-                    <td data-label="Kota" className="px-4 py-3 text-muted-foreground">{c.city ?? "-"}</td>
-                    <td data-label="Terdaftar" className="px-4 py-3 text-muted-foreground">{formatDateJakarta(c.createdAt)}</td>
-                    <td data-label="Pekerjaan di kantor" className="px-4 py-3 text-muted-foreground">{c._count.jobs}</td>
+                    <td data-label={tp("Kota")} className="px-4 py-3 text-muted-foreground">{c.city ?? "-"}</td>
+                    <td data-label={tp("Terdaftar")} className="px-4 py-3 text-muted-foreground">{formatDateJakarta(c.createdAt)}</td>
+                    <td data-label={tp("Pekerjaan di kantor")} className="px-4 py-3 text-muted-foreground">{c._count.jobs}</td>
                     <td className="px-4 py-3 text-right">
                       <Link href={`/clients/${c.id}/edit`} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-                        <Pencil className="h-3.5 w-3.5" /> Ubah
+                        <Pencil className="h-3.5 w-3.5" /> {tp("Ubah")}
                       </Link>
                     </td>
                   </tr>

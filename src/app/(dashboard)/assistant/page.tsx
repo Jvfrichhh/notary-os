@@ -4,12 +4,14 @@ import { getUserPermissions } from "@/lib/permissions";
 import { isAiEnabled, aiModel } from "@/lib/ai/client";
 import { Card } from "@/components/ui/Card";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 // Server action asisten boleh berjalan sampai 60 detik (beberapa putaran tool + model).
 export const maxDuration = 60;
 
 export default async function AssistantPage() {
+  const { tp } = await getT();
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const permissions = await getUserPermissions(user.id);
 
@@ -28,14 +30,14 @@ export default async function AssistantPage() {
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Asisten AI</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Asisten AI")}</h1>
         <p className="text-sm text-muted-foreground">
-          Tanya apa saja tentang data kantor. Asisten hanya membaca data yang memang boleh Anda lihat dan tidak pernah mengubah apa pun.
+          {tp("Tanya apa saja tentang data kantor. Asisten hanya membaca data yang memang boleh Anda lihat dan tidak pernah mengubah apa pun.")}
         </p>
       </div>
       {!isAiEnabled() ? (
         <Card>
-          <p className="text-sm text-muted-foreground">Fitur AI belum diaktifkan di server (ANTHROPIC_API_KEY belum diset).</p>
+          <p className="text-sm text-muted-foreground">{tp("Fitur AI belum diaktifkan di server (ANTHROPIC_API_KEY belum diset).")}</p>
         </Card>
       ) : (
         <AssistantChat suggestions={suggestions} userName={user.name ?? "Staf"} model={aiModel()} />

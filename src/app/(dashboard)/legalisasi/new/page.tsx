@@ -5,8 +5,10 @@ import { Card } from "@/components/ui/Card";
 import { ServiceRecordForm } from "@/components/serviceRecords/ServiceRecordForm";
 import { createLegalisasi } from "@/app/(dashboard)/legalisasi/actions";
 import { suggestRecordNumber, yearRange } from "@/lib/serviceRecordNumber";
+import { getT } from "@/lib/i18n/server";
 
 export default async function NewLegalisasiPage() {
+  const { tp } = await getT();
   await requirePermission(PERMISSIONS.EDIT_LEGALISASI);
 
   const today = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date()) + "T00:00:00.000Z");
@@ -27,7 +29,7 @@ export default async function NewLegalisasiPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Catat Legalisasi</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Catat Legalisasi")}</h1>
       </div>
       <Card>
         <ServiceRecordForm

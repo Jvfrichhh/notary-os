@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 const field = "rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default async function HolidaysPage() {
+  const { tp } = await getT();
   await requirePermission(PERMISSIONS.MANAGE_USERS);
   const { t } = await getT();
   const from = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1));
@@ -22,7 +23,7 @@ export default async function HolidaysPage() {
     <div className="max-w-2xl space-y-6">
       <div>
         <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">
-          ← Admin
+          {tp("← Admin")}
         </Link>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{t("records.holidays.title")}</h1>
         <p className="text-sm text-muted-foreground">

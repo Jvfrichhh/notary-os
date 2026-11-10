@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatDate, formatStatusLabel, type DeadlineTone } from "@/lib/format";
 import type { Job, Client, User } from "@prisma/client";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ const GROUPS: { tone: DeadlineTone; title: string }[] = [
 ];
 
 export default async function DeadlinesPage() {
+  const { tp } = await getT();
   await requirePermission(PERMISSIONS.VIEW_JOBS);
 
   const jobs = await prisma.job.findMany({
@@ -50,13 +52,13 @@ export default async function DeadlinesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Tenggat</h1>
-        <p className="text-sm text-muted-foreground">Semua pekerjaan aktif yang punya tenggat, dikelompokkan berdasarkan urgensi</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Tenggat")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Semua pekerjaan aktif yang punya tenggat, dikelompokkan berdasarkan urgensi")}</p>
       </div>
 
       {totalWithDeadline === 0 ? (
         <Card>
-          <EmptyState title="Tidak ada pekerjaan dengan tenggat yang belum selesai." />
+          <EmptyState title={tp("Tidak ada pekerjaan dengan tenggat yang belum selesai.")} />
         </Card>
       ) : (
         <div className="space-y-6">

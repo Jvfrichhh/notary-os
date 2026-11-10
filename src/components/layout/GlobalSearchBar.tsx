@@ -107,6 +107,9 @@ export function GlobalSearchBar({ autoFocus = false, className = "" }: { autoFoc
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setIsOpen(true)}
         autoFocus={autoFocus}
+        aria-label={t("topbar.searchPlaceholder")}
+        enterKeyHint="search"
+        autoComplete="off"
         placeholder={t("topbar.searchPlaceholder")}
         className="h-11 w-full rounded-md border border-input bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       />

@@ -491,7 +491,14 @@ export async function setPpatStage(jobId: string, step: string, formData: FormDa
   const user = await requireUser();
   await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
   // Hanya langkah yang berlaku untuk jenis akta PPAT pekerjaan ini.
-  if (!(await jobStageDefs(jobId)).some((d) => d.key === step)) return;
+  const defs = await jobStageDefs(jobId);
+  if (!defs.some((d) => d.key === step)) return;
+  // Urutan tahap dijaga: staf hanya bisa menandai tahap berikutnya (Notaris/PPAT boleh melompati bila ada alasan).
+  if (formData.get("undo") !== "1" && !(await isNotaryLevel(user.id))) {
+    const done = await prisma.ppatStage.findMany({ where: { jobId }, select: { step: true } });
+    const next = defs.find((d) => !done.some((x) => x.step === d.key));
+    if (!next || next.key !== step) return;
+  }
   if (formData.get("undo") === "1") {
     if (!(await isNotaryLevel(user.id))) return;
     await undoStage(jobId, step, user.id);
@@ -562,4 +569,47 @@ export async function cancelAppointment(appointmentId: string) {
     revalidatePath(`/portal/jobs/${appt.jobId}`);
   }
   revalidatePath("/calendar");
+}
+
+// ---------------------------------------------------------------------------
+// DOKUMEN ASLI klien yang dititipkan ke kantor (sertipikat, BPKB, dsb.):
+// dicatat saat diterima dan saat dikembalikan. Catatan tidak dihapus.
+// ---------------------------------------------------------------------------
+
+export async function receiveOriginalDocument(jobId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  const description = String(formData.get("description") ?? "").trim().slice(0, 300);
+  const date = String(formData.get("receivedAt") ?? "").trim();
+  if (description.length < 3) return;
+  const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, clientId: true } });
+  if (!job) return;
+  const row = await prisma.originalDocument.create({
+    data: {
+      jobId,
+      clientId: job.clientId,
+      description,
+      receivedAt: (/^\d{4}-\d{2}-\d{2}$/.test(date) && fromDateInput(date)) || new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date()) + "T00:00:00.000Z"),
+      receivedFrom: String(formData.get("receivedFrom") ?? "").trim().slice(0, 120) || null,
+      notes: String(formData.get("notes") ?? "").trim().slice(0, 300) || null,
+      receivedById: user.id
+    }
+  });
+  await writeAuditLog({ userId: user.id, action: "original_document_received", entityType: "Job", entityId: jobId, newValue: { id: row.id, description } });
+  revalidatePath(`/jobs/${jobId}`);
+}
+
+export async function returnOriginalDocument(id: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  const row = await prisma.originalDocument.findUnique({ where: { id }, select: { id: true, jobId: true, returnedAt: true, description: true } });
+  if (!row || row.returnedAt) return;
+  const returnedTo = String(formData.get("returnedTo") ?? "").trim().slice(0, 120);
+  if (returnedTo.length < 2) return;
+  await prisma.originalDocument.update({
+    where: { id },
+    data: { returnedAt: new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date()) + "T00:00:00.000Z"), returnedTo, returnedById: user.id }
+  });
+  await writeAuditLog({ userId: user.id, action: "original_document_returned", entityType: "Job", entityId: row.jobId, newValue: { id, description: row.description, returnedTo } });
+  revalidatePath(`/jobs/${row.jobId}`);
 }

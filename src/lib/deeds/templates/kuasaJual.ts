@@ -2,6 +2,7 @@ import type { DeedTemplate } from "../types";
 import { personFromClient } from "../types";
 import type { Block } from "../layout";
 import type { Person } from "../schema";
+import { KAPASITAS_FIELD, peranList } from "../parties";
 import { daftarPenghadap, denganPasangan, dikenal, domisili, judul, komparisi, list, pembuka, penutup, person, str } from "../common";
 import { LAND_FIELDS, uraianTanah } from "../land";
 import { nomorPenghadap } from "../parties";
@@ -16,7 +17,7 @@ export const kuasaJual: DeedTemplate = {
     {
       title: "Pemberi Kuasa (pemilik)",
       fields: [
-        { kind: "list", key: "pemberi", label: "Pemberi kuasa", itemLabel: "Pemberi kuasa", min: 1, max: 4, fields: [{ kind: "person", key: "orang", label: "Identitas" }] },
+        { kind: "list", key: "pemberi", label: "Pemberi kuasa", itemLabel: "Pemberi kuasa", min: 1, max: 4, fields: [{ kind: "person", key: "orang", label: "Identitas" }, KAPASITAS_FIELD] },
         { kind: "person", key: "pasangan", label: "Suami/istri pemberi kuasa (persetujuan; kosongkan bila tidak ada)", optional: true }
       ]
     },
@@ -44,7 +45,9 @@ export const kuasaJual: DeedTemplate = {
   build(d, variant) {
     const pemberi = orang(d.pemberi);
     const penerima = orang(d.penerima);
-    const penghadap = denganPasangan(pemberi, person(d.pasangan), "menurut keterangannya dalam hal ini bertindak untuk diri sendiri");
+    const penghadap = denganPasangan(pemberi, person(d.pasangan), "menurut keterangannya dalam hal ini bertindak untuk diri sendiri").map((x, i) =>
+      i < pemberi.length ? { ...x, peran: peranList(d.pemberi)[i] ?? x.peran } : x
+    );
     const ada = !!str(person(d.pasangan).nama);
     const blocks: Block[] = [
       judul("KUASA UNTUK MENJUAL", d),

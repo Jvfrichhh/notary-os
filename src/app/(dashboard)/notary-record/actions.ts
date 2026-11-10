@@ -9,6 +9,20 @@ import { requireUser } from "@/lib/session";
 import { writeAuditLog } from "@/lib/audit";
 import { generateRepertoriumSequence } from "@/lib/idGenerators";
 
+/**
+ * Tandai minuta satu bulan sudah dijilid (Pasal 16 ayat (1) huruf g UUJN:
+ * dijilid per bulan, paling banyak 50 akta per buku). Dicatat di log audit;
+ * tidak ada tabel tersendiri.
+ */
+export async function markMinutaBundled(ym: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
+  if (!/^\d{4}-\d{2}$/.test(ym)) return;
+  const note = String(formData.get("note") ?? "").trim().slice(0, 200) || null;
+  await writeAuditLog({ userId: user.id, action: "minuta_bundled", entityType: "MinutaBundle", entityId: ym, newValue: { note } });
+  revalidatePath("/notary-record");
+}
+
 const EDIT_REPERTORIUM = PERMISSIONS.EDIT_REPERTORIUM;
 
 function toNullable(value: FormDataEntryValue | null | undefined) {

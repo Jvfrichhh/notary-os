@@ -29,7 +29,8 @@ export function FinalizeDeedForm({
   plannedTanggal,
   ppat = false,
   blanks = 0,
-  review = "none"
+  review = "none",
+  pajakBelum = []
 }: {
   draftId: string;
   defaultNomor: string;
@@ -42,6 +43,8 @@ export function FinalizeDeedForm({
   blanks?: number;
   /** Status pemeriksaan klien di portal atas isi draft saat ini. */
   review?: "none" | "waiting" | "approved" | "changes" | "outdated";
+  /** Akta PPAT: tahap validasi pajak (PPh/BPHTB) yang belum ditandai selesai. */
+  pajakBelum?: string[];
 }) {
   const [state, action] = useFormState(finalizeDeedDraft.bind(null, draftId), {} as FinalizeState);
   const [nomor, setNomor] = useState(defaultNomor);
@@ -92,7 +95,7 @@ export function FinalizeDeedForm({
           {plannedTanggal && ` Rencana tanggal di draft: ${plannedTanggal}.`}
         </p>
       </div>
-      {(blanks > 0 || (review !== "none" && review !== "approved")) && (
+      {(blanks > 0 || pajakBelum.length > 0 || (review !== "none" && review !== "approved")) && (
         <div role="alert" className="space-y-2 rounded-md border border-status-overdue/40 bg-status-overdue/10 px-3 py-2.5">
           <p className="text-sm font-bold text-foreground">Periksa dulu sebelum mengesahkan</p>
           {blanks > 0 && (
@@ -100,6 +103,15 @@ export function FinalizeDeedForm({
               <input type="checkbox" name="abaikanKosong" className="mt-1" />
               <span>
                 Masih ada <strong>{blanks} isian kosong</strong> yang tercetak [...] di akta. Centang hanya bila isian itu memang sengaja dikosongkan.
+              </span>
+            </label>
+          )}
+          {pajakBelum.length > 0 && (
+            <label className="flex items-start gap-2 text-sm text-foreground">
+              <input type="checkbox" name="abaikanPajak" className="mt-1" />
+              <span>
+                Tahap pajak <strong>belum ditandai selesai</strong>: {pajakBelum.join("; ")}. Centang hanya bila bukti setor/validasi pajaknya sudah
+                diterima atau peralihan ini memang tidak terutang pajak.
               </span>
             </label>
           )}

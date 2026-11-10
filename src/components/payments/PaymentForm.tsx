@@ -35,6 +35,7 @@ interface PaymentFormProps {
     taxDepositAmount?: string;
     agencyFeeAmount?: string;
     otherAmount?: string;
+    ppnAmount?: string;
     downPayment?: string;
     paidAmount?: string;
     status?: string;
@@ -71,7 +72,8 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
     feeAmount: initial?.feeAmount ?? "",
     taxDepositAmount: initial?.taxDepositAmount ?? "",
     agencyFeeAmount: initial?.agencyFeeAmount ?? "",
-    otherAmount: initial?.otherAmount ?? ""
+    otherAmount: initial?.otherAmount ?? "",
+    ppnAmount: initial?.ppnAmount ?? ""
   });
   const jumlahRincian = Object.values(rincian).reduce((n, v) => n + (Number(v) || 0), 0);
   const pakaiRincian = jumlahRincian > 0;
@@ -138,7 +140,8 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
               ["feeAmount", "Honorarium / jasa (Rp)"],
               ["taxDepositAmount", "Pajak titipan: BPHTB, PPh (Rp)"],
               ["agencyFeeAmount", "Biaya instansi: PNBP BPN/AHU (Rp)"],
-              ["otherAmount", "Biaya lain: meterai, saksi (Rp)"]
+              ["otherAmount", "Biaya lain: meterai, saksi (Rp)"],
+              ["ppnAmount", "PPN atas honorarium (hanya bila kantor PKP; Rp)"]
             ].map(([key, label]) => (
               <label key={key}>
                 <span className="mb-1 block text-xs text-muted-foreground">{label}</span>

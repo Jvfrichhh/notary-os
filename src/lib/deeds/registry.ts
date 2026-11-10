@@ -10,7 +10,9 @@ import { pascaNikah, praNikah } from "./templates/perkawinan";
 import { fidusia } from "./templates/fidusia";
 import { peralihanSaham, perubahanPt } from "./templates/saham";
 import { kuasaWaris, waris, wasiat } from "./templates/waris";
-import { ajbPpat, hibahPpat } from "./templates/ppatAkta";
+import { ajbPpat, aphbPpat, aphtPpat, hgbAtasHmPpat, hibahPpat, inbrengPpat, skmhtPpat, tukarMenukarPpat } from "./templates/ppatAkta";
+import { pendirianFirma } from "./templates/pendirianFirma";
+import { pendirianKoperasi } from "./templates/pendirianKoperasi";
 import { pengakuanHutang } from "./templates/pengakuanHutang";
 import { pendirianCv } from "./templates/pendirianCv";
 import { pendirianYayasan } from "./templates/pendirianYayasan";
@@ -36,8 +38,16 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     pendirianYayasan,
     perubahanPt,
     peralihanSaham,
+    pendirianFirma,
+    pendirianKoperasi,
     ajbPpat,
-    hibahPpat
+    hibahPpat,
+    tukarMenukarPpat,
+    inbrengPpat,
+    aphbPpat,
+    aphtPpat,
+    skmhtPpat,
+    hgbAtasHmPpat
   ].map((t) => [t.key, t])
 );
 
@@ -48,7 +58,8 @@ export function getDeedTemplate(key: string): DeedTemplate | null {
 /** Bagian form lengkap: bagian khusus akta + data akta & saksi. */
 export function sectionsFor(t: DeedTemplate): SectionDef[] {
   // Klausul perubahan (renvoi) hanya ada di penutup akta notaris; akta PPAT memakai penutup blangko PPAT.
-  const common = t.ppat ? COMMON_SECTIONS.map((s) => ({ ...s, fields: s.fields.filter((f) => f.key !== "perubahan") })) : COMMON_SECTIONS;
+  const NOTARIS_SAJA = ["perubahan", "pengenalanPenghadap", "saksiPengenal", "bahasaPenghadap", "penerjemah"];
+  const common = t.ppat ? COMMON_SECTIONS.map((s) => ({ ...s, fields: s.fields.filter((f) => !NOTARIS_SAJA.includes(f.key)) })) : COMMON_SECTIONS;
   return [...t.sections, ...common];
 }
 

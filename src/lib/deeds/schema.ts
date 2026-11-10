@@ -129,6 +129,17 @@ export const COMMON_SECTIONS: SectionDef[] = [
       { kind: "time", key: "jamAkta", label: "Jam", default: "10:00" },
       { kind: "text", key: "kotaPengadilan", label: "Domisili hukum (Pengadilan Negeri)", default: "Bogor" },
       {
+        kind: "select",
+        key: "pengenalanPenghadap",
+        label: "Pengenalan penghadap",
+        options: ["Dikenal dari identitas yang diperlihatkan", "Diperkenalkan oleh dua saksi pengenal"],
+        default: "Dikenal dari identitas yang diperlihatkan",
+        help: "Pilih 'diperkenalkan' bila penghadap tidak dapat menunjukkan identitas yang sah; saksi pengenal ditulis di bawah ini."
+      },
+      { kind: "text", key: "saksiPengenal", label: "Saksi pengenal (nama keduanya; bila diperkenalkan)", wide: true, placeholder: "Tuan A dan Nyonya B, keduanya dikenal oleh saya, Notaris" },
+      { kind: "text", key: "bahasaPenghadap", label: "Bahasa penghadap (bila tidak mengerti bahasa Indonesia)", placeholder: "Inggris" },
+      { kind: "person", key: "penerjemah", label: "Penerjemah resmi (kosongkan bila tidak ada)", optional: true },
+      {
         kind: "textarea",
         key: "perubahan",
         label: "Perubahan (renvoi) saat pembacaan akta",

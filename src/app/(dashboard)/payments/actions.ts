@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
-import { ensureInvoiceNumber, parseMoney, recordReceipt, voidReceipt, breakdownFromForm } from "@/lib/billing";
+import { ensureInvoiceNumber, parseMoney, recordReceipt, voidReceipt, breakdownFromForm, recordRefund } from "@/lib/billing";
 import { fromDateInput, getJakartaToday } from "@/lib/format";
 
 function toNullable(value: FormDataEntryValue | null | undefined) {
@@ -259,4 +259,29 @@ export async function cancelReceipt(receiptId: string, formData: FormData) {
   revalidatePath("/payments");
   if (r.payment.jobId) revalidatePath(`/jobs/${r.payment.jobId}`);
   redirect(`/payments/${r.paymentId}?ok=voided`);
+}
+
+/** Kembalikan dana ke klien (refund) sebagai transaksi bernomor; jumlah dibayar berkurang. */
+export async function refundPayment(paymentId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_FINANCE);
+  const amount = parseMoney(formData.get("amount"));
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 300);
+  const refundedAt = fromDateInput(String(formData.get("refundedAt") ?? "")) ?? getJakartaToday();
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { id: true, jobId: true, paidAmount: true } });
+  if (!payment) redirect("/payments");
+  if (!Number.isFinite(amount) || amount <= 0) redirect(`/payments/${paymentId}?err=refundAmount`);
+  if (amount > Number(payment.paidAmount)) redirect(`/payments/${paymentId}?err=refundOver`);
+  if (reason.length < 3) redirect(`/payments/${paymentId}?err=refundReason`);
+  let refundNumber: string;
+  try {
+    refundNumber = (await recordRefund({ paymentId, amount, refundedAt, method: toNullable(formData.get("method")), reason, userId: user.id })).refundNumber;
+  } catch (err) {
+    if (err instanceof Error && err.message === "REFUND_OVER") redirect(`/payments/${paymentId}?err=refundOver`);
+    throw err;
+  }
+  await writeAuditLog({ userId: user.id, action: "payment_refunded", entityType: "Payment", entityId: paymentId, newValue: { refundNumber, amount, reason } });
+  revalidatePath("/payments");
+  if (payment.jobId) revalidatePath(`/jobs/${payment.jobId}`);
+  redirect(`/payments/${paymentId}?ok=refunded`);
 }

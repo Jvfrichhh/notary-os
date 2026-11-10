@@ -14,6 +14,7 @@ import { nextDeedNumber } from "@/lib/deeds/numbering";
 import { draftHash, reviewState } from "@/lib/deeds/review";
 import { refreshDraftFromClient, shareDraftWithClient } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { renderDeed } from "@/lib/deeds/render";
+import { stagesFor } from "@/lib/ppatStages";
 import { formatDateTime } from "@/lib/format";
 import { unwrapProps, type Async } from "@/lib/pageProps";
 
@@ -71,6 +72,15 @@ export default async function DeedDraftPage(props: Async<{
   const hasPortal = draft.job.client._count.accounts > 0;
   // Isian yang masih kosong ([...]) di badan akta -- ditampilkan sebagai pengaman sebelum disahkan.
   const blanks = canFinalize && !finalized ? renderDeed(template, data, "minuta", { notes: false }).placeholders : 0;
+  // Akta PPAT: tahap validasi pajak yang belum ditandai selesai di halaman pekerjaan.
+  let pajakBelum: string[] = [];
+  if (template.ppat && canFinalize && !finalized) {
+    const wajib = stagesFor(template.ppat.deedType).filter((s) => s.key === "VALIDASI_PPH" || s.key === "VALIDASI_BPHTB");
+    if (wajib.length) {
+      const done = await prisma.ppatStage.findMany({ where: { jobId: draft.job.id }, select: { step: true } });
+      pajakBelum = wajib.filter((s) => !done.some((x) => x.step === s.key)).map((s) => s.label);
+    }
+  }
   const syncedCount = searchParams?.synced ? Number(searchParams.synced.split("-")[0]) : null;
   const todayJakarta = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
   const suggestedNomor =
@@ -218,6 +228,7 @@ export default async function DeedDraftPage(props: Async<{
           defaultTanggal={todayJakarta}
           ppat={isPpat}
           blanks={blanks}
+          pajakBelum={pajakBelum}
           review={review}
           plannedTanggal={typeof data.tanggalAkta === "string" && data.tanggalAkta !== todayJakarta ? data.tanggalAkta : undefined}
         />

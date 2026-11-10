@@ -7,24 +7,28 @@ import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { formatCurrency, formatDate, formatDateTime, formatStatusLabel, toDateInput, getJakartaToday } from "@/lib/format";
-import { cancelReceipt, recordPayment } from "@/app/(dashboard)/payments/actions";
+import { cancelReceipt, recordPayment, refundPayment } from "@/app/(dashboard)/payments/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
 const inputCls = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm";
-const METHODS = ["Tunai", "Transfer bank", "QRIS", "Cek / Giro", "Lainnya"];
+const METHODS = ["Tunai", "Transfer bank", "QRIS", "Cek / Giro", "Potongan PPh (bukti potong)", "Lainnya"];
 
 const OK: Record<string, string> = {
   created: "Tagihan dibuat.",
   updated: "Tagihan diperbarui.",
   receipt: "Pembayaran dicatat dan kuitansi dibuat.",
-  voided: "Kuitansi dibatalkan; total dibayar sudah disesuaikan."
+  voided: "Kuitansi dibatalkan; total dibayar sudah disesuaikan.",
+  refunded: "Pengembalian dana dicatat; total dibayar sudah disesuaikan."
 };
 const ERR: Record<string, string> = {
   amount: "Isi jumlah pembayaran.",
   over: "Jumlah melebihi sisa tagihan. Ubah total tagihan dulu bila memang ada biaya tambahan.",
-  reason: "Tulis alasan pembatalan kuitansi."
+  reason: "Tulis alasan pembatalan kuitansi.",
+  refundAmount: "Isi jumlah yang dikembalikan.",
+  refundOver: "Jumlah pengembalian melebihi uang yang sudah diterima.",
+  refundReason: "Tulis alasan pengembalian dana."
 };
 
 /** Tagihan satu pekerjaan: ringkasan, catat pembayaran, daftar kuitansi. */
@@ -44,6 +48,7 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
   const remaining = Number(p.remainingAmount);
   const total = Number(p.totalAmount);
   const rincian = paymentBreakdown(p);
+  const refunds = await prisma.paymentRefund.findMany({ where: { paymentId: p.id }, orderBy: { refundedAt: "desc" } });
   const pct = total > 0 ? Math.min(100, Math.round((Number(p.paidAmount) / total) * 100)) : 0;
   const justCreated = searchParams.r ? p.receipts.find((r) => r.id === searchParams.r) : undefined;
 
@@ -199,6 +204,64 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
           </ul>
         )}
       </Card>
+
+      {(refunds.length > 0 || (canEdit && Number(p.paidAmount) > 0)) && (
+        <Card className="p-0">
+          <div className="border-b border-border px-5 py-3">
+            <h2 className="text-base font-bold text-foreground">Pengembalian Dana ({refunds.length})</h2>
+          </div>
+          {refunds.length > 0 && (
+            <ul className="divide-y divide-border text-sm">
+              {refunds.map((r) => (
+                <li key={r.id} className="px-5 py-3">
+                  <p className="font-medium text-foreground">
+                    {r.refundNumber} · {formatCurrency(r.amount)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(r.refundedAt)} · {r.method ?? "-"} · {r.reason}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {canEdit && Number(p.paidAmount) > 0 && (
+            <details className="border-t border-border px-5 py-3 text-sm">
+              <summary className="cursor-pointer font-medium text-foreground">Kembalikan dana ke klien</summary>
+              <form action={refundPayment.bind(null, p.id)} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Jumlah (Rp)</span>
+                  <input name="amount" inputMode="numeric" required className={inputCls} />
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Tanggal</span>
+                  <input type="date" name="refundedAt" defaultValue={toDateInput(getJakartaToday())} className={inputCls} />
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Cara</span>
+                  <select name="method" defaultValue="Transfer bank" className={inputCls}>
+                    {METHODS.map((m) => (
+                      <option key={m}>{m}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Alasan</span>
+                  <input name="reason" required minLength={3} maxLength={300} placeholder="mis. pekerjaan dibatalkan / kelebihan titipan pajak" className={inputCls} />
+                </label>
+                <div className="sm:col-span-4">
+                  <ConfirmButton
+                    message="Catat pengembalian dana ini? Total dibayar akan dikurangi dan catatannya tidak bisa dihapus."
+                    className="rounded-md border border-status-overdue/50 px-4 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10"
+                  >
+                    Catat pengembalian
+                  </ConfirmButton>
+                  <span className="ml-2 text-xs text-muted-foreground">Paling banyak {formatCurrency(p.paidAmount)} (yang sudah diterima).</span>
+                </div>
+              </form>
+            </details>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

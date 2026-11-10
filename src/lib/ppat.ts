@@ -15,18 +15,25 @@ import { completeStage } from "@/lib/ppatStages";
  *      * SKMHT -> tindak lanjuti dengan APHT paling lambat 1 bulan (tanah
  *        terdaftar) / 3 bulan (belum terdaftar) (UUHT Pasal 15);
  *  - tahap "Penandatanganan akta" tercatat; pekerjaan selesai pada tahap terakhir.
- * Hari kerja dihitung Senin–Jumat (hari libur nasional belum diperhitungkan).
+ * Hari kerja dihitung Senin–Jumat, dikurangi hari libur nasional/cuti bersama
+ * yang diisi Admin (menu Admin › Hari Libur).
  */
 
-export function addWorkingDays(d: Date, n: number): Date {
+export function addWorkingDays(d: Date, n: number, holidays?: Set<string>): Date {
   const out = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   let left = n;
   while (left > 0) {
     out.setUTCDate(out.getUTCDate() + 1);
     const day = out.getUTCDay();
-    if (day !== 0 && day !== 6) left--;
+    if (day !== 0 && day !== 6 && !holidays?.has(out.toISOString().slice(0, 10))) left--;
   }
   return out;
+}
+
+/** Hari libur (YYYY-MM-DD) mulai `from` -- untuk hitungan hari kerja. */
+export async function loadHolidays(from?: Date): Promise<Set<string>> {
+  const rows = await prisma.holiday.findMany({ where: from ? { date: { gte: from } } : {}, select: { date: true } });
+  return new Set(rows.map((r) => r.date.toISOString().slice(0, 10)));
 }
 
 const addMonths = (d: Date, n: number) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, d.getUTCDate()));
@@ -35,18 +42,24 @@ export const isSkmht = (type: string) => type.startsWith("Surat Kuasa Membebanka
 export const isApht = (type: string) => type.startsWith("Pemberian Hak Tanggungan");
 
 /** Tenggat & judul kewajiban setelah akta PPAT. */
-export function ppatDuty(deedType: string, deedDate: Date): { title: string; due: Date; basis: string } {
+export function ppatDuty(
+  deedType: string,
+  deedDate: Date,
+  opts: { holidays?: Set<string>; landRegistered?: boolean | null } = {}
+): { title: string; due: Date; basis: string } {
   if (isSkmht(deedType)) {
+    // Tanah belum terdaftar: SKMHT berlaku 3 bulan; selain itu (atau belum diisi) 1 bulan.
+    const belum = opts.landRegistered === false;
     return {
       title: "Tindak lanjuti SKMHT dengan APHT",
-      due: addMonths(deedDate, 1),
-      basis: "UUHT Pasal 15: 1 bulan (tanah terdaftar) / 3 bulan (belum terdaftar)"
+      due: addMonths(deedDate, belum ? 3 : 1),
+      basis: belum ? "UUHT Pasal 15: 3 bulan (tanah belum terdaftar)" : "UUHT Pasal 15: 1 bulan (tanah sudah terdaftar)"
     };
   }
   if (isApht(deedType)) {
-    return { title: "Daftarkan Hak Tanggungan (HT-el) ke Kantor Pertanahan", due: addWorkingDays(deedDate, 7), basis: "UUHT Pasal 13: 7 hari kerja" };
+    return { title: "Daftarkan Hak Tanggungan (HT-el) ke Kantor Pertanahan", due: addWorkingDays(deedDate, 7, opts.holidays), basis: "UUHT Pasal 13: 7 hari kerja" };
   }
-  return { title: "Sampaikan akta & warkah ke Kantor Pertanahan", due: addWorkingDays(deedDate, 7), basis: "PP 24/1997 Pasal 40: 7 hari kerja" };
+  return { title: "Sampaikan akta & warkah ke Kantor Pertanahan", due: addWorkingDays(deedDate, 7, opts.holidays), basis: "PP 24/1997 Pasal 40: 7 hari kerja" };
 }
 
 export interface PpatInput {
@@ -68,6 +81,8 @@ export interface PpatInput {
   sspdDate: Date | null;
   sspdAmount: number | null;
   notes: string | null;
+  /** SKMHT: tanah sudah terdaftar? (menentukan masa berlaku 1 atau 3 bulan). */
+  landRegistered?: boolean | null;
 }
 
 /** Nomor urut berikutnya pada tahun akta. */
@@ -102,7 +117,7 @@ export async function registerPpatDeed(input: PpatInput, userId: string, sequenc
 
   if (deed.jobId) {
     const job = await prisma.job.findUnique({ where: { id: deed.jobId }, select: { picId: true, jobNumber: true } });
-    const duty = ppatDuty(deed.deedType, deed.deedDate);
+    const duty = ppatDuty(deed.deedType, deed.deedDate, { holidays: await loadHolidays(deed.deedDate), landRegistered: deed.landRegistered });
     const assignee = job?.picId ?? userId;
     await prisma.jobTask.create({
       data: {

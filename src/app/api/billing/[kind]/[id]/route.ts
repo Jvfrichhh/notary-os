@@ -55,7 +55,9 @@ export async function GET(_req: NextRequest, ctx: Async<{ params: { kind: string
       where: { paymentId: receipt.paymentId, voidedAt: null, createdAt: { gte: receipt.createdAt } },
       _sum: { amount: true }
     });
-    const paidBefore = Math.max(doc.paidAmount - Number(later._sum.amount ?? 0), 0);
+    // Pengembalian dana setelah kuitansi ini mengurangi "total dibayar sekarang": ditambahkan kembali.
+    const refundedLater = await prisma.paymentRefund.aggregate({ where: { paymentId: receipt.paymentId, createdAt: { gte: receipt.createdAt } }, _sum: { amount: true } });
+    const paidBefore = Math.max(doc.paidAmount + Number(refundedLater._sum.amount ?? 0) - Number(later._sum.amount ?? 0), 0);
     buffer = buildReceiptDocx(doc, { ...receipt, amount: Number(receipt.amount), receivedBy: receipt.receivedBy?.name ?? null, paidBefore });
     name = `Kuitansi_${receipt.receiptNumber.replace(/\//g, "-")}.docx`;
   } else {

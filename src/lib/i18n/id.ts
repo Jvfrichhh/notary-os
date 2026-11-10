@@ -25,6 +25,7 @@ export const id = {
     "/archive": "Minuta / Salinan / Grosse / Kutipan",
     "/notary-record": "Repertorium / Klapper",
     "/protes": "Daftar Protes",
+    "/legalisir": "Legalisir Fotokopi",
     "/compliance": "Laporan Bulanan",
     "/reports": "Laporan",
     "/legalisasi": "Legalisasi",

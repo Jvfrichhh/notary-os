@@ -1,6 +1,6 @@
 import { blocksToLines, paginate } from "./layout";
 import { buildDocx, type ExtraSheet, type Variant } from "./docx";
-import { NOTARIS, namaLengkap, resolvePenghadap, sebutanSingkat, str, tandaTanganMinuta, tandaTanganSalinan } from "./common";
+import { NOTARIS, namaLengkap, person, resolvePenghadap, sebutanSingkat, str, tandaTanganMinuta, tandaTanganSalinan } from "./common";
 import { tanggalHuruf, tanggalSingkat } from "./words";
 import { buildPpatDocx, type PpatVariant } from "./ppatDoc";
 import { PPAT } from "./common";
@@ -83,10 +83,21 @@ export function renderDeed(
   if (template.ppat) return renderPpat(template, data, rv, opts);
 
   const variant: Variant = rv === "minuta" ? "minuta" : "salinan";
-  const blocks = resolvePenghadap(template.build(data, variant), template.signers(data).length);
+  const built = template.build(data, variant).map((b) =>
+    // Penghadap tanpa identitas sah: diperkenalkan oleh dua saksi pengenal (Pasal 39 UUJN).
+    b.t === "p" && /^(Para p|P)enghadap telah dikenal oleh saya, Notaris, dari identitas/.test(b.text) && str(data.pengenalanPenghadap).startsWith("Diperkenalkan")
+      ? { ...b, text: `${b.text.startsWith("Para") ? "Para penghadap" : "Penghadap"} diperkenalkan kepada saya, Notaris, oleh dua orang saksi pengenal, yaitu ${str(data.saksiPengenal).replace(/[\s.;]+$/, "") || "[...]"}.` }
+      : b
+  );
+  const blocks = resolvePenghadap(built, template.signers(data).length);
   const { title, body, closingIndex } = blocksToLines(blocks);
-  const signers = template.signers(data);
-  const labels = template.signerLabels?.(data) ?? [];
+  // Penerjemah resmi turut menandatangani akta.
+  const penerjemah = person(data.penerjemah);
+  const adaPenerjemah = !!str(penerjemah.nama);
+  const baseSigners = template.signers(data);
+  const signers = adaPenerjemah ? [...baseSigners, penerjemah] : baseSigners;
+  const baseLabels = template.signerLabels?.(data) ?? [];
+  const labels = adaPenerjemah ? [...baseSigners.map((_, i) => baseLabels[i] || "Penghadap,"), "Penerjemah,"] : baseLabels;
   const sig = variant === "minuta" ? tandaTanganMinuta(signers, labels) : tandaTanganSalinan();
   const lines = paginate(title, body, closingIndex, sig.lines, sig.minLines);
 
@@ -115,10 +126,11 @@ export function renderDeed(
           nomorAkta: str(data.nomorAkta) || "[...]",
           tanggalAkta: tanggalHuruf(str(data.tanggalAkta)),
           notaris: NOTARIS.namaSingkat,
-          penghadap: signers.map((p, i) => ({
+          // Lembar sidik jari hanya untuk penghadap (penerjemah tidak ikut).
+          penghadap: baseSigners.map((p, i) => ({
             sebutan: sebutanSingkat(p),
             nama: namaLengkap(p),
-            kedudukan: (labels[i] || "Penghadap").replace(/,$/, ""),
+            kedudukan: (baseLabels[i] || "Penghadap").replace(/,$/, ""),
             nik: str(p.nik) || "[...]"
           }))
         }

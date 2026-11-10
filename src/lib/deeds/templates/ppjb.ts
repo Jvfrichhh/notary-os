@@ -2,6 +2,7 @@ import type { DeedTemplate } from "../types";
 import { personFromClient } from "../types";
 import type { Block } from "../layout";
 import type { Person } from "../schema";
+import { KAPASITAS_FIELD, peranList } from "../parties";
 import { ayat, daftarPenghadap, denganPasangan, dikenal, domisili, judul, list, pasal, pembuka, penutup, person, str } from "../common";
 import { LAND_FIELDS, uraianTanah } from "../land";
 import { nomorPenghadap } from "../parties";
@@ -18,13 +19,13 @@ export const ppjb: DeedTemplate = {
     {
       title: "Pihak Pertama (Penjual)",
       fields: [
-        { kind: "list", key: "penjual", label: "Penjual", itemLabel: "Penjual", min: 1, max: 4, fields: [{ kind: "person", key: "orang", label: "Identitas" }] },
+        { kind: "list", key: "penjual", label: "Penjual", itemLabel: "Penjual", min: 1, max: 4, fields: [{ kind: "person", key: "orang", label: "Identitas" }, KAPASITAS_FIELD] },
         { kind: "person", key: "pasanganPenjual", label: "Suami/istri penjual (persetujuan; kosongkan bila tidak ada)", optional: true }
       ]
     },
     {
       title: "Pihak Kedua (Pembeli)",
-      fields: [{ kind: "list", key: "pembeli", label: "Pembeli", itemLabel: "Pembeli", min: 1, max: 4, fields: [{ kind: "person", key: "orang", label: "Identitas" }] }]
+      fields: [{ kind: "list", key: "pembeli", label: "Pembeli", itemLabel: "Pembeli", min: 1, max: 4, fields: [{ kind: "person", key: "orang", label: "Identitas" }, KAPASITAS_FIELD] }]
     },
     { title: "Objek Jual Beli", fields: LAND_FIELDS },
     {
@@ -82,8 +83,10 @@ export const ppjb: DeedTemplate = {
     const uangMuka = Number(str(d.uangMuka).replace(/\D/g, ""));
     const sisa = harga > 0 && uangMuka > 0 ? harga - uangMuka : 0;
     const penghadap = [
-      ...denganPasangan(penjual, person(d.pasanganPenjual), "menurut keterangannya dalam hal ini bertindak untuk diri sendiri"),
-      ...pembeli.map((p) => ({ p, peran: "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }))
+      ...denganPasangan(penjual, person(d.pasanganPenjual), "menurut keterangannya dalam hal ini bertindak untuk diri sendiri").map((x, i) =>
+        i < penjual.length ? { ...x, peran: peranList(d.penjual)[i] ?? x.peran } : x
+      ),
+      ...pembeli.map((p, i) => ({ p, peran: peranList(d.pembeli)[i] ?? "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }))
     ];
     const adaPasangan = !!str(person(d.pasanganPenjual).nama);
     const potongan = Number(str(d.potonganBatal).replace(",", ".")) || 0;

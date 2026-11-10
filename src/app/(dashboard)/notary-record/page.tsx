@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { markMinutaBundled } from "@/app/(dashboard)/notary-record/actions";
 import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
@@ -11,11 +12,15 @@ import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "repertorium" | "klapper";
+type Tab = "repertorium" | "klapper" | "bundel";
 const TABS: { key: Tab; label: string }[] = [
   { key: "repertorium", label: "Repertorium" },
-  { key: "klapper", label: "Klapper" }
+  { key: "klapper", label: "Klapper" },
+  { key: "bundel", label: "Bundel Minuta" }
 ];
+const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+/** Paling banyak 50 akta per buku/jilid (Pasal 16 ayat (1) huruf g UUJN). */
+const MAKS_PER_JILID = 50;
 
 interface PageProps {
   searchParams: { tab?: string; q?: string; year?: string; date?: string };
@@ -26,7 +31,7 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
 
-  const tab: Tab = searchParams.tab === "klapper" ? "klapper" : "repertorium";
+  const tab: Tab = searchParams.tab === "klapper" ? "klapper" : searchParams.tab === "bundel" ? "bundel" : "repertorium";
   const q = searchParams.q?.trim();
   const year = searchParams.year ? parseInt(searchParams.year, 10) : undefined;
   const date = searchParams.date; // YYYY-MM-DD
@@ -91,6 +96,36 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
   }
   const klapperLetters = [...klapperGroups.keys()].sort();
 
+  // Bundel minuta: akta per bulan, jumlah jilid (maks. 50 akta per jilid), dan status penjilidan.
+  const bundles: { ym: string; label: string; count: number; first: number; last: number; jilid: number; bundledAt: Date | null; note: string | null }[] = [];
+  if (tab === "bundel") {
+    const perMonth = new Map<string, number[]>();
+    for (const e of entries) {
+      const ym = e.deedDate.toISOString().slice(0, 7);
+      perMonth.set(ym, [...(perMonth.get(ym) ?? []), e.sequenceNumber]);
+    }
+    const marks = await prisma.auditLog.findMany({
+      where: { action: "minuta_bundled", entityType: "MinutaBundle", entityId: { in: [...perMonth.keys()] } },
+      orderBy: { timestamp: "desc" },
+      select: { entityId: true, timestamp: true, newValue: true }
+    });
+    for (const ym of [...perMonth.keys()].sort().reverse()) {
+      const seqs = perMonth.get(ym)!;
+      const mark = marks.find((m) => m.entityId === ym);
+      bundles.push({
+        ym,
+        label: `${BULAN[Number(ym.slice(5)) - 1]} ${ym.slice(0, 4)}`,
+        count: seqs.length,
+        first: Math.min(...seqs),
+        last: Math.max(...seqs),
+        jilid: Math.ceil(seqs.length / MAKS_PER_JILID),
+        bundledAt: mark?.timestamp ?? null,
+        note: (mark?.newValue as { note?: string | null } | null)?.note ?? null
+      });
+    }
+  }
+  const currentYm = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date()).slice(0, 7);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -153,6 +188,42 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
       {entries.length === 0 ? (
         <Card>
           <EmptyState title="Tidak ada data repertorium yang cocok." />
+        </Card>
+      ) : tab === "bundel" ? (
+        <Card className="!p-0">
+          <p className="border-b border-border px-4 py-3 text-xs text-muted-foreground">
+            Minuta dijilid per bulan menjadi buku yang memuat paling banyak {MAKS_PER_JILID} akta; bila lebih, dijilid menjadi beberapa buku. Tandai
+            setelah bundel bulan itu selesai dijilid dan diberi sampul.
+          </p>
+          <div className="divide-y divide-border">
+            {bundles.map((b) => (
+              <div key={b.ym} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground">{b.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {b.count} akta · nomor urut {b.first}–{b.last} · {b.jilid} jilid
+                    {b.jilid > 1 ? ` (${MAKS_PER_JILID} akta per jilid)` : ""}
+                  </p>
+                </div>
+                {b.bundledAt ? (
+                  <span className="text-xs text-status-on-track">
+                    Sudah dijilid ({formatDate(b.bundledAt)}){b.note ? ` · ${b.note}` : ""}
+                  </span>
+                ) : b.ym >= currentYm ? (
+                  <span className="text-xs text-muted-foreground">Bulan berjalan</span>
+                ) : canCreate ? (
+                  <form action={markMinutaBundled.bind(null, b.ym)} className="flex flex-wrap items-center gap-2">
+                    <input name="note" maxLength={200} placeholder="Catatan (opsional)" className="w-40 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground" />
+                    <button type="submit" className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted">
+                      Tandai sudah dijilid
+                    </button>
+                  </form>
+                ) : (
+                  <span className="text-xs text-status-due-soon">Belum dijilid</span>
+                )}
+              </div>
+            ))}
+          </div>
         </Card>
       ) : tab === "repertorium" ? (
         <Card className="!p-0">

@@ -56,7 +56,7 @@ export function reportDueDate(kind: ReportKind, ym: string): Date {
 export async function gatherMonth(ym: string) {
   const { start, end } = monthRange(ym);
   const range = { gte: start, lt: end };
-  const [akta, legalisasi, waarmerking, wasiat, ppat, protes] = await Promise.all([
+  const [akta, legalisasi, waarmerking, wasiat, ppat, protes, legalisir] = await Promise.all([
     prisma.repertorium.findMany({
       where: { deedDate: range, recordStatus: "ACTIVE" },
       orderBy: [{ year: "asc" }, { sequenceNumber: "asc" }],
@@ -103,9 +103,14 @@ export async function gatherMonth(ym: string) {
       where: { date: range, recordStatus: "ACTIVE" },
       orderBy: { date: "asc" },
       select: { number: true, date: true, instrumentType: true, requesterName: true, againstName: true, reason: true }
+    }),
+    prisma.copyCertification.findMany({
+      where: { date: range, recordStatus: "ACTIVE" },
+      orderBy: { date: "asc" },
+      select: { number: true, date: true, documentTitle: true, requesterName: true, copies: true }
     })
   ]);
-  return { akta, legalisasi, waarmerking, wasiat, ppat, protes };
+  return { akta, legalisasi, waarmerking, wasiat, ppat, protes, legalisir };
 }
 
 export type MonthData = Awaited<ReturnType<typeof gatherMonth>>;
@@ -137,7 +142,7 @@ export function signature(role = "Notaris"): DocBlock[] {
 
 export function buildMpdReport(ym: string, d: MonthData): Buffer {
   const bulan = monthLabel(ym);
-  const kosong = d.akta.length + d.legalisasi.length + d.waarmerking.length + d.wasiat.length + d.protes.length === 0;
+  const kosong = d.akta.length + d.legalisasi.length + d.waarmerking.length + d.wasiat.length + d.protes.length + d.legalisir.length === 0;
   const blocks: DocBlock[] = [
     { t: "p", text: "Kepada Yth.", spaceAfter: 0 },
     { t: "p", text: `**Majelis Pengawas Daerah Notaris ${NOTARIS.kota}**`, spaceAfter: 0 },
@@ -153,7 +158,8 @@ export function buildMpdReport(ym: string, d: MonthData): Buffer {
     { t: "p", text: `2. Daftar Surat di Bawah Tangan yang Disahkan (Legalisasi): ${d.legalisasi.length || "NIHIL"};`, spaceAfter: 0 },
     { t: "p", text: `3. Daftar Surat di Bawah Tangan yang Dibukukan (Waarmerking): ${d.waarmerking.length || "NIHIL"};`, spaceAfter: 0 },
     { t: "p", text: `4. Daftar Akta Wasiat: ${d.wasiat.length || "NIHIL"};`, spaceAfter: 0 },
-    { t: "p", text: `5. Daftar Protes: ${d.protes.length || "NIHIL"}.`, spaceAfter: 240 },
+    { t: "p", text: `5. Daftar Protes: ${d.protes.length || "NIHIL"};`, spaceAfter: 0 },
+    { t: "p", text: `6. Daftar Pengesahan Fotokopi Sesuai Asli: ${d.legalisir.length || "NIHIL"}.`, spaceAfter: 240 },
     { t: "p", text: "Demikian laporan ini kami sampaikan. Atas perhatiannya kami ucapkan terima kasih.", spaceAfter: 360 },
     ...signature(),
     { t: "pageBreak" },
@@ -204,6 +210,16 @@ export function buildMpdReport(ym: string, d: MonthData): Buffer {
       widths: [0.6, 1.8, 1.4, 3, 3.5],
       rows: nihil(
         d.protes.map((r, i) => [String(i + 1), r.number, formatDate(r.date), `${r.instrumentType} — ${r.reason}`, `${r.requesterName} / ${r.againstName}`]),
+        5
+      )
+    },
+    { t: "p", text: `LAMPIRAN VI — DAFTAR PENGESAHAN FOTOKOPI SESUAI ASLI BULAN ${bulan.toUpperCase()}`, bold: true, align: "center" },
+    {
+      t: "table",
+      header: ["No.", "Nomor", "Tanggal", "Dokumen", "Pemohon"],
+      widths: [0.6, 1.8, 1.4, 3.5, 3],
+      rows: nihil(
+        d.legalisir.map((r, i) => [String(i + 1), r.number, formatDate(r.date), `${r.documentTitle}${r.copies > 1 ? ` (${r.copies} rangkap)` : ""}`, r.requesterName]),
         5
       )
     },

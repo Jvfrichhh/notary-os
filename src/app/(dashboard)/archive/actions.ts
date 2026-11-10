@@ -247,10 +247,19 @@ export async function updateMinuta(minutaId: string, formData: FormData) {
     return;
   }
 
+  // Scan minuta yang sudah ditandatangani (file terpisah dari Word minuta).
+  const signedDocumentId = toNullable(formData.get("signedDocumentId"));
+  try {
+    await assertDocumentBelongsToDeed(signedDocumentId, minuta.deedId);
+  } catch {
+    return;
+  }
+
   const updated = await prisma.minuta.update({
     where: { id: minutaId },
     data: {
       documentId,
+      signedDocumentId,
       repertoriumId,
       notes: toNullable(formData.get("notes"))
     }
@@ -261,8 +270,8 @@ export async function updateMinuta(minutaId: string, formData: FormData) {
     action: "minuta_updated",
     entityType: "Minuta",
     entityId: minutaId,
-    previousValue: { documentId: minuta.documentId, notes: minuta.notes },
-    newValue: { documentId: updated.documentId, notes: updated.notes }
+    previousValue: { documentId: minuta.documentId, signedDocumentId: minuta.signedDocumentId, notes: minuta.notes },
+    newValue: { documentId: updated.documentId, signedDocumentId: updated.signedDocumentId, notes: updated.notes }
   });
 
   revalidatePath(`/archive/minuta/${minutaId}`);

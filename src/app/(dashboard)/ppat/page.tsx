@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatCurrency, formatDate, getJakartaYear } from "@/lib/format";
-import { isSkmht, ppatDuty } from "@/lib/ppat";
+import { isSkmht, ppatDuty, loadHolidays } from "@/lib/ppat";
 import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +25,7 @@ export default async function PpatRegisterPage(props: Async<{ searchParams: { ye
     }),
     prisma.ppatDeed.findMany({ distinct: ["year"], select: { year: true }, orderBy: { year: "desc" } })
   ]);
+  const holidays = await loadHolidays(new Date(Date.UTC(year, 0, 1)));
   const yearOptions = Array.from(new Set([getJakartaYear(), ...years.map((y) => y.year)])).sort((a, b) => b - a);
 
   return (
@@ -76,7 +77,7 @@ export default async function PpatRegisterPage(props: Async<{ searchParams: { ye
               </thead>
               <tbody className="divide-y divide-border">
                 {deeds.map((d) => {
-                  const duty = ppatDuty(d.deedType, d.deedDate);
+                  const duty = ppatDuty(d.deedType, d.deedDate, { holidays, landRegistered: d.landRegistered });
                   return (
                     <tr key={d.id} className="align-top hover:bg-muted/50">
                       <td data-label="No. Akta" className="px-4 py-3">

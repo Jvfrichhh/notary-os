@@ -25,6 +25,21 @@ export function partyList(key: string, label: string, itemLabel: string, min = 1
   };
 }
 
+/** Isian "Bertindak" untuk daftar penghadap yang hanya memuat identitas (kuasa, PPJB, dst.). */
+export const KAPASITAS_FIELD: FieldDef = {
+  kind: "text",
+  key: "kapasitas",
+  label: "Bertindak",
+  wide: true,
+  default: "untuk diri sendiri",
+  help: "mis. 'untuk diri sendiri', 'selaku Direktur Utama dari dan oleh karena itu untuk dan atas nama PT ABC, berkedudukan di Kota Bogor', atau 'selaku kuasa dari Tuan X berdasarkan Surat Kuasa tanggal ...'"
+};
+
+/** Kedudukan bertindak tiap penghadap dalam daftar (urut sesuai daftar). */
+export function peranList(v: unknown): string[] {
+  return list<{ kapasitas?: string }>(v).map((x) => `menurut keterangannya dalam hal ini bertindak ${str(x.kapasitas) || "untuk diri sendiri"}`);
+}
+
 export type Party = { p: Person; kapasitas: string };
 
 export function parties(v: unknown): Party[] {

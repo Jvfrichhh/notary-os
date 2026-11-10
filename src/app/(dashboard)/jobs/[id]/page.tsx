@@ -21,7 +21,9 @@ import {
   toggleChecklistItem,
   toggleTaskStatus,
   createAppointment,
-  cancelAppointment
+  cancelAppointment,
+  receiveOriginalDocument,
+  returnOriginalDocument
 } from "@/app/(dashboard)/jobs/actions";
 import { ClientUploadReview } from "@/components/jobs/ClientUploadReview";
 import { DocumentAiPanel } from "@/components/documents/DocumentAiPanel";
@@ -139,6 +141,8 @@ export default async function JobDetailPage(props: Async<{
   // Jadwal tanda tangan / pertemuan untuk pekerjaan ini (yang akan datang dulu).
   const appointments = await prisma.appointment.findMany({ where: { jobId: job.id }, orderBy: [{ date: "asc" }, { time: "asc" }] });
   const todayStart = getJakartaTodayDate();
+  // Dokumen asli klien yang dititipkan ke kantor untuk pekerjaan ini.
+  const originals = await prisma.originalDocument.findMany({ where: { jobId: job.id }, orderBy: { receivedAt: "asc" } });
 
   // Riwayat pekerjaan dari audit log (status, draft akta, pengesahan).
   const timeline = await prisma.auditLog.findMany({
@@ -586,6 +590,70 @@ export default async function JobDetailPage(props: Async<{
                 </label>
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
                   Jadwalkan
+                </button>
+              </form>
+            )}
+          </Card>
+
+          {/* Dokumen asli */}
+          <Card>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-bold text-foreground">
+                Dokumen Asli Dititipkan ({originals.filter((o) => !o.returnedAt).length} masih di kantor)
+              </h2>
+              {originals.length > 0 && (
+                <a href={`/api/jobs/${job.id}/tanda-terima`} className="text-xs font-medium text-primary hover:underline">
+                  Unduh tanda terima (Word)
+                </a>
+              )}
+            </div>
+            <p className="mb-2 text-xs text-muted-foreground">Sertipikat, BPKB, dan surat asli lain yang diterima dari klien. Catat saat diterima dan saat dikembalikan.</p>
+            <div className="divide-y divide-border">
+              {originals.map((o) => (
+                <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                  <div className="min-w-0">
+                    <p className="break-words font-medium text-foreground">{o.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Diterima {formatDate(o.receivedAt)}
+                      {o.receivedFrom ? ` dari ${o.receivedFrom}` : ""}
+                      {o.notes ? ` · ${o.notes}` : ""}
+                    </p>
+                  </div>
+                  {o.returnedAt ? (
+                    <span className="text-xs text-status-on-track">
+                      Dikembalikan {formatDate(o.returnedAt)}
+                      {o.returnedTo ? ` kepada ${o.returnedTo}` : ""}
+                    </span>
+                  ) : canEdit ? (
+                    <form action={returnOriginalDocument.bind(null, o.id)} className="flex flex-wrap items-center gap-2">
+                      <input name="returnedTo" required minLength={2} maxLength={120} placeholder="Dikembalikan kepada" className="w-44 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground" />
+                      <button type="submit" className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted">
+                        Tandai dikembalikan
+                      </button>
+                    </form>
+                  ) : (
+                    <span className="text-xs text-status-due-soon">Masih di kantor</span>
+                  )}
+                </div>
+              ))}
+              {originals.length === 0 && <p className="py-2.5 text-sm text-muted-foreground">Belum ada dokumen asli yang dicatat.</p>}
+            </div>
+            {canEdit && (
+              <form action={receiveOriginalDocument.bind(null, job.id)} className="mt-3 flex flex-wrap items-end gap-2 border-t border-border pt-3">
+                <label className="min-w-0 flex-1">
+                  <span className="mb-1 block text-xs text-muted-foreground">Dokumen asli</span>
+                  <input name="description" required minLength={3} maxLength={300} placeholder="mis. Sertipikat Hak Milik Nomor 123/Babakan" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Diterima dari</span>
+                  <input name="receivedFrom" maxLength={120} className="w-40 rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Tanggal</span>
+                  <input type="date" name="receivedAt" defaultValue={toDateInput(todayStart)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                </label>
+                <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
+                  Catat diterima
                 </button>
               </form>
             )}

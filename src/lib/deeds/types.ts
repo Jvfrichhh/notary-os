@@ -52,6 +52,8 @@ export interface PpatRegisterData {
   sspAmount: number | null;
   sspdDate: string | null;
   sspdAmount: number | null;
+  /** SKMHT: tanah sudah terdaftar? */
+  landRegistered?: boolean | null;
 }
 
 export interface PrefillContext {

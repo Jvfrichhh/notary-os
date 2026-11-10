@@ -95,6 +95,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
   },
   {
     name: "Akta Tukar Menukar",
+    deedKey: "tukar_menukar",
     category: "PPAT",
     ppatType: "Tukar Menukar",
     description: "Tukar menukar hak atas tanah (dibuat selaku PPAT).",
@@ -103,6 +104,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
   },
   {
     name: "Akta Pemasukan ke Dalam Perusahaan (Inbreng)",
+    deedKey: "inbreng",
     category: "PPAT",
     ppatType: "Pemasukan ke Dalam Perusahaan (Inbreng)",
     description: "Penyetoran tanah sebagai modal perseroan (dibuat selaku PPAT).",
@@ -117,6 +119,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
   },
   {
     name: "Akta Pembagian Hak Bersama",
+    deedKey: "aphb",
     category: "PPAT",
     ppatType: "Pembagian Hak Bersama",
     description: "Pembagian hak bersama atas tanah (mis. setelah waris) (dibuat selaku PPAT).",
@@ -125,6 +128,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
   },
   {
     name: "Akta Pemberian Hak Tanggungan (APHT)",
+    deedKey: "apht",
     category: "PPAT",
     ppatType: "Pemberian Hak Tanggungan (APHT)",
     description: "Pembebanan hak tanggungan untuk kredit bank (dibuat selaku PPAT).",
@@ -139,6 +143,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
   },
   {
     name: "Surat Kuasa Membebankan Hak Tanggungan (SKMHT)",
+    deedKey: "skmht",
     category: "PPAT",
     ppatType: "Surat Kuasa Membebankan Hak Tanggungan (SKMHT)",
     description: "Kuasa membebankan hak tanggungan; wajib diikuti APHT dalam 1 bulan (tanah terdaftar) / 3 bulan (belum terdaftar).",
@@ -147,11 +152,26 @@ export const SERVICE_CATALOG: CatalogItem[] = [
   },
   {
     name: "Akta Pemberian HGB/Hak Pakai atas Tanah Hak Milik",
+    deedKey: "hgb_hp_atas_hm",
     category: "PPAT",
     ppatType: "Pemberian HGB/Hak Pakai atas Tanah Hak Milik",
     description: "Pemberian HGB/Hak Pakai di atas tanah Hak Milik (dibuat selaku PPAT).",
     checklist: [{ label: "KTP Para Pihak" }, { label: "Sertifikat Hak Milik Asli" }, { label: "SPPT PBB" }, ...PPAT_PAJAK],
     tasks: PPAT_TASKS
+  },
+  {
+    name: "Pengurusan Roya",
+    category: "Pertanahan",
+    description: "Penghapusan (roya) Hak Tanggungan di Kantor Pertanahan setelah utang lunas.",
+    checklist: [
+      { label: "Sertipikat Hak atas Tanah Asli" },
+      { label: "Sertipikat Hak Tanggungan Asli" },
+      { label: "Surat Roya / Surat Keterangan Lunas dari Kreditor" },
+      { label: "KTP Pemegang Hak" },
+      { label: "Surat Kuasa (bila dikuasakan)", isRequired: false },
+      { label: "SPPT PBB Tahun Berjalan", isRequired: false }
+    ],
+    tasks: ["Verifikasi kelengkapan dokumen", "Ajukan permohonan roya ke Kantor Pertanahan", "Ambil sertipikat yang sudah diroya", "Serahkan sertipikat kepada klien"]
   },
   {
     name: "Akta Perjanjian Pengikatan Jual Beli",
@@ -407,6 +427,37 @@ export const SERVICE_CATALOG: CatalogItem[] = [
       { label: "Surat Keterangan Domisili / Pernyataan Alamat", isRequired: false }
     ],
     tasks: ["Pemesanan nama Yayasan di AHU", ...BASE_TASKS, "Permohonan pengesahan badan hukum Yayasan (maks. 10 hari)"]
+  },
+  {
+    name: "Akta Pendirian Firma",
+    category: "Korporasi",
+    description: "Pendirian Persekutuan Firma (semua sekutu mengurus dan bertanggung jawab penuh).",
+    deedKey: "pendirian_firma",
+    checklist: [
+      { label: "KTP Seluruh Sekutu" },
+      { label: "NPWP Seluruh Sekutu" },
+      { label: "Usulan Nama Firma (3 alternatif)" },
+      { label: "Alamat Lengkap Kedudukan Firma" },
+      { label: "Bidang Usaha / KBLI" },
+      { label: "Rincian Pemasukan Modal & Pembagian Laba" }
+    ],
+    tasks: ["Pengajuan nama Firma di AHU (SABU)", ...BASE_TASKS, "Pendaftaran Firma melalui SABU (maks. 60 hari)", "Pendaftaran NIB di OSS"]
+  },
+  {
+    name: "Akta Pendirian Koperasi",
+    category: "Korporasi",
+    description: "Pendirian Koperasi beserta anggaran dasar dan pengurus pertama.",
+    deedKey: "pendirian_koperasi",
+    checklist: [
+      { label: "Berita Acara Rapat Pembentukan Koperasi" },
+      { label: "Daftar Hadir Rapat Pembentukan & Fotokopi KTP Pendiri (min. 9 orang)" },
+      { label: "Surat Kuasa Pendiri kepada Kuasa Pendiri" },
+      { label: "Rancangan Anggaran Dasar" },
+      { label: "Bukti Setoran Modal (Simpanan Pokok & Wajib)" },
+      { label: "Rencana Kegiatan Usaha (min. 3 tahun)", isRequired: false },
+      { label: "Susunan Pengurus & Pengawas (KTP, NPWP)" }
+    ],
+    tasks: ["Pengajuan nama Koperasi di AHU", ...BASE_TASKS, "Permohonan pengesahan badan hukum Koperasi"]
   },
   {
     name: "Akta Perubahan PT",

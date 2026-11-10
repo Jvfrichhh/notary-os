@@ -90,6 +90,31 @@ export default async function MinutaDetailPage(props: Async<{ params: { id: stri
               )}
             </div>
             <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">Scan minuta bertanda tangan</label>
+              <select name="signedDocumentId" defaultValue={minuta.signedDocumentId ?? ""} className={fieldClass}>
+                <option value="">— Belum ada scan —</option>
+                {documents.map((doc) => (
+                  <option key={doc.id} value={doc.id}>
+                    {doc.fileName}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Setelah akta ditandatangani, pindai minuta (PDF) lalu unggah ke Document Vault pada pekerjaan/akta ini, kemudian pilih di sini. Minuta asli
+                tetap disimpan fisik dalam bundel.
+              </p>
+              {minuta.signedDocumentId && (
+                <a
+                  href={`/api/documents/${minuta.signedDocumentId}/download`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
+                >
+                  Buka scan bertanda tangan
+                </a>
+              )}
+            </div>
+            <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Repertorium</label>
               <select name="repertoriumId" defaultValue={minuta.repertoriumId ?? ""} className={fieldClass}>
                 <option value="">— Belum ditautkan —</option>

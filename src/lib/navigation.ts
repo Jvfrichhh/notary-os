@@ -141,6 +141,7 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
     items: [
       { label: "Legalisasi", href: "/legalisasi", icon: "file-check", permissions: [PERMISSIONS.VIEW_LEGALISASI] },
       { label: "Waarmerking", href: "/waarmerking", icon: "stamp", permissions: [PERMISSIONS.VIEW_WAARMERKING] },
+      { label: "Legalisir Fotokopi", href: "/legalisir", icon: "file-check", permissions: [PERMISSIONS.VIEW_LEGALISASI] },
       { label: "Wasiat", href: "/wasiat", icon: "scroll", permissions: [PERMISSIONS.VIEW_WASIAT] }
     ]
   },

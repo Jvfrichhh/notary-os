@@ -183,6 +183,15 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { w
             text: "Segera setelah akta ini saya, Notaris, bacakan kepada {PENGHADAP} dan saksi-saksi, maka akta ini ditandatangani oleh {PENGHADAP}, saksi-saksi, dan saya, Notaris."
           }
         ] as Block[])),
+    // Penghadap tidak mengerti bahasa akta: diterjemahkan/dijelaskan penerjemah resmi yang turut menandatangani (Pasal 43-44 UUJN).
+    ...(str(person(data.penerjemah).nama)
+      ? ([
+          {
+            t: "p",
+            text: `Oleh karena {PENGHADAP} menerangkan tidak cukup mengerti bahasa Indonesia, isi akta ini diterjemahkan dan dijelaskan ke dalam bahasa ${str(data.bahasaPenghadap) || "[...]"} oleh ${komparisi(person(data.penerjemah), "")}, selaku penerjemah resmi, yang turut hadir dan turut menandatangani akta ini.`
+          }
+        ] as Block[])
+      : []),
     { t: "p", text: "{Penghadap} membubuhkan cap ibu jari tangan kanan pada lembar kertas yang dilekatkan pada minuta akta ini." },
     // Perubahan (renvoi) yang diparaf saat pembacaan disebut jumlah & jenisnya (Pasal 48-50 UUJN).
     { t: "p", text: str(data.perubahan) ? `Dilangsungkan dengan ${str(data.perubahan).replace(/[\s.;]+$/, "")}.` : "Dilangsungkan dengan tiada perubahan." }

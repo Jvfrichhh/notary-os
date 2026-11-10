@@ -588,6 +588,8 @@ model Minuta {
   repertorium    Repertorium? @relation(fields: [repertoriumId], references: [id])
   documentId     String?
   document       Document?    @relation(fields: [documentId], references: [id])
+  /// Scan minuta yang SUDAH ditandatangani (dokumen di Document Vault); file Word tetap di documentId.
+  signedDocumentId String?
   notes          String?
   recordStatus   RecordStatus @default(ACTIVE)
   createdAt      DateTime     @default(now())
@@ -715,6 +717,70 @@ model Protes {
   @@map("protes")
 }
 
+/// Hari libur nasional & cuti bersama (diisi Admin): dipakai menghitung tenggat "hari kerja".
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  @@map("holidays")
+}
+
+/// Tanda terima dokumen ASLI klien (sertipikat, BPKB, dsb.) yang dititipkan ke kantor
+/// dan pengembaliannya. Catatan tidak dihapus; pengembalian dicatat pada baris yang sama.
+model OriginalDocument {
+  id           String    @id @default(cuid())
+  jobId        String
+  clientId     String
+  description  String
+  receivedAt   DateTime
+  receivedFrom String?
+  receivedById String?
+  returnedAt   DateTime?
+  returnedTo   String?
+  returnedById String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+
+  @@index([jobId])
+  @@index([clientId])
+  @@map("original_documents")
+}
+
+/// Daftar pengesahan fotokopi sesuai asli (legalisir fotokopi / copie collationnee).
+model CopyCertification {
+  id            String       @id @default(cuid())
+  number        String       @unique
+  date          DateTime
+  requesterName String
+  documentTitle String
+  copies        Int          @default(1)
+  notes         String?
+  recordStatus  RecordStatus @default(ACTIVE)
+  createdById   String?
+  createdAt     DateTime     @default(now())
+
+  @@index([date])
+  @@map("copy_certifications")
+}
+
+/// Pengembalian dana ke klien (refund) sebagai transaksi bernomor; mengurangi jumlah dibayar.
+model PaymentRefund {
+  id           String   @id @default(cuid())
+  paymentId    String
+  refundNumber String   @unique
+  amount       Decimal  @db.Decimal(14, 2)
+  refundedAt   DateTime
+  method       String?
+  reason       String
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  @@index([paymentId])
+  @@map("payment_refunds")
+}
+
 model Legalisasi {
   id          String              @id @default(cuid())
   number      String              @unique
@@ -803,6 +869,8 @@ model Payment {
   agencyFeeAmount Decimal?      @db.Decimal(14, 2)
   /// Biaya lain (meterai, saksi, transport, dsb.).
   otherAmount     Decimal?      @db.Decimal(14, 2)
+  /// PPN atas honorarium (hanya bila kantor berstatus PKP).
+  ppnAmount       Decimal?      @db.Decimal(14, 2)
   paidAmount      Decimal       @default(0) @db.Decimal(14, 2)
   remainingAmount Decimal       @default(0) @db.Decimal(14, 2)
   status          PaymentStatus @default(UNPAID)
@@ -976,6 +1044,8 @@ model PpatDeed {
   sspdDate         DateTime?
   sspdAmount       Decimal?     @db.Decimal(16, 2)
   submittedToBpnAt DateTime?
+  /// SKMHT: tanah sudah terdaftar (berlaku 1 bulan) atau belum (3 bulan). null = dianggap terdaftar.
+  landRegistered   Boolean?
   notes            String?
   recordStatus     RecordStatus @default(ACTIVE)
   createdById      String?

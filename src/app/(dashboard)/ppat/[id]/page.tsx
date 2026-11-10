@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { PpatForm } from "@/components/ppat/PpatForm";
 import { submitPpatToBpn, updatePpatDeed } from "@/app/(dashboard)/ppat/actions";
 import { classifyDeadline, formatDate, getJakartaToday, toDateInput } from "@/lib/format";
-import { isSkmht, ppatDuty } from "@/lib/ppat";
+import { isSkmht, ppatDuty, loadHolidays } from "@/lib/ppat";
 import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,7 @@ export default async function PpatDetailPage(props: Async<{ params: { id: string
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
   const d = await prisma.ppatDeed.findUnique({ where: { id: params.id }, include: { job: { select: { id: true, jobNumber: true } } } });
   if (!d) notFound();
-  const duty = ppatDuty(d.deedType, d.deedDate);
+  const duty = ppatDuty(d.deedType, d.deedDate, { holidays: await loadHolidays(d.deedDate), landRegistered: d.landRegistered });
   const skmht = isSkmht(d.deedType);
 
   return (

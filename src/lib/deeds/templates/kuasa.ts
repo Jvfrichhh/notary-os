@@ -1,6 +1,7 @@
 import type { DeedTemplate } from "../types";
 import { personFromClient } from "../types";
 import type { Block } from "../layout";
+import { KAPASITAS_FIELD, peranList } from "../parties";
 import type { Person } from "../schema";
 import { daftarPenghadap, dikenal, domisili, judul, komparisi, list, pembuka, penutup, person, str } from "../common";
 
@@ -17,7 +18,7 @@ export const kuasa: DeedTemplate = {
   sections: [
     {
       title: "Pemberi Kuasa (penghadap)",
-      fields: [{ kind: "list", key: "pemberi", label: "Pemberi kuasa", itemLabel: "Pemberi kuasa", min: 1, max: 6, fields: [{ kind: "person", key: "orang", label: "Identitas" }] }]
+      fields: [{ kind: "list", key: "pemberi", label: "Pemberi kuasa", itemLabel: "Pemberi kuasa", min: 1, max: 6, fields: [{ kind: "person", key: "orang", label: "Identitas" }, KAPASITAS_FIELD] }]
     },
     {
       title: "Penerima Kuasa",
@@ -43,7 +44,7 @@ export const kuasa: DeedTemplate = {
     const blocks: Block[] = [
       judul("KUASA", d),
       ...pembuka(d),
-      ...daftarPenghadap(pemberi.map((p) => ({ p, peran: "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }))),
+      ...daftarPenghadap(pemberi.map((p, i) => ({ p, peran: peranList(d.pemberi)[i] ?? "menurut keterangannya dalam hal ini bertindak untuk diri sendiri" }))),
       dikenal(pemberi.length),
       {
         t: "p",

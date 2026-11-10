@@ -155,6 +155,34 @@ export async function voidReceipt(receiptId: string, reason: string) {
   });
 }
 
+/**
+ * Pengembalian dana ke klien sebagai transaksi bernomor (RF/TTTT/BB/NNNN):
+ * jumlah dibayar berkurang, sisa & status dihitung ulang. Tidak pernah dihapus.
+ */
+export async function recordRefund(input: { paymentId: string; amount: number; refundedAt: Date; method: string | null; reason: string; userId: string }) {
+  return withRetry("refundNumber", () =>
+    prisma.$transaction(async (tx) => {
+      const p = await tx.payment.findUniqueOrThrow({ where: { id: input.paymentId }, select: { totalAmount: true, paidAmount: true } });
+      if (input.amount > Number(p.paidAmount)) throw new Error("REFUND_OVER");
+      const today = getJakartaToday();
+      const base = `RF/${today.getUTCFullYear()}/${pad(today.getUTCMonth() + 1, 2)}/`;
+      const rows = await tx.paymentRefund.findMany({ where: { refundNumber: { startsWith: base } }, select: { refundNumber: true } });
+      const max = rows.reduce((m, r) => Math.max(m, Number(r.refundNumber.slice(base.length)) || 0), 0);
+      const refund = await tx.paymentRefund.create({
+        data: { paymentId: input.paymentId, refundNumber: `${base}${pad(max + 1, 4)}`, amount: input.amount, refundedAt: input.refundedAt, method: input.method, reason: input.reason, createdById: input.userId }
+      });
+      const total = Number(p.totalAmount);
+      const paid = Math.max(Number(p.paidAmount) - input.amount, 0);
+      await tx.payment.update({
+        where: { id: input.paymentId },
+        // Seluruh uang dikembalikan -> status Refund; sebagian -> mengikuti angka.
+        data: { paidAmount: paid, remainingAmount: Math.max(total - paid, 0), status: derivePaymentStatus(total, paid, paid <= 0) }
+      });
+      return refund;
+    })
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Dokumen Word: Tagihan & Kuitansi                                     */
 /* ------------------------------------------------------------------ */
@@ -182,6 +210,8 @@ export interface BillingDocData {
   notes: string | null;
   /** Rincian tagihan (bila diisi): honorarium, pajak titipan, biaya instansi, lain-lain. */
   breakdown?: { label: string; amount: number }[];
+  /** Pengembalian dana ke klien (mengurangi jumlah dibayar). */
+  refunds?: { refundNumber: string; amount: number; refundedAt: Date }[];
   client: { fullName: string; clientNumber: string; address: string | null };
   job: { jobNumber: string; description: string | null; service: string | null } | null;
   receipts: { receiptNumber: string; amount: number; paidAt: Date; method: string | null; voidedAt: Date | null }[];
@@ -189,7 +219,8 @@ export interface BillingDocData {
 
 export function buildInvoiceDocx(d: BillingDocData): Buffer {
   const valid = d.receipts.filter((r) => !r.voidedAt);
-  const legacy = Math.max(d.paidAmount - valid.reduce((n, r) => n + r.amount, 0), 0);
+  const refunds = d.refunds ?? [];
+  const legacy = Math.max(d.paidAmount + refunds.reduce((n, r) => n + r.amount, 0) - valid.reduce((n, r) => n + r.amount, 0), 0);
   const uraian = d.job ? `${d.job.service ?? "Jasa kenotariatan"}${d.job.description ? ` — ${d.job.description}` : ""}` : "Jasa kenotariatan";
   const blocks: DocBlock[] = [
     ...kop(),
@@ -209,6 +240,7 @@ export function buildInvoiceDocx(d: BillingDocData): Buffer {
         // Pembayaran yang dicatat sebelum ada kuitansi bernomor.
         ...(legacy > 0 ? [["Pembayaran sebelumnya (tanpa kuitansi bernomor)", `- ${rp(legacy)}`]] : []),
         ...valid.map((r) => [`Dibayar ${formatDate(r.paidAt)} (${r.receiptNumber}${r.method ? `, ${r.method}` : ""})`, `- ${rp(r.amount)}`]),
+        ...refunds.map((r) => [`Dikembalikan kepada klien ${formatDate(r.refundedAt)} (${r.refundNumber})`, `+ ${rp(r.amount)}`]),
         ["**Sisa yang harus dibayar**", `**${rp(d.remainingAmount)}**`]
       ]
     },
@@ -260,7 +292,8 @@ export const BREAKDOWN_FIELDS = [
   { key: "feeAmount", label: "Honorarium / jasa Notaris-PPAT" },
   { key: "taxDepositAmount", label: "Pajak titipan (BPHTB, PPh, dsb.)" },
   { key: "agencyFeeAmount", label: "Biaya instansi (PNBP BPN/AHU, pengecekan, balik nama)" },
-  { key: "otherAmount", label: "Biaya lain (meterai, saksi, transport)" }
+  { key: "otherAmount", label: "Biaya lain (meterai, saksi, transport)" },
+  { key: "ppnAmount", label: "PPN atas honorarium" }
 ] as const;
 
 type BreakdownSource = Partial<Record<(typeof BREAKDOWN_FIELDS)[number]["key"], unknown>>;
@@ -273,7 +306,7 @@ export function paymentBreakdown(p: BreakdownSource): { label: string; amount: n
 /** Rincian dari form; `total` = jumlahnya (0 bila rincian tidak dipakai). */
 export function breakdownFromForm(formData: FormData) {
   const v = Object.fromEntries(BREAKDOWN_FIELDS.map((f) => [f.key, parseMoney(formData.get(f.key))])) as Record<(typeof BREAKDOWN_FIELDS)[number]["key"], number>;
-  const total = v.feeAmount + v.taxDepositAmount + v.agencyFeeAmount + v.otherAmount;
+  const total = BREAKDOWN_FIELDS.reduce((n, f) => n + v[f.key], 0);
   const data = Object.fromEntries(BREAKDOWN_FIELDS.map((f) => [f.key, total > 0 ? v[f.key] : null])) as Record<(typeof BREAKDOWN_FIELDS)[number]["key"], number | null>;
   return { total, data };
 }
@@ -294,6 +327,7 @@ export async function loadBillingDoc(paymentId: string): Promise<(BillingDocData
       taxDepositAmount: true,
       agencyFeeAmount: true,
       otherAmount: true,
+      ppnAmount: true,
       client: { select: { fullName: true, clientNumber: true, address: true } },
       job: { select: { jobNumber: true, description: true, serviceType: { select: { name: true } } } },
       receipts: { orderBy: { paidAt: "asc" }, select: { receiptNumber: true, amount: true, paidAt: true, method: true, voidedAt: true } }
@@ -309,6 +343,10 @@ export async function loadBillingDoc(paymentId: string): Promise<(BillingDocData
     remainingAmount: Number(p.remainingAmount),
     notes: p.notes,
     breakdown: paymentBreakdown(p),
+    refunds: (await prisma.paymentRefund.findMany({ where: { paymentId }, orderBy: { refundedAt: "asc" }, select: { refundNumber: true, amount: true, refundedAt: true } })).map((r) => ({
+      ...r,
+      amount: Number(r.amount)
+    })),
     client: p.client,
     job: p.job ? { jobNumber: p.job.jobNumber, description: p.job.description, service: p.job.serviceType?.name ?? null } : null,
     receipts: p.receipts.map((r) => ({ ...r, amount: Number(r.amount) }))

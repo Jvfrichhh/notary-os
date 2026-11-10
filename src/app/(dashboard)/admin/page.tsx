@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, ShieldCheck, ScrollText } from "lucide-react";
+import { Users, ShieldCheck, ScrollText, CalendarOff } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireAnyPermission } from "@/lib/session";
 import { getUserPermissions, PERMISSIONS } from "@/lib/permissions";
@@ -12,11 +12,12 @@ export default async function AdminPage() {
   const user = await requireAnyPermission(ADMIN_PAGE_PERMISSIONS);
   const perms = await getUserPermissions(user.id);
 
-  const [userCount, activeUsers, roleCount, auditCount] = await Promise.all([
+  const [userCount, activeUsers, roleCount, auditCount, holidayCount] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { isActive: true } }),
     prisma.role.count(),
-    prisma.auditLog.count()
+    prisma.auditLog.count(),
+    prisma.holiday.count({ where: { date: { gte: new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1)) } } })
   ]);
 
   const sections = [
@@ -40,6 +41,13 @@ export default async function AdminPage() {
       title: "Audit Log",
       desc: "Jejak semua aksi: siapa, kapan, apa yang berubah.",
       stat: `${auditCount} catatan`
+    },
+    perms.has(PERMISSIONS.MANAGE_USERS) && {
+      href: "/admin/holidays",
+      icon: CalendarOff,
+      title: "Hari Libur",
+      desc: "Libur nasional & cuti bersama untuk hitungan tenggat hari kerja.",
+      stat: `${holidayCount} tanggal tahun ini`
     }
   ].filter(Boolean) as { href: string; icon: typeof Users; title: string; desc: string; stat: string }[];
 

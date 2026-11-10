@@ -17,6 +17,7 @@ import { fromDateInput } from "@/lib/format";
 import { createStatutoryTasks } from "@/lib/compliance/statutory";
 import { draftHash, reviewState } from "@/lib/deeds/review";
 import { renderDeed } from "@/lib/deeds/render";
+import { stagesFor } from "@/lib/ppatStages";
 import { personFromClient, type PrefillContext } from "@/lib/deeds/types";
 import { createClientNotification } from "@/lib/clientNotifications";
 import { PT_CHANGE_OPTIONS } from "@/lib/serviceCatalog";
@@ -346,7 +347,19 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
             : "Klien belum menyetujui draft yang dibagikan. Tunggu persetujuannya, atau centang konfirmasi persetujuan klien."
     };
   }
-  const pengaman = { isianKosong: kosong, persetujuanKlien: persetujuan };
+  // Akta PPAT peralihan hak: PPh & BPHTB harus sudah tervalidasi sebelum akta ditandatangani.
+  let pajakBelum: string[] = [];
+  if (template.ppat) {
+    const wajib = stagesFor(template.ppat.deedType).filter((s) => s.key === "VALIDASI_PPH" || s.key === "VALIDASI_BPHTB");
+    if (wajib.length) {
+      const done = await prisma.ppatStage.findMany({ where: { jobId: draft.job.id, step: { in: wajib.map((s) => s.key) } }, select: { step: true } });
+      pajakBelum = wajib.filter((s) => !done.some((x) => x.step === s.key)).map((s) => s.label);
+      if (pajakBelum.length && formData.get("abaikanPajak") !== "on") {
+        return { error: `Tahap pajak belum ditandai selesai: ${pajakBelum.join("; ")}. Tandai tahapnya di halaman pekerjaan, atau centang konfirmasi pajak.` };
+      }
+    }
+  }
+  const pengaman = { isianKosong: kosong, persetujuanKlien: persetujuan, pajakBelum };
 
   // Akta PPAT: nomor urut per tahun di Buku Daftar Akta PPAT (bukan repertorium notaris).
   if (template.ppat) {
@@ -385,7 +398,8 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
           sspAmount: reg.sspAmount,
           sspdDate: reg.sspdDate ? fromDateInput(reg.sspdDate) : null,
           sspdAmount: reg.sspdAmount,
-          notes: null
+          notes: null,
+          landRegistered: reg.landRegistered ?? null
         },
         user.id,
         seq

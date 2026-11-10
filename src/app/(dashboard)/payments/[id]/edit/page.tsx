@@ -32,6 +32,7 @@ export default async function EditPaymentPage(props: Async<{ params: { id: strin
             taxDepositAmount: payment.taxDepositAmount?.toString() ?? "",
             agencyFeeAmount: payment.agencyFeeAmount?.toString() ?? "",
             otherAmount: payment.otherAmount?.toString() ?? "",
+            ppnAmount: payment.ppnAmount?.toString() ?? "",
             downPayment: payment.downPayment.toString(),
             paidAmount: payment.paidAmount.toString(),
             status: payment.status,

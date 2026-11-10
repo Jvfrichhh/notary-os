@@ -14,7 +14,6 @@ export const en: Dict = {
     "/deeds": "Deed Drafts",
     "/ppat": "PPAT Deed Register",
     "/assistant": "AI Assistant",
-    "/kantor-ai": "AI Office",
     "/documents": "Document Vault",
     "/archive": "Minutes / Copies / Grosse / Extracts",
     "/notary-record": "Repertorium / Klapper",

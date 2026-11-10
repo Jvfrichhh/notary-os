@@ -38,8 +38,7 @@ export type NavIconKey =
   | "file-pen"
   | "calendar-check"
   | "database"
-  | "map"
-  | "building";
+  | "map";
 
 export interface NavItemConfig {
   label: string;
@@ -87,9 +86,7 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
       { label: "Draft Akta", href: "/deeds", icon: "file-pen", permissions: [PERMISSIONS.VIEW_JOBS] },
       // Asisten AI membaca data lewat tool yang masing-masing dibatasi permission;
       // minimal VIEW_JOBS supaya ada yang bisa ditanyakan.
-      { label: "Asisten AI", href: "/assistant", icon: "sparkles", permissions: [PERMISSIONS.VIEW_JOBS], requiresAi: true },
-      // Kantor virtual 12 agen; datanya ringkasan job (tanpa data klien) -> VIEW_JOBS.
-      { label: "Kantor AI", href: "/kantor-ai", icon: "building", permissions: [PERMISSIONS.VIEW_JOBS] }
+      { label: "Asisten AI", href: "/assistant", icon: "sparkles", permissions: [PERMISSIONS.VIEW_JOBS], requiresAi: true }
     ]
   },
   {

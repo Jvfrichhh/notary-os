@@ -31,8 +31,7 @@ import {
   X,
   CalendarCheck,
   Database,
-  Map as MapIcon,
-  Building2
+  Map as MapIcon
 } from "lucide-react";
 import { usePhrase } from "@/components/i18n/LocaleProvider";
 
@@ -58,8 +57,7 @@ const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
   "file-pen": PenLine,
   "calendar-check": CalendarCheck,
   database: Database,
-  map: MapIcon,
-  building: Building2
+  map: MapIcon
 };
 
 const OPEN_MENU_EVENT = "nexora:open-menu";

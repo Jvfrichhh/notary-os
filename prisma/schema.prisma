@@ -175,6 +175,24 @@ model Client {
   npwp         String?
   /// Pekerjaan/profesi klien sesuai KTP (mis. Karyawan Swasta, Pelajar/Mahasiswa) -- untuk laporan tahunan PKJM.
   occupation   String?
+  /// Status perkawinan (Belum Kawin / Kawin / Cerai Hidup / Cerai Mati) -- menentukan perlu tidaknya persetujuan pasangan.
+  maritalStatus String?
+  /// Badan usaha: pengurus/kuasa yang bertindak mewakili (nama & jabatan).
+  representative String?
+  // --- Prinsip Mengenali Pengguna Jasa (PMPJ) ---
+  /// Sumber dana transaksi (mis. Penghasilan/Gaji, Hasil Usaha, Warisan, Pinjaman).
+  sourceOfFunds String?
+  /// Tujuan transaksi / hubungan usaha dengan kantor.
+  transactionPurpose String?
+  /// Pemilik manfaat (beneficial owner) bila pengguna jasa bertindak untuk pihak lain / korporasi.
+  beneficialOwner String?
+  /// Orang yang populer secara politis (PEP) atau keluarga/pihak terkaitnya.
+  isPep         Boolean  @default(false)
+  /// Profil risiko: RENDAH / SEDANG / TINGGI.
+  riskLevel     String?
+  /// Kapan PMPJ terakhir diisi/diperbarui & oleh siapa.
+  pmpjUpdatedAt DateTime?
+  pmpjUpdatedById String?
   notes        String?
   status       RecordStatus @default(ACTIVE)
   /// Persetujuan pemrosesan data pribadi (UU PDP): kapan & dicatat oleh siapa.
@@ -593,6 +611,10 @@ model Salinan {
   recordStatus RecordStatus @default(ACTIVE)
   createdAt    DateTime     @default(now())
 
+  /// Kepada siapa salinan ini diberikan & kapan (salinan pertama, kedua, dst).
+  recipient   String?
+  issuedAt    DateTime?
+
   @@map("salinan")
   @@index([deedId])
   @@index([documentId])
@@ -666,6 +688,32 @@ model Repertorium {
 // NOTE Phase 4: Klapper TIDAK dibuat sebagai tabel.
 // Klapper = query GROUP BY appearerName/clientId dari tabel `repertorium`,
 // diurutkan alfabetis. Lihat blueprint §6.1.
+
+/// Buku Daftar Protes (Pasal 16 ayat (1) huruf g UUJN): protes terhadap tidak
+/// dibayar / tidak diterimanya surat berharga. Catatan tidak pernah dihapus.
+model Protes {
+  id               String       @id @default(cuid())
+  number           String       @unique
+  date             DateTime
+  /// Pemohon protes (pemegang surat berharga).
+  requesterName    String
+  clientId         String?
+  /// Wesel / Cek / Surat Sanggup.
+  instrumentType   String
+  instrumentNumber String?
+  amount           Decimal?     @db.Decimal(16, 2)
+  /// Pihak yang diprotes (tertarik / penerbit).
+  againstName      String
+  /// Non-akseptasi / Non-pembayaran.
+  reason           String
+  notes            String?
+  recordStatus     RecordStatus @default(ACTIVE)
+  createdById      String?
+  createdAt        DateTime     @default(now())
+
+  @@index([date])
+  @@map("protes")
+}
 
 model Legalisasi {
   id          String              @id @default(cuid())
@@ -746,6 +794,15 @@ model Payment {
   client          Client        @relation(fields: [clientId], references: [id])
   totalAmount     Decimal       @default(0) @db.Decimal(14, 2)
   downPayment     Decimal       @default(0) @db.Decimal(14, 2)
+  /// Rincian tagihan (opsional; bila diisi, totalAmount = jumlah keempatnya).
+  /// Honorarium/jasa Notaris-PPAT.
+  feeAmount       Decimal?      @db.Decimal(14, 2)
+  /// Pajak titipan klien (BPHTB, PPh, dsb.) -- bukan pendapatan kantor.
+  taxDepositAmount Decimal?     @db.Decimal(14, 2)
+  /// Biaya instansi (PNBP BPN/AHU, pengecekan, balik nama, dsb.).
+  agencyFeeAmount Decimal?      @db.Decimal(14, 2)
+  /// Biaya lain (meterai, saksi, transport, dsb.).
+  otherAmount     Decimal?      @db.Decimal(14, 2)
   paidAmount      Decimal       @default(0) @db.Decimal(14, 2)
   remainingAmount Decimal       @default(0) @db.Decimal(14, 2)
   status          PaymentStatus @default(UNPAID)

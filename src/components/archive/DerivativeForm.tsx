@@ -90,6 +90,19 @@ export function DerivativeForm({ action, label, deeds, documents, lockedDeed, ca
         </p>
       </div>
 
+      {label === "Salinan" && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">Diberikan kepada</label>
+            <input name="recipient" maxLength={200} placeholder="mis. Tuan Budi (Pihak Pertama)" className={fieldClass} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">Tanggal diberikan</label>
+            <input type="date" name="issuedAt" className={fieldClass} />
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
         <SubmitButton label={label} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">

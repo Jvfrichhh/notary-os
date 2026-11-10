@@ -14,6 +14,12 @@ export const STATUTORY_DUTIES: Record<string, { title: string; days: number; bas
   pendirian_pt: [
     { title: "Ajukan pengesahan badan hukum PT (AHU Online)", days: 60, basis: "UUPT Pasal 10: 60 hari sejak akta ditandatangani" }
   ],
+  pendirian_cv: [
+    { title: "Daftarkan pendirian CV di Sistem Administrasi Badan Usaha (AHU Online)", days: 60, basis: "Permenkumham 17/2018: 60 hari sejak akta ditandatangani" }
+  ],
+  pendirian_yayasan: [
+    { title: "Sampaikan permohonan pengesahan badan hukum Yayasan (AHU Online)", days: 10, basis: "UU 28/2004 Pasal 11: 10 hari sejak akta ditandatangani" }
+  ],
   perubahan_pt: [
     {
       title: "Ajukan persetujuan / pemberitahuan perubahan anggaran dasar & data perseroan (AHU Online)",

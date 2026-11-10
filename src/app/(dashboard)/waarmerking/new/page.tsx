@@ -4,9 +4,14 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { ServiceRecordForm } from "@/components/serviceRecords/ServiceRecordForm";
 import { createWaarmerking } from "@/app/(dashboard)/waarmerking/actions";
+import { suggestRecordNumber, yearRange } from "@/lib/serviceRecordNumber";
 
 export default async function NewWaarmerkingPage() {
   await requirePermission(PERMISSIONS.EDIT_WAARMERKING);
+
+  const today = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date()) + "T00:00:00.000Z");
+  const numbers = await prisma.waarmerking.findMany({ where: { date: yearRange(today) }, select: { number: true } });
+  const suggestedNumber = suggestRecordNumber(numbers.map((n) => n.number), "W", today);
 
   const [clients, users, documents] = await Promise.all([
     prisma.client.findMany({ where: { status: "ACTIVE" }, orderBy: { fullName: "asc" }, select: { id: true, fullName: true, clientNumber: true } }),
@@ -31,6 +36,8 @@ export default async function NewWaarmerkingPage() {
           clients={clients}
           users={users}
           documents={documents}
+          suggestedNumber={suggestedNumber}
+          suggestedDate={today.toISOString().slice(0, 10)}
           cancelHref="/waarmerking"
         />
       </Card>

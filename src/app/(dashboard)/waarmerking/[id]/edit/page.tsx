@@ -46,6 +46,7 @@ export default async function EditWaarmerkingPage(props: Async<{ params: { id: s
             documentId: record.documentId,
             notes: record.notes
           }}
+          lockNumber
           cancelHref={`/waarmerking/${record.id}`}
         />
       </Card>

@@ -121,7 +121,8 @@ export async function updateLegalisasi(id: string, _prevState: LegalisasiFormSta
     record = await prisma.legalisasi.update({
       where: { id },
       data: {
-        number: data.number.trim(),
+        // Nomor daftar tidak berubah setelah dicatat (buku daftar tidak boleh dinomori ulang).
+        number: before.number,
         date: new Date(data.date),
         serviceType: toNullable(data.serviceType ?? ""),
         status: data.status,

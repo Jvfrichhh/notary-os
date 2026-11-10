@@ -122,6 +122,12 @@ export const NAV_SECTIONS: NavSectionConfig[] = [
         permissions: [PERMISSIONS.VIEW_REPERTORIUM]
       },
       {
+        label: "Daftar Protes",
+        href: "/protes",
+        icon: "scroll",
+        permissions: [PERMISSIONS.VIEW_REPERTORIUM]
+      },
+      {
         // Laporan bulanan MPD & Daftar Pusat Wasiat + tenggat hukum setelah akta.
         label: "Laporan Bulanan",
         href: "/compliance",

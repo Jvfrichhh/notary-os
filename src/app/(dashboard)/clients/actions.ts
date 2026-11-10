@@ -26,6 +26,40 @@ const clientSchema = z.object({
   notes: z.string().optional().or(z.literal(""))
 });
 
+const MARITAL = ["Belum Kawin", "Kawin", "Cerai Hidup", "Cerai Mati"];
+const RISK = ["RENDAH", "SEDANG", "TINGGI"];
+
+/**
+ * Isian status perkawinan, wakil badan usaha, dan PMPJ (Prinsip Mengenali
+ * Pengguna Jasa) dari form. Semua opsional; nilai di luar pilihan diabaikan.
+ */
+function profileFromForm(formData: FormData, userId: string, before?: Record<string, unknown> | null) {
+  const text = (k: string, max: number) => {
+    const v = String(formData.get(k) ?? "").trim().slice(0, max);
+    return v === "" ? null : v;
+  };
+  const pick = (k: string, allowed: string[]) => {
+    const v = String(formData.get(k) ?? "").trim();
+    return allowed.includes(v) ? v : null;
+  };
+  const pmpj = {
+    sourceOfFunds: text("sourceOfFunds", 120),
+    transactionPurpose: text("transactionPurpose", 200),
+    beneficialOwner: text("beneficialOwner", 300),
+    isPep: formData.get("isPep") === "on",
+    riskLevel: pick("riskLevel", RISK)
+  };
+  const filled = Boolean(pmpj.sourceOfFunds || pmpj.transactionPurpose || pmpj.beneficialOwner || pmpj.isPep || pmpj.riskLevel);
+  const changed = !before || (Object.keys(pmpj) as (keyof typeof pmpj)[]).some((k) => (before[k] ?? (k === "isPep" ? false : null)) !== pmpj[k]);
+  return {
+    maritalStatus: pick("maritalStatus", MARITAL),
+    representative: text("representative", 200),
+    ...pmpj,
+    // Cap waktu PMPJ hanya bergerak bila isinya memang diisi/diubah.
+    ...(filled && changed ? { pmpjUpdatedAt: new Date(), pmpjUpdatedById: userId } : {})
+  };
+}
+
 export type ClientFormState = {
   errors?: Partial<Record<keyof z.infer<typeof clientSchema> | "serviceTypeId", string[]>>;
   formError?: string;
@@ -193,6 +227,7 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
           npwp: toNullable(data.npwp),
           occupation: toNullable(data.occupation),
           notes: toNullable(data.notes),
+          ...profileFromForm(formData, user.id),
           createdBy: user.id,
           // Persetujuan pemrosesan data pribadi (UU PDP) dicatat saat pendaftaran.
           dataConsentAt: new Date(),
@@ -296,6 +331,21 @@ export async function updateClient(
     return { formError: "Klien tidak ditemukan." };
   }
 
+  // NIK diganti menjadi NIK yang sudah dipakai klien lain: cegah data ganda (boleh dilanjutkan dengan centang).
+  const nikBaru = toNullable(parsed.data.nik ?? "");
+  if (nikBaru && nikBaru !== before.nik && formData.get("allowDuplicateNik") !== "on") {
+    const existing = await prisma.client.findFirst({
+      where: { nik: nikBaru, status: "ACTIVE", id: { not: clientId } },
+      select: { fullName: true, clientNumber: true }
+    });
+    if (existing) {
+      return {
+        errors: { nik: [`NIK ini sudah terdaftar atas ${existing.fullName} (${existing.clientNumber}). Periksa kembali, atau centang "Tetap simpan".`] },
+        duplicateNik: true
+      };
+    }
+  }
+
   const data = parsed.data;
   const client = await prisma.client.update({
     where: { id: clientId },
@@ -310,7 +360,8 @@ export async function updateClient(
       companyName: toNullable(data.companyName),
       npwp: toNullable(data.npwp),
       occupation: toNullable(data.occupation),
-      notes: toNullable(data.notes)
+      notes: toNullable(data.notes),
+      ...profileFromForm(formData, user.id, before as unknown as Record<string, unknown>)
     }
   });
 

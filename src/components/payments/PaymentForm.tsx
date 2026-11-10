@@ -31,6 +31,10 @@ interface PaymentFormProps {
   lockedJob?: JobOption;
   initial?: {
     totalAmount?: string;
+    feeAmount?: string;
+    taxDepositAmount?: string;
+    agencyFeeAmount?: string;
+    otherAmount?: string;
     downPayment?: string;
     paidAmount?: string;
     status?: string;
@@ -63,8 +67,18 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
   const [totalAmount, setTotalAmount] = useState(initial?.totalAmount ?? "0");
   const [paidAmount, setPaidAmount] = useState(initial?.paidAmount ?? "0");
 
+  const [rincian, setRincian] = useState<Record<string, string>>({
+    feeAmount: initial?.feeAmount ?? "",
+    taxDepositAmount: initial?.taxDepositAmount ?? "",
+    agencyFeeAmount: initial?.agencyFeeAmount ?? "",
+    otherAmount: initial?.otherAmount ?? ""
+  });
+  const jumlahRincian = Object.values(rincian).reduce((n, v) => n + (Number(v) || 0), 0);
+  const pakaiRincian = jumlahRincian > 0;
+  const total = pakaiRincian ? jumlahRincian : Number(totalAmount || 0);
+
   const filteredJobs = useMemo(() => jobs.filter((j) => !clientId || j.clientId === clientId), [jobs, clientId]);
-  const remaining = Math.max(Number(totalAmount || 0) - Number(paidAmount || 0), 0);
+  const remaining = Math.max(total - Number(paidAmount || 0), 0);
 
   return (
     <form action={formAction} className="space-y-5">
@@ -114,6 +128,34 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
           )}
         </div>
 
+        <fieldset className="space-y-3 rounded-md border border-border p-3 sm:col-span-2">
+          <legend className="px-1 text-sm font-medium text-foreground">Rincian tagihan (opsional)</legend>
+          <p className="text-xs text-muted-foreground">
+            Pisahkan honorarium dari uang titipan klien. Bila rincian diisi, total tagihan dihitung otomatis dan rinciannya tercetak di tagihan.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[
+              ["feeAmount", "Honorarium / jasa (Rp)"],
+              ["taxDepositAmount", "Pajak titipan: BPHTB, PPh (Rp)"],
+              ["agencyFeeAmount", "Biaya instansi: PNBP BPN/AHU (Rp)"],
+              ["otherAmount", "Biaya lain: meterai, saksi (Rp)"]
+            ].map(([key, label]) => (
+              <label key={key}>
+                <span className="mb-1 block text-xs text-muted-foreground">{label}</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  name={key}
+                  value={rincian[key]}
+                  onChange={(e) => setRincian((r) => ({ ...r, [key]: e.target.value }))}
+                  className={fieldClass}
+                />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">Total Tagihan (Rp)</label>
           <input
@@ -121,10 +163,13 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
             min="0"
             step="1000"
             name="totalAmount"
-            value={totalAmount}
+            value={pakaiRincian ? String(jumlahRincian) : totalAmount}
             onChange={(e) => setTotalAmount(e.target.value)}
-            className={fieldClass}
+            readOnly={pakaiRincian}
+            className={pakaiRincian ? `${fieldClass} opacity-70` : fieldClass}
           />
+          {pakaiRincian && <p className="mt-1 text-xs text-muted-foreground">Dihitung dari rincian di atas.</p>}
+          {errors.totalAmount?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.totalAmount[0]}</p> : null}
         </div>
 
         <div>

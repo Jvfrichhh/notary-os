@@ -28,6 +28,10 @@ export default async function EditPaymentPage(props: Async<{ params: { id: strin
           lockedJob={payment.job ? { id: payment.job.id, jobNumber: payment.job.jobNumber, clientId: payment.clientId } : undefined}
           initial={{
             totalAmount: payment.totalAmount.toString(),
+            feeAmount: payment.feeAmount?.toString() ?? "",
+            taxDepositAmount: payment.taxDepositAmount?.toString() ?? "",
+            agencyFeeAmount: payment.agencyFeeAmount?.toString() ?? "",
+            otherAmount: payment.otherAmount?.toString() ?? "",
             downPayment: payment.downPayment.toString(),
             paidAmount: payment.paidAmount.toString(),
             status: payment.status,

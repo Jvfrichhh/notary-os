@@ -46,6 +46,7 @@ export default async function EditLegalisasiPage(props: Async<{ params: { id: st
             documentId: record.documentId,
             notes: record.notes
           }}
+          lockNumber
           cancelHref={`/legalisasi/${record.id}`}
         />
       </Card>

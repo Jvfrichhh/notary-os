@@ -110,6 +110,15 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
   const missingRequired = checklistItems.filter((i) => i.isRequired && i.status !== "COMPLETE");
   const statusInfo = PORTAL_JOB_STATUS[job.status];
   // Kemajuan proses PPAT (cek sertipikat -> pajak -> tanda tangan -> BPN -> sertipikat).
+  // Jadwal terdekat (tanda tangan / pertemuan) yang dibuat kantor untuk pekerjaan ini.
+  const hariIni = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date()) + "T00:00:00.000Z");
+  const jadwal = await prisma.appointment.findMany({
+    where: { jobId: job.id, date: { gte: hariIni } },
+    orderBy: [{ date: "asc" }, { time: "asc" }],
+    take: 3,
+    select: { id: true, date: true, time: true, type: true, notes: true }
+  });
+
   const ppatDefs = stagesFor(job.ppatDeeds[0]?.deedType ?? SERVICE_CATALOG.find((c) => c.name === job.serviceType?.name)?.ppatType);
   const ppatDone = new Map(job.ppatStages.map((st) => [st.step, st.doneAt]));
 
@@ -264,6 +273,24 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
           <p className="mt-3 text-xs text-muted-foreground">Pekerjaan sudah ditutup; unggah dokumen tidak tersedia.</p>
         )}
       </Card>
+
+      {jadwal.length > 0 && (
+        <Card>
+          <h2 className="mb-2 text-base font-bold text-foreground">Jadwal Anda</h2>
+          <ul className="space-y-2 text-sm">
+            {jadwal.map((a) => (
+              <li key={a.id}>
+                <p className="font-medium text-foreground">
+                  {a.type === "signing" ? "Tanda tangan akta" : a.type === "follow-up" ? "Tindak lanjut" : "Pertemuan"} · {formatDate(a.date)}
+                  {a.time ? ` · pukul ${a.time} WIB` : ""}
+                </p>
+                {a.notes && <p className="break-words text-xs text-muted-foreground">{a.notes}</p>}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-muted-foreground">Bila berhalangan hadir, mohon hubungi kantor untuk menjadwalkan ulang.</p>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>

@@ -12,6 +12,8 @@ import { peralihanSaham, perubahanPt } from "./templates/saham";
 import { kuasaWaris, waris, wasiat } from "./templates/waris";
 import { ajbPpat, hibahPpat } from "./templates/ppatAkta";
 import { pengakuanHutang } from "./templates/pengakuanHutang";
+import { pendirianCv } from "./templates/pendirianCv";
+import { pendirianYayasan } from "./templates/pendirianYayasan";
 
 /** Semua template draft akta yang tersedia. Kunci = SERVICE_CATALOG[].deedKey. */
 export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
@@ -30,6 +32,8 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     kerjasamaUsaha,
     kerjasamaInvestasi,
     pendirianPt,
+    pendirianCv,
+    pendirianYayasan,
     perubahanPt,
     peralihanSaham,
     ajbPpat,

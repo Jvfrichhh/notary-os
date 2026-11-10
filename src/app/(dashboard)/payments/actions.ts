@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { requireUser } from "@/lib/session";
-import { ensureInvoiceNumber, parseMoney, recordReceipt, voidReceipt } from "@/lib/billing";
+import { ensureInvoiceNumber, parseMoney, recordReceipt, voidReceipt, breakdownFromForm } from "@/lib/billing";
 import { fromDateInput, getJakartaToday } from "@/lib/format";
 
 function toNullable(value: FormDataEntryValue | null | undefined) {
@@ -78,7 +78,9 @@ export async function createPayment(_prevState: PaymentFormState, formData: Form
     if (job.clientId !== data.clientId) return { formError: "Pekerjaan yang dipilih bukan milik klien tersebut." };
   }
 
-  const totalAmount = toDecimalInput(data.totalAmount);
+  // Rincian diisi -> total = jumlah rincian (angka "Total" di form diabaikan).
+  const rincian = breakdownFromForm(formData);
+  const totalAmount = rincian.total > 0 ? rincian.total : toDecimalInput(data.totalAmount);
   const paidAmount = toDecimalInput(data.paidAmount);
   const downPayment = toDecimalInput(data.downPayment);
   if (totalAmount > 0 && paidAmount > totalAmount) return { errors: { paidAmount: ["Sudah dibayar melebihi total tagihan."] } };
@@ -95,6 +97,7 @@ export async function createPayment(_prevState: PaymentFormState, formData: Form
       clientId: data.clientId,
       jobId,
       totalAmount,
+      ...rincian.data,
       downPayment: 0,
       paidAmount: 0,
       remainingAmount: totalAmount,
@@ -148,11 +151,13 @@ export async function updatePayment(id: string, _prevState: PaymentFormState, fo
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
   const data = parsed.data;
 
-  const totalAmount = toDecimalInput(data.totalAmount);
+  const rincian = breakdownFromForm(formData);
+  const totalAmount = rincian.total > 0 ? rincian.total : toDecimalInput(data.totalAmount);
   // Bila sudah ada kuitansi, "sudah dibayar" hanya berubah lewat kuitansi.
   const hasReceipts = (await prisma.paymentReceipt.count({ where: { paymentId: id } })) > 0;
   const paidAmount = hasReceipts ? Number(before.paidAmount) : toDecimalInput(data.paidAmount);
   const downPayment = hasReceipts ? Number(before.downPayment) : toDecimalInput(data.downPayment);
+  if (totalAmount < paidAmount) return { errors: { totalAmount: ["Total tagihan tidak boleh lebih kecil dari yang sudah dibayar."] } };
   const remainingAmount = Math.max(totalAmount - paidAmount, 0);
   const status = derivePaymentStatus(totalAmount, paidAmount, data.status);
 
@@ -160,6 +165,7 @@ export async function updatePayment(id: string, _prevState: PaymentFormState, fo
     where: { id },
     data: {
       totalAmount,
+      ...rincian.data,
       downPayment,
       paidAmount,
       remainingAmount,

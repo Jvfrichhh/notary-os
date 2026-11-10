@@ -17,6 +17,7 @@ export const en: Dict = {
     "/documents": "Document Vault",
     "/archive": "Minutes / Copies / Grosse / Extracts",
     "/notary-record": "Repertorium / Klapper",
+    "/protes": "Protest Register",
     "/compliance": "Monthly Reports",
     "/reports": "Reports",
     "/legalisasi": "Legalization",

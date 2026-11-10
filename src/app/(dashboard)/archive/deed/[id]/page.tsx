@@ -158,10 +158,11 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             addHref={`/archive/salinan/new?deedId=${deed.id}`}
             canEdit={canEdit}
           >
-            {deed.salinan.map((s) => (
+            {deed.salinan.map((s, i) => (
               <div key={s.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                <Link href={`/archive/salinan/${s.id}`} className="text-foreground hover:underline">
-                  Salinan · {formatDate(s.createdAt)}
+                <Link href={`/archive/salinan/${s.id}`} className="min-w-0 break-words text-foreground hover:underline">
+                  Salinan ke-{deed.salinan.length - i} · {formatDate(s.issuedAt ?? s.createdAt)}
+                  {s.recipient ? ` · kepada ${s.recipient}` : ""}
                 </Link>
                 <FileLink documentId={s.documentId} />
               </div>

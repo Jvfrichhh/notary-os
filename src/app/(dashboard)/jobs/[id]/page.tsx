@@ -19,7 +19,9 @@ import {
   setPpatStage,
   reviewChecklistDocument,
   toggleChecklistItem,
-  toggleTaskStatus
+  toggleTaskStatus,
+  createAppointment,
+  cancelAppointment
 } from "@/app/(dashboard)/jobs/actions";
 import { ClientUploadReview } from "@/components/jobs/ClientUploadReview";
 import { DocumentAiPanel } from "@/components/documents/DocumentAiPanel";
@@ -30,6 +32,7 @@ import { deedTemplateOptions, getDeedTemplate, variantLabels } from "@/lib/deeds
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { formatDateTime as fmtDeedTime } from "@/lib/format";
+import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { draftHash, reviewState } from "@/lib/deeds/review";
 import { suggestCovernoteItems } from "@/lib/covernote";
@@ -114,7 +117,9 @@ export default async function JobDetailPage(props: Async<{
           s !== "REVIEW" &&
           s !== "READY_FOR_SIGNING" &&
           (isNotary || !NOTARY_ONLY.includes(s)) &&
-          !((job.status === "REVIEW" || job.status === "READY_FOR_SIGNING") && s === "IN_PROGRESS")
+          !((job.status === "REVIEW" || job.status === "READY_FOR_SIGNING") && s === "IN_PROGRESS") &&
+          // Masih ada draft akta yang belum disahkan: "Selesai" lewat Sahkan & Daftarkan, bukan manual.
+          !(s === "COMPLETED" && job.deedDrafts.some((d) => !d.deed && !d.ppatDeed))
       );
   const isFinal = job.status === "COMPLETED" || job.status === "CANCELLED";
   const staffOptions = isNotary && !isFinal
@@ -131,6 +136,9 @@ export default async function JobDetailPage(props: Async<{
   const stageDone = new Map(job.ppatStages.map((st) => [st.step, st]));
   const nextStage = ppatStageDefs.find((d) => !stageDone.has(d.key));
   const covernoteItems = isNotary ? await suggestCovernoteItems(job.id) : [];
+  // Jadwal tanda tangan / pertemuan untuk pekerjaan ini (yang akan datang dulu).
+  const appointments = await prisma.appointment.findMany({ where: { jobId: job.id }, orderBy: [{ date: "asc" }, { time: "asc" }] });
+  const todayStart = getJakartaTodayDate();
 
   // Riwayat pekerjaan dari audit log (status, draft akta, pengesahan).
   const timeline = await prisma.auditLog.findMany({
@@ -520,6 +528,64 @@ export default async function JobDetailPage(props: Async<{
                 />
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
                   Tambah
+                </button>
+              </form>
+            )}
+          </Card>
+
+          {/* Jadwal */}
+          <Card>
+            <h2 className="mb-1 text-base font-bold text-foreground">Jadwal ({appointments.length})</h2>
+            <p className="mb-2 text-xs text-muted-foreground">Jadwal tanda tangan atau pertemuan. Tampil di Kalender; klien diberi tahu lewat portal.</p>
+            <div className="divide-y divide-border">
+              {appointments.map((a) => {
+                const past = a.date.getTime() < todayStart.getTime();
+                return (
+                  <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                    <div className="min-w-0">
+                      <p className={past ? "text-muted-foreground" : "font-medium text-foreground"}>
+                        {a.type === "signing" ? "Tanda tangan akta" : a.type === "follow-up" ? "Tindak lanjut" : "Pertemuan"} · {formatDate(a.date)}
+                        {a.time ? ` · ${a.time} WIB` : ""}
+                        {past ? " (lewat)" : ""}
+                      </p>
+                      {a.notes && <p className="break-words text-xs text-muted-foreground">{a.notes}</p>}
+                    </div>
+                    {canEdit && !past && (
+                      <form action={cancelAppointment.bind(null, a.id)}>
+                        <ConfirmButton message="Batalkan jadwal ini? Klien akan diberi tahu lewat portal." className="text-xs text-status-overdue hover:underline">
+                          Batalkan
+                        </ConfirmButton>
+                      </form>
+                    )}
+                  </div>
+                );
+              })}
+              {appointments.length === 0 && <p className="py-2.5 text-sm text-muted-foreground">Belum ada jadwal.</p>}
+            </div>
+            {canEdit && !isFinal && (
+              <form action={createAppointment.bind(null, job.id)} className="mt-3 flex flex-wrap items-end gap-2 border-t border-border pt-3">
+                <label className="w-full sm:w-44">
+                  <span className="mb-1 block text-xs text-muted-foreground">Jenis</span>
+                  <select name="type" defaultValue="signing" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground">
+                    <option value="signing">Tanda tangan akta</option>
+                    <option value="meeting">Pertemuan</option>
+                    <option value="follow-up">Tindak lanjut</option>
+                  </select>
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Tanggal</span>
+                  <input type="date" name="date" required min={toDateInput(todayStart)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                </label>
+                <label>
+                  <span className="mb-1 block text-xs text-muted-foreground">Jam</span>
+                  <input type="time" name="time" className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                </label>
+                <label className="min-w-0 flex-1">
+                  <span className="mb-1 block text-xs text-muted-foreground">Catatan (opsional)</span>
+                  <input name="notes" maxLength={300} placeholder="mis. bawa KTP & sertipikat asli" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                </label>
+                <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
+                  Jadwalkan
                 </button>
               </form>
             )}

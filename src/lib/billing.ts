@@ -180,6 +180,8 @@ export interface BillingDocData {
   paidAmount: number;
   remainingAmount: number;
   notes: string | null;
+  /** Rincian tagihan (bila diisi): honorarium, pajak titipan, biaya instansi, lain-lain. */
+  breakdown?: { label: string; amount: number }[];
   client: { fullName: string; clientNumber: string; address: string | null };
   job: { jobNumber: string; description: string | null; service: string | null } | null;
   receipts: { receiptNumber: string; amount: number; paidAt: Date; method: string | null; voidedAt: Date | null }[];
@@ -201,7 +203,9 @@ export function buildInvoiceDocx(d: BillingDocData): Buffer {
       header: ["Uraian", "Jumlah"],
       widths: [7, 3],
       rows: [
-        [uraian, rp(d.totalAmount)],
+        ...(d.breakdown?.length
+          ? [[`**${uraian}**`, ""], ...d.breakdown.map((b) => [`   ${b.label}`, rp(b.amount)]), ["**Total tagihan**", `**${rp(d.totalAmount)}**`]]
+          : [[uraian, rp(d.totalAmount)]]),
         // Pembayaran yang dicatat sebelum ada kuitansi bernomor.
         ...(legacy > 0 ? [["Pembayaran sebelumnya (tanpa kuitansi bernomor)", `- ${rp(legacy)}`]] : []),
         ...valid.map((r) => [`Dibayar ${formatDate(r.paidAt)} (${r.receiptNumber}${r.method ? `, ${r.method}` : ""})`, `- ${rp(r.amount)}`]),
@@ -252,6 +256,28 @@ export function buildReceiptDocx(
   return buildSimpleDocx(blocks, { title: `Kuitansi ${r.receiptNumber}` });
 }
 
+export const BREAKDOWN_FIELDS = [
+  { key: "feeAmount", label: "Honorarium / jasa Notaris-PPAT" },
+  { key: "taxDepositAmount", label: "Pajak titipan (BPHTB, PPh, dsb.)" },
+  { key: "agencyFeeAmount", label: "Biaya instansi (PNBP BPN/AHU, pengecekan, balik nama)" },
+  { key: "otherAmount", label: "Biaya lain (meterai, saksi, transport)" }
+] as const;
+
+type BreakdownSource = Partial<Record<(typeof BREAKDOWN_FIELDS)[number]["key"], unknown>>;
+
+/** Baris rincian yang terisi (> 0). Kosong = tagihan satu angka seperti biasa. */
+export function paymentBreakdown(p: BreakdownSource): { label: string; amount: number }[] {
+  return BREAKDOWN_FIELDS.map((f) => ({ label: f.label, amount: Number(p[f.key] ?? 0) || 0 })).filter((r) => r.amount > 0);
+}
+
+/** Rincian dari form; `total` = jumlahnya (0 bila rincian tidak dipakai). */
+export function breakdownFromForm(formData: FormData) {
+  const v = Object.fromEntries(BREAKDOWN_FIELDS.map((f) => [f.key, parseMoney(formData.get(f.key))])) as Record<(typeof BREAKDOWN_FIELDS)[number]["key"], number>;
+  const total = v.feeAmount + v.taxDepositAmount + v.agencyFeeAmount + v.otherAmount;
+  const data = Object.fromEntries(BREAKDOWN_FIELDS.map((f) => [f.key, total > 0 ? v[f.key] : null])) as Record<(typeof BREAKDOWN_FIELDS)[number]["key"], number | null>;
+  return { total, data };
+}
+
 /** Data lengkap untuk dokumen tagihan/kuitansi. */
 export async function loadBillingDoc(paymentId: string): Promise<(BillingDocData & { clientId: string }) | null> {
   const p = await prisma.payment.findUnique({
@@ -264,6 +290,10 @@ export async function loadBillingDoc(paymentId: string): Promise<(BillingDocData
       paidAmount: true,
       remainingAmount: true,
       notes: true,
+      feeAmount: true,
+      taxDepositAmount: true,
+      agencyFeeAmount: true,
+      otherAmount: true,
       client: { select: { fullName: true, clientNumber: true, address: true } },
       job: { select: { jobNumber: true, description: true, serviceType: { select: { name: true } } } },
       receipts: { orderBy: { paidAt: "asc" }, select: { receiptNumber: true, amount: true, paidAt: true, method: true, voidedAt: true } }
@@ -278,6 +308,7 @@ export async function loadBillingDoc(paymentId: string): Promise<(BillingDocData
     paidAmount: Number(p.paidAmount),
     remainingAmount: Number(p.remainingAmount),
     notes: p.notes,
+    breakdown: paymentBreakdown(p),
     client: p.client,
     job: p.job ? { jobNumber: p.job.jobNumber, description: p.job.description, service: p.job.serviceType?.name ?? null } : null,
     receipts: p.receipts.map((r) => ({ ...r, amount: Number(r.amount) }))

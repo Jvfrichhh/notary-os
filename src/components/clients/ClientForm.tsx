@@ -18,6 +18,9 @@ interface ClientFormProps {
 
 const initialState: ClientFormState = {};
 
+const selectClass =
+  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
+
 function Field({
   label,
   name,
@@ -100,7 +103,7 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
           <Field label="NIK" name="nik" defaultValue={client?.nik} errors={errors.nik} />
           {state.duplicateNik && (
             <label className="mt-1 flex items-center gap-2 text-xs text-foreground">
-              <input type="checkbox" name="allowDuplicateNik" /> Tetap simpan sebagai klien baru
+              <input type="checkbox" name="allowDuplicateNik" /> {client ? "Tetap simpan" : "Tetap simpan sebagai klien baru"}
             </label>
           )}
         </div>
@@ -137,7 +140,63 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
           {errors.occupation && <p className="mt-1 text-xs text-status-overdue">{errors.occupation[0]}</p>}
           <p className="mt-1 text-xs text-muted-foreground">Dipakai untuk laporan tahunan (PKJM). Pilih dari daftar atau ketik sendiri.</p>
         </div>
+        <div>
+          <label htmlFor="maritalStatus" className="mb-1 block text-sm font-medium text-foreground">
+            Status Perkawinan
+          </label>
+          <select id="maritalStatus" name="maritalStatus" defaultValue={client?.maritalStatus ?? ""} className={selectClass}>
+            <option value="">— Belum diisi —</option>
+            <option>Belum Kawin</option>
+            <option>Kawin</option>
+            <option>Cerai Hidup</option>
+            <option>Cerai Mati</option>
+          </select>
+          <p className="mt-1 text-xs text-muted-foreground">Bila “Kawin”, tindakan atas harta bersama perlu persetujuan suami/istri.</p>
+        </div>
+        <div className="sm:col-span-2">
+          <Field label="Wakil badan usaha (nama & jabatan; khusus klien perusahaan)" name="representative" defaultValue={client?.representative} />
+        </div>
       </div>
+
+      <fieldset className="space-y-4 rounded-md border border-border p-4">
+        <legend className="px-1 text-sm font-bold text-foreground">Pengenalan Pengguna Jasa (PMPJ)</legend>
+        <p className="text-xs text-muted-foreground">
+          Diisi untuk transaksi yang wajib PMPJ (jual beli properti, pengelolaan uang/efek, pendirian dan jual beli badan usaha). Boleh
+          dilengkapi belakangan dari halaman klien.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="sourceOfFunds" className="mb-1 block text-sm font-medium text-foreground">
+              Sumber dana
+            </label>
+            <input id="sourceOfFunds" name="sourceOfFunds" list="sumber-dana" defaultValue={client?.sourceOfFunds ?? ""} autoComplete="off" maxLength={120} className={selectClass} />
+            <datalist id="sumber-dana">
+              {["Penghasilan / Gaji", "Hasil Usaha", "Tabungan", "Warisan", "Hibah", "Pinjaman / Kredit Bank", "Penjualan Aset"].map((o) => (
+                <option key={o} value={o} />
+              ))}
+            </datalist>
+          </div>
+          <Field label="Tujuan transaksi" name="transactionPurpose" defaultValue={client?.transactionPurpose} />
+          <div className="sm:col-span-2">
+            <Field label="Pemilik manfaat (bila bertindak untuk pihak lain / korporasi)" name="beneficialOwner" defaultValue={client?.beneficialOwner} />
+          </div>
+          <div>
+            <label htmlFor="riskLevel" className="mb-1 block text-sm font-medium text-foreground">
+              Profil risiko
+            </label>
+            <select id="riskLevel" name="riskLevel" defaultValue={client?.riskLevel ?? ""} className={selectClass}>
+              <option value="">— Belum dinilai —</option>
+              <option value="RENDAH">Rendah</option>
+              <option value="SEDANG">Sedang</option>
+              <option value="TINGGI">Tinggi</option>
+            </select>
+          </div>
+          <label className="flex items-start gap-2 self-end pb-2 text-sm text-foreground">
+            <input type="checkbox" name="isPep" defaultChecked={client?.isPep ?? false} className="mt-1" />
+            <span>Pejabat publik / orang yang populer secara politis (PEP), atau keluarga dekatnya</span>
+          </label>
+        </div>
+      </fieldset>
 
       <div>
         <label htmlFor="address" className="mb-1 block text-sm font-medium text-foreground">

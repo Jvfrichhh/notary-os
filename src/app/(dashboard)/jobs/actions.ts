@@ -61,6 +61,8 @@ export async function updateJobStatus(jobId: string, newStatus: JobStatus) {
   if (!allowed.includes(newStatus)) return;
   // Masuk ke "Diperiksa Notaris" hanya lewat tombol Ajukan (submitJobForReview), supaya Notaris diberi tahu.
   if (newStatus === "REVIEW") return;
+  // Selesai manual tidak boleh selagi masih ada draft akta yang belum disahkan (aktanya belum terdaftar).
+  if (newStatus === "COMPLETED" && (await prisma.deedDraft.count({ where: { jobId, deedId: null, ppatDeedId: null } })) > 0) return;
   // Menyetujui untuk tanda tangan, menyelesaikan, dan membatalkan job adalah keputusan Notaris.
   if (!(await isNotaryLevel(user.id))) {
     if (NOTARY_ONLY_STATUSES.includes(newStatus)) return;
@@ -501,4 +503,63 @@ export async function setPpatStage(jobId: string, step: string, formData: FormDa
     });
   }
   revalidateJob(jobId);
+}
+
+// ---------------------------------------------------------------------------
+// JADWAL (tanda tangan / pertemuan) -- tampil di Kalender dan di portal klien.
+// ---------------------------------------------------------------------------
+
+const APPOINTMENT_TYPES: Record<string, string> = { signing: "Tanda tangan akta", meeting: "Pertemuan", "follow-up": "Tindak lanjut" };
+
+export async function createAppointment(jobId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  const type = String(formData.get("type") ?? "signing");
+  const date = String(formData.get("date") ?? "").trim();
+  const time = String(formData.get("time") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim().slice(0, 300);
+  if (!APPOINTMENT_TYPES[type] || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (time && !/^\d{2}:\d{2}$/.test(time))) return;
+  const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true, jobNumber: true, clientId: true, client: { select: { fullName: true } } } });
+  if (!job) return;
+  const when = new Date(`${date}T00:00:00.000Z`);
+  const appt = await prisma.appointment.create({
+    data: { jobId, clientId: job.clientId, title: `${APPOINTMENT_TYPES[type]} — ${job.jobNumber} ${job.client.fullName}`, date: when, time: time || null, type, notes: notes || null }
+  });
+  await writeAuditLog({ userId: user.id, action: "appointment_created", entityType: "Job", entityId: jobId, newValue: { appointmentId: appt.id, type, date, time: time || null } });
+  // Klien diberi tahu lewat portal; PIC & Notaris lewat notifikasi kantor.
+  const jadwal = `${formatDate(when)}${time ? ` pukul ${time} WIB` : ""}`;
+  await createClientNotification({
+    clientId: job.clientId,
+    type: "info",
+    message: `${APPOINTMENT_TYPES[type]} untuk ${job.jobNumber} dijadwalkan ${jadwal}.${type === "signing" ? " Mohon hadir membawa KTP asli." : ""}`,
+    relatedEntityType: "Job",
+    relatedEntityId: jobId
+  });
+  await notifyJobPeople(jobId, `${APPOINTMENT_TYPES[type]} ${job.jobNumber} dijadwalkan ${jadwal}.`, { pic: true, notary: true });
+  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/calendar");
+  revalidatePath(`/portal/jobs/${jobId}`);
+}
+
+export async function cancelAppointment(appointmentId: string) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  const appt = await prisma.appointment.findUnique({ where: { id: appointmentId }, select: { id: true, jobId: true, clientId: true, title: true, date: true, time: true, type: true } });
+  if (!appt) return;
+  await prisma.appointment.delete({ where: { id: appointmentId } });
+  await writeAuditLog({ userId: user.id, action: "appointment_cancelled", entityType: "Job", entityId: appt.jobId ?? appointmentId, previousValue: appt });
+  if (appt.clientId && appt.jobId) {
+    await createClientNotification({
+      clientId: appt.clientId,
+      type: "info",
+      message: `Jadwal ${formatDate(appt.date)}${appt.time ? ` pukul ${appt.time} WIB` : ""} dibatalkan. Kantor akan menghubungi Anda untuk jadwal baru.`,
+      relatedEntityType: "Job",
+      relatedEntityId: appt.jobId
+    });
+  }
+  if (appt.jobId) {
+    revalidatePath(`/jobs/${appt.jobId}`);
+    revalidatePath(`/portal/jobs/${appt.jobId}`);
+  }
+  revalidatePath("/calendar");
 }

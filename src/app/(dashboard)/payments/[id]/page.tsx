@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { paymentBreakdown } from "@/lib/billing";
 import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
@@ -42,6 +43,7 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
   if (!p) notFound();
   const remaining = Number(p.remainingAmount);
   const total = Number(p.totalAmount);
+  const rincian = paymentBreakdown(p);
   const pct = total > 0 ? Math.min(100, Math.round((Number(p.paidAmount) / total) * 100)) : 0;
   const justCreated = searchParams.r ? p.receipts.find((r) => r.id === searchParams.r) : undefined;
 
@@ -109,6 +111,16 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
           <div className="h-full bg-status-on-track" style={{ width: `${pct}%` }} />
         </div>
+        {rincian.length > 0 && (
+          <dl className="mt-4 divide-y divide-border border-t border-border text-sm">
+            {rincian.map((r) => (
+              <div key={r.label} className="flex items-center justify-between gap-3 py-2">
+                <dt className="text-muted-foreground">{r.label}</dt>
+                <dd className="font-medium text-foreground">{formatCurrency(r.amount)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
         {p.notes && <p className="mt-3 text-sm text-muted-foreground">{p.notes}</p>}
       </Card>
 

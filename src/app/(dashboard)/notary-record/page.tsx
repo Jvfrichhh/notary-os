@@ -71,15 +71,23 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
 
   // Klapper: dikelompokkan alfabetis berdasarkan nama penghadap (fallback ke nama client).
   // Bukan tabel baru -- murni derived dari data Repertorium di atas.
-  const klapperGroups = new Map<string, typeof entries>();
+  // Satu akta dengan beberapa penghadap muncul di bawah huruf tiap nama; tiap huruf diurutkan abjad.
+  const klapperGroups = new Map<string, { name: string; entry: (typeof entries)[number] }[]>();
   if (tab === "klapper") {
     for (const entry of entries) {
-      const name = entry.appearerName || entry.client?.fullName || "-";
-      const letter = name.trim()[0]?.toUpperCase() ?? "#";
-      const list = klapperGroups.get(letter) ?? [];
-      list.push(entry);
-      klapperGroups.set(letter, list);
+      const names = (entry.appearerName || entry.client?.fullName || "-")
+        .split(",")
+        .map((n) => n.trim())
+        .filter(Boolean);
+      for (const name of names.length ? names : ["-"]) {
+        const first = name[0]?.toUpperCase() ?? "#";
+        const letter = /[A-Z]/.test(first) ? first : "#";
+        const list = klapperGroups.get(letter) ?? [];
+        list.push({ name, entry });
+        klapperGroups.set(letter, list);
+      }
     }
+    for (const list of klapperGroups.values()) list.sort((a, b) => a.name.localeCompare(b.name, "id") || b.entry.deedDate.getTime() - a.entry.deedDate.getTime());
   }
   const klapperLetters = [...klapperGroups.keys()].sort();
 
@@ -184,14 +192,14 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
               <h2 className="mb-2 text-base font-bold text-foreground">{letter}</h2>
               <Card className="!p-0">
                 <div className="divide-y divide-border">
-                  {klapperGroups.get(letter)!.map((entry) => (
+                  {klapperGroups.get(letter)!.map(({ name, entry }) => (
                     <Link
-                      key={entry.id}
+                      key={`${entry.id}:${name}`}
                       href={`/notary-record/${entry.id}`}
                       className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/50"
                     >
                       <div className="min-w-0 break-words">
-                        <p className="font-medium text-foreground">{entry.appearerName}</p>
+                        <p className="font-medium text-foreground">{name}</p>
                         <p className="text-xs text-muted-foreground">
                           {entry.deedType} · {entry.deed.deedNumber}
                         </p>

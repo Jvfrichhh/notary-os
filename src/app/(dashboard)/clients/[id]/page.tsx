@@ -125,7 +125,44 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
           <InfoRow label="Kota" value={client.city} />
           <InfoRow label="NPWP" value={client.npwp} />
           <InfoRow label="Pekerjaan" value={client.occupation} />
+          <InfoRow label="Status Perkawinan" value={client.maritalStatus} />
           {client.companyName && <InfoRow label="Perusahaan" value={client.companyName} />}
+          {client.representative && (
+            <div className="col-span-2">
+              <InfoRow label="Wakil Badan Usaha" value={client.representative} />
+            </div>
+          )}
+        </div>
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-bold text-foreground">Pengenalan Pengguna Jasa (PMPJ)</h3>
+            {client.riskLevel ? (
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  client.riskLevel === "TINGGI"
+                    ? "bg-status-overdue/10 text-status-overdue"
+                    : client.riskLevel === "SEDANG"
+                      ? "bg-status-due-soon/10 text-status-due-soon"
+                      : "bg-status-on-track/10 text-status-on-track"
+                }`}
+              >
+                Risiko {client.riskLevel.toLowerCase()}
+              </span>
+            ) : (
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">Belum dinilai</span>
+            )}
+            {client.isPep && <span className="rounded-full bg-status-overdue/10 px-2.5 py-0.5 text-xs font-medium text-status-overdue">PEP</span>}
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <InfoRow label="Sumber Dana" value={client.sourceOfFunds} />
+            <InfoRow label="Tujuan Transaksi" value={client.transactionPurpose} />
+            <div className="col-span-2">
+              <InfoRow label="Pemilik Manfaat" value={client.beneficialOwner} />
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {client.pmpjUpdatedAt ? `PMPJ terakhir diperbarui ${formatDateTime(client.pmpjUpdatedAt)}.` : "PMPJ belum diisi. Lengkapi lewat tombol Edit bila transaksinya wajib PMPJ."}
+          </p>
         </div>
         {client.notes && (
           <div className="mt-4">

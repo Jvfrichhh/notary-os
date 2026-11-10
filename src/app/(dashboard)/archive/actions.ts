@@ -299,8 +299,11 @@ export async function createSalinan(_prevState: ArchiveFormState, formData: Form
     return { formError: e instanceof Error ? e.message : "Dokumen tidak valid." };
   }
 
+  const recipient = String(formData.get("recipient") ?? "").trim().slice(0, 200) || null;
+  const issuedRaw = String(formData.get("issuedAt") ?? "").trim();
+  const issuedAt = /^\d{4}-\d{2}-\d{2}$/.test(issuedRaw) ? new Date(`${issuedRaw}T00:00:00.000Z`) : null;
   const salinan = await prisma.salinan.create({
-    data: { deedId: parsed.data.deedId, jobId: deed.jobId, documentId, createdBy: user.id }
+    data: { deedId: parsed.data.deedId, jobId: deed.jobId, documentId, createdBy: user.id, recipient, issuedAt }
   });
 
   await writeAuditLog({ userId: user.id, action: "salinan_created", entityType: "Salinan", entityId: salinan.id });

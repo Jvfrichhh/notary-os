@@ -44,6 +44,11 @@ interface ServiceRecordFormProps {
     notes?: string | null;
   };
   cancelHref: string;
+  /** Catat baru: nomor urut berikutnya diusulkan otomatis (masih bisa disesuaikan sebelum disimpan). */
+  suggestedNumber?: string;
+  suggestedDate?: string;
+  /** Edit: nomor daftar tidak bisa diubah setelah dicatat. */
+  lockNumber?: boolean;
 }
 
 const initialState: FormStateShape = {};
@@ -69,7 +74,10 @@ export function ServiceRecordForm({
   documents,
   lockedClient,
   initial,
-  cancelHref
+  cancelHref,
+  suggestedNumber,
+  suggestedDate,
+  lockNumber = false
 }: ServiceRecordFormProps) {
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
@@ -91,7 +99,18 @@ export function ServiceRecordForm({
           <label className="mb-1 block text-sm font-medium text-foreground">
             Nomor {moduleLabel} <span className="text-status-overdue">*</span>
           </label>
-          <input name="number" defaultValue={initial?.number} required className={fieldClass} />
+          <input
+            name="number"
+            defaultValue={initial?.number ?? suggestedNumber}
+            required
+            readOnly={lockNumber}
+            className={lockNumber ? `${fieldClass} opacity-70` : fieldClass}
+          />
+          {lockNumber ? (
+            <p className="mt-1 text-xs text-muted-foreground">Nomor daftar tidak bisa diubah setelah dicatat.</p>
+          ) : suggestedNumber ? (
+            <p className="mt-1 text-xs text-muted-foreground">Diusulkan otomatis: nomor urut berikutnya tahun ini. Sesuaikan bila format kantor berbeda.</p>
+          ) : null}
           {errors.number?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.number[0]}</p> : null}
         </div>
 
@@ -99,7 +118,7 @@ export function ServiceRecordForm({
           <label className="mb-1 block text-sm font-medium text-foreground">
             Tanggal <span className="text-status-overdue">*</span>
           </label>
-          <input type="date" name="date" defaultValue={initial?.date} required className={fieldClass} />
+          <input type="date" name="date" defaultValue={initial?.date ?? suggestedDate} required className={fieldClass} />
         </div>
 
         <div>

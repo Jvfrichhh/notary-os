@@ -376,6 +376,39 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     tasks: ["Pemesanan nama PT di AHU", ...BASE_TASKS, "Pengesahan badan hukum melalui SABH", "Pendaftaran NIB di OSS"]
   },
   {
+    name: "Akta Pendirian CV",
+    category: "Korporasi",
+    description: "Pendirian Persekutuan Komanditer (CV).",
+    deedKey: "pendirian_cv",
+    checklist: [
+      { label: "KTP Seluruh Sekutu (Komplementer & Komanditer)" },
+      { label: "NPWP Seluruh Sekutu" },
+      { label: "Usulan Nama CV (3 alternatif)" },
+      { label: "Alamat Lengkap Kedudukan CV" },
+      { label: "Bidang Usaha / KBLI" },
+      { label: "Rincian Pemasukan Modal & Pembagian Laba" },
+      { label: "Nomor HP & Email CV" }
+    ],
+    tasks: ["Pengajuan nama CV di AHU (SABU)", ...BASE_TASKS, "Pendaftaran CV melalui SABU (maks. 60 hari)", "Pendaftaran NIB di OSS"]
+  },
+  {
+    name: "Akta Pendirian Yayasan",
+    category: "Korporasi",
+    description: "Pendirian Yayasan beserta organ pertamanya.",
+    deedKey: "pendirian_yayasan",
+    checklist: [
+      { label: "KTP Seluruh Pendiri" },
+      { label: "NPWP Pendiri" },
+      { label: "KTP & NPWP Pembina, Pengurus, dan Pengawas" },
+      { label: "Usulan Nama Yayasan (3 alternatif)" },
+      { label: "Alamat Lengkap Kedudukan Yayasan" },
+      { label: "Maksud, Tujuan, dan Kegiatan Yayasan" },
+      { label: "Surat Pernyataan Pemisahan Kekayaan & Bukti Setor Kekayaan Awal" },
+      { label: "Surat Keterangan Domisili / Pernyataan Alamat", isRequired: false }
+    ],
+    tasks: ["Pemesanan nama Yayasan di AHU", ...BASE_TASKS, "Permohonan pengesahan badan hukum Yayasan (maks. 10 hari)"]
+  },
+  {
     name: "Akta Perubahan PT",
     category: "Korporasi",
     description: "Perubahan anggaran dasar/data PT berdasarkan keputusan RUPS (KBLI, Direksi, Komisaris, saham, dll.).",

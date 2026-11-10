@@ -8,6 +8,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { deedTemplateOptions, getDeedTemplate, variantLabels } from "@/lib/deeds/registry";
 import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { createDeedDraftFromList } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ const selectCls = "w-full rounded-md border border-border bg-background px-3 py-
 
 /** Semua draft akta lintas job + pembuatan draft baru (pilih job & jenis akta). */
 export default async function DeedsPage() {
+  const { tp } = await getT();
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_JOBS);
 
@@ -86,20 +88,20 @@ export default async function DeedsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Draft Akta</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Draft Akta")}</h1>
         <p className="text-sm text-muted-foreground">
-          Buat draft akta dari template, isi datanya, lalu unduh Minuta (garis hitam) dan Salinan (garis merah) dalam format Word.
+          {tp("Buat draft akta dari template, isi datanya, lalu unduh Minuta (garis hitam) dan Salinan (garis merah) dalam format Word.")}
         </p>
       </div>
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-base font-bold text-foreground">Job Baru Menunggu Draft Akta ({waiting.length})</h2>
-          <p className="text-xs text-muted-foreground">Perintah dari Notaris yang belum dibuatkan draft. Tugas Anda ditandai.</p>
+          <h2 className="text-base font-bold text-foreground">{tp("Job Baru Menunggu Draft Akta (")}{waiting.length})</h2>
+          <p className="text-xs text-muted-foreground">{tp("Perintah dari Notaris yang belum dibuatkan draft. Tugas Anda ditandai.")}</p>
         </div>
         {waiting.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="Tidak ada pekerjaan yang menunggu draft." />
+            <EmptyState title={tp("Tidak ada pekerjaan yang menunggu draft.")} />
           </div>
         ) : (
           <ul className="divide-y divide-border text-sm">
@@ -114,10 +116,10 @@ export default async function DeedsPage() {
                       {j.jobNumber} — {j.client.fullName}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {j.serviceType?.name ?? "Layanan belum dipilih"}
-                      {j.description ? ` · ${j.description}` : ""} · PIC: {j.pic?.name ?? "belum ditentukan"}
-                      {mine ? " (Anda)" : ""} · masuk {formatDateTime(j.createdAt)}
-                      {j.deadline ? ` · target ${formatDate(j.deadline)}` : ""}
+                      {j.serviceType?.name ?? tp("Layanan belum dipilih")}
+                      {j.description ? ` · ${j.description}` : ""} {tp("· PIC:")} {j.pic?.name ?? tp("belum ditentukan")}
+                      {mine ? " (Anda)" : ""} {tp("· masuk")} {formatDateTime(j.createdAt)}
+                      {j.deadline ? tp(" · target {0}", [formatDate(j.deadline)]) : ""}
                     </p>
                   </div>
                   {canEdit &&
@@ -126,11 +128,11 @@ export default async function DeedsPage() {
                         <input type="hidden" name="jobId" value={j.id} />
                         <input type="hidden" name="templateKey" value={suggested} />
                         <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
-                          Buat Draft
+                          {tp("Buat Draft")}
                         </button>
                       </form>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Pilih jenis akta di bawah</span>
+                      <span className="text-xs text-muted-foreground">{tp("Pilih jenis akta di bawah")}</span>
                     ))}
                 </li>
               );
@@ -141,19 +143,18 @@ export default async function DeedsPage() {
 
       {canEdit && (
         <Card>
-          <h2 className="mb-3 text-base font-bold text-foreground">Buat Draft Akta (pilih pekerjaan & jenis akta)</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">{tp("Buat Draft Akta (pilih pekerjaan & jenis akta)")}</h2>
           {jobs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Belum ada job aktif. Draft akta selalu terkait dengan satu job;
-              job dibuat oleh Notaris melalui Tambah Klien.
+              {tp("Belum ada job aktif. Draft akta selalu terkait dengan satu job; job dibuat oleh Notaris melalui Tambah Klien.")}
             </p>
           ) : (
             <form action={createDeedDraftFromList} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
               <label>
-                <span className="mb-1 block text-xs text-muted-foreground">Pekerjaan / klien</span>
+                <span className="mb-1 block text-xs text-muted-foreground">{tp("Pekerjaan / klien")}</span>
                 <select name="jobId" required className={selectCls} defaultValue="">
                   <option value="" disabled>
-                    — Pilih pekerjaan —
+                    {tp("— Pilih pekerjaan —")}
                   </option>
                   {jobs.map((j) => (
                     <option key={j.id} value={j.id}>
@@ -164,7 +165,7 @@ export default async function DeedsPage() {
                 </select>
               </label>
               <label>
-                <span className="mb-1 block text-xs text-muted-foreground">Jenis akta</span>
+                <span className="mb-1 block text-xs text-muted-foreground">{tp("Jenis akta")}</span>
                 <select name="templateKey" required className={selectCls}>
                   {templates.map((t) => (
                     <option key={t.key} value={t.key}>
@@ -174,7 +175,7 @@ export default async function DeedsPage() {
                 </select>
               </label>
               <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                Buat Draft
+                {tp("Buat Draft")}
               </button>
             </form>
           )}
@@ -183,11 +184,11 @@ export default async function DeedsPage() {
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-base font-bold text-foreground">Semua Draft Akta</h2>
+          <h2 className="text-base font-bold text-foreground">{tp("Semua Draft Akta")}</h2>
         </div>
         {drafts.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="Belum ada draft akta." />
+            <EmptyState title={tp("Belum ada draft akta.")} />
           </div>
         ) : (
           <ul className="divide-y divide-border text-sm">
@@ -212,9 +213,9 @@ export default async function DeedsPage() {
                             : ["Draft", "bg-status-due-soon/10 text-status-due-soon"];
                     return <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}>{label}</span>;
                   })()}
-                  {d.job.picId === user.id && <span className="ml-1 text-[11px] text-muted-foreground">(tugas Anda)</span>}
+                  {d.job.picId === user.id && <span className="ml-1 text-[11px] text-muted-foreground">{tp("(tugas Anda)")}</span>}
                   <p className="text-xs text-muted-foreground">
-                    {d.job.jobNumber} · {d.job.client.fullName} · diperbarui {formatDateTime(d.updatedAt)}
+                    {d.job.jobNumber} · {d.job.client.fullName} {tp("· diperbarui")} {formatDateTime(d.updatedAt)}
                   </p>
                 </div>
                 <span className="flex flex-wrap items-center gap-3 text-xs">

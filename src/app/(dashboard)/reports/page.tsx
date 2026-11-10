@@ -7,6 +7,7 @@ import { LineChart } from "@/components/charts/LineChart";
 import { CountUp } from "@/components/motion/CountUp";
 import { formatCurrency, getJakartaToday } from "@/lib/format";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,7 @@ interface PageProps {
 }
 
 export default async function ReportsPage(props: Async<PageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canViewFinance = await userHasPermission(user.id, PERMISSIONS.VIEW_FINANCE);
@@ -194,10 +196,10 @@ export default async function ReportsPage(props: Async<PageProps>) {
     <div className="mx-auto max-w-[1200px] space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Laporan</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Ringkasan operasional kantor sepanjang {year}.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Laporan")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{tp("Ringkasan operasional kantor sepanjang")} {year}.</p>
         </div>
-        <nav aria-label="Pilih tahun" className="flex gap-1 rounded-md border border-border bg-background p-1 text-sm shadow-card">
+        <nav aria-label={tp("Pilih tahun")} className="flex gap-1 rounded-md border border-border bg-background p-1 text-sm shadow-card">
           {yearOptions.map((y) => (
             <Link
               key={y}
@@ -217,12 +219,12 @@ export default async function ReportsPage(props: Async<PageProps>) {
           className="surface press flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-muted/50"
         >
           <span>
-            <span className="block text-sm font-bold text-foreground">Laporan Tahunan Pekerjaan / Profesi Klien (PKJM)</span>
+            <span className="block text-sm font-bold text-foreground">{tp("Laporan Tahunan Pekerjaan / Profesi Klien (PKJM)")}</span>
             <span className="block text-xs text-muted-foreground">
-              Jumlah klien per jenis pekerjaan (karyawan swasta, pelajar/mahasiswa, tidak bekerja, dst.) tahun {year} — bisa diunduh Word / Excel.
+              {tp("Jumlah klien per jenis pekerjaan (karyawan swasta, pelajar/mahasiswa, tidak bekerja, dst.) tahun")} {year} {tp("— bisa diunduh Word / Excel.")}
             </span>
           </span>
-          <span className="text-sm font-bold text-primary">Buka →</span>
+          <span className="text-sm font-bold text-primary">{tp("Buka →")}</span>
         </Link>
       )}
 
@@ -241,24 +243,24 @@ export default async function ReportsPage(props: Async<PageProps>) {
         <div
           style={{ ["--d" as string]: "240ms" }}
           className="surface press rise col-span-2 flex flex-col gap-2 border-danger-border bg-danger-soft p-4 lg:col-span-1">
-          <span className="text-[13px] font-semibold text-danger-strong">Terlambat saat ini</span>
+          <span className="text-[13px] font-semibold text-danger-strong">{tp("Terlambat saat ini")}</span>
           <span className="text-3xl font-extrabold leading-none tracking-tight text-status-overdue">
             <CountUp value={overdueCount} delay={240} />
           </span>
           <Link href="/deadlines" className="text-xs font-bold text-status-overdue hover:underline">
-            Lihat daftar →
+            {tp("Lihat daftar →")}
           </Link>
         </div>
       </div>
 
       <Card>
         <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-base font-bold text-foreground">Tren per bulan ({year})</h2>
-          <p className="text-xs text-muted-foreground">Arahkan kursor ke grafik untuk melihat angka tiap bulan</p>
+          <h2 className="text-base font-bold text-foreground">{tp("Tren per bulan (")}{year})</h2>
+          <p className="text-xs text-muted-foreground">{tp("Arahkan kursor ke grafik untuk melihat angka tiap bulan")}</p>
         </div>
         <p className="mb-4 text-sm text-muted-foreground">
-          {totalJobs.toLocaleString("id-ID")} pekerjaan masuk, {totalClients.toLocaleString("id-ID")} klien baru, dan{" "}
-          {totalDeeds.toLocaleString("id-ID")} akta sepanjang tahun ini.
+          {totalJobs.toLocaleString("id-ID")} {tp("pekerjaan masuk,")} {totalClients.toLocaleString("id-ID")} {tp("klien baru, dan")}{" "}
+          {totalDeeds.toLocaleString("id-ID")} {tp("akta sepanjang tahun ini.")}
         </p>
         <LineChart
           ariaLabel={`Grafik garis pekerjaan masuk, klien baru, dan akta per bulan tahun ${year}`}
@@ -273,18 +275,18 @@ export default async function ReportsPage(props: Async<PageProps>) {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-4 text-base font-bold text-foreground">Pekerjaan per jenis layanan ({year})</h2>
+          <h2 className="mb-4 text-base font-bold text-foreground">{tp("Pekerjaan per jenis layanan (")}{year})</h2>
           {jobsByService.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Belum ada data.</p>
+            <p className="text-sm text-muted-foreground">{tp("Belum ada data.")}</p>
           ) : (
             <BarList data={jobsByService} />
           )}
         </Card>
 
         <Card>
-          <h2 className="mb-4 text-base font-bold text-foreground">Beban kerja per PIC (pekerjaan aktif)</h2>
+          <h2 className="mb-4 text-base font-bold text-foreground">{tp("Beban kerja per PIC (pekerjaan aktif)")}</h2>
           {workloadPic.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Belum ada pekerjaan aktif.</p>
+            <p className="text-sm text-muted-foreground">{tp("Belum ada pekerjaan aktif.")}</p>
           ) : (
             <BarList data={workloadPic} />
           )}
@@ -295,18 +297,18 @@ export default async function ReportsPage(props: Async<PageProps>) {
         <>
           <Card>
             <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-              <h2 className="text-base font-bold text-foreground">Keuangan per bulan ({year})</h2>
+              <h2 className="text-base font-bold text-foreground">{tp("Keuangan per bulan (")}{year})</h2>
               <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
                 <div>
-                  <dt className="text-xs font-semibold text-muted-foreground">Total ditagihkan</dt>
+                  <dt className="text-xs font-semibold text-muted-foreground">{tp("Total ditagihkan")}</dt>
                   <dd className="text-lg font-extrabold text-foreground">{formatCurrency(paymentSummary.totalInvoiced)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-muted-foreground">Total dibayar</dt>
+                  <dt className="text-xs font-semibold text-muted-foreground">{tp("Total dibayar")}</dt>
                   <dd className="text-lg font-extrabold text-status-on-track">{formatCurrency(paymentSummary.totalPaid)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-muted-foreground">Belum dibayar</dt>
+                  <dt className="text-xs font-semibold text-muted-foreground">{tp("Belum dibayar")}</dt>
                   <dd className="text-lg font-extrabold text-status-overdue">{formatCurrency(paymentSummary.totalOutstanding)}</dd>
                 </div>
               </dl>
@@ -324,9 +326,9 @@ export default async function ReportsPage(props: Async<PageProps>) {
           </Card>
 
           <Card>
-            <h2 className="mb-3 text-base font-bold text-foreground">Tagihan belum lunas terbesar</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">{tp("Tagihan belum lunas terbesar")}</h2>
             {outstandingTop.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Tidak ada tagihan yang belum lunas.</p>
+              <p className="text-sm text-muted-foreground">{tp("Tidak ada tagihan yang belum lunas.")}</p>
             ) : (
               <div className="divide-y divide-muted text-sm">
                 {outstandingTop.map((o, i) => (

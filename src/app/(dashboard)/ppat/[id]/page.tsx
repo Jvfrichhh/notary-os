@@ -10,6 +10,7 @@ import { submitPpatToBpn, updatePpatDeed } from "@/app/(dashboard)/ppat/actions"
 import { classifyDeadline, formatDate, getJakartaToday, toDateInput } from "@/lib/format";
 import { isSkmht, ppatDuty, loadHolidays } from "@/lib/ppat";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ const ERR: Record<string, string> = { required: "Lengkapi tanggal, perbuatan huk
 const str = (v: { toString(): string } | null) => (v == null ? "" : v.toString().replace(/\.00$/, ""));
 
 export default async function PpatDetailPage(props: Async<{ params: { id: string }; searchParams: { ok?: string; err?: string } }>) {
+  const { tp } = await getT();
   const { params, searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
@@ -35,10 +37,10 @@ export default async function PpatDetailPage(props: Async<{ params: { id: string
     <div className="max-w-4xl space-y-6">
       <div>
         <Link href="/ppat" className="text-xs text-muted-foreground hover:text-foreground">
-          ← Buku Daftar Akta PPAT
+          {tp("← Buku Daftar Akta PPAT")}
         </Link>
         <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">
-          Akta PPAT No. {d.deedNumber} — {d.deedType}
+          {tp("Akta PPAT No.")} {d.deedNumber} — {d.deedType}
         </h1>
         <p className="text-sm text-muted-foreground">
           {formatDate(d.deedDate)}
@@ -63,19 +65,19 @@ export default async function PpatDetailPage(props: Async<{ params: { id: string
 
       <Card>
         <h2 className="mb-1 text-base font-bold text-foreground">{duty.title}</h2>
-        <p className="mb-3 text-xs text-muted-foreground">Dasar: {duty.basis}. Hari kerja dihitung Senin–Jumat; periksa hari libur nasional.</p>
+        <p className="mb-3 text-xs text-muted-foreground">{tp("Dasar:")} {duty.basis}{tp(". Hari kerja dihitung Senin–Jumat; periksa hari libur nasional.")}</p>
         {d.submittedToBpnAt ? (
           <p className="text-sm text-status-on-track">
-            {skmht ? "APHT sudah dibuat" : "Sudah disampaikan"} pada {formatDate(d.submittedToBpnAt)}.
+            {skmht ? tp("APHT sudah dibuat") : tp("Sudah disampaikan")} {tp("pada")} {formatDate(d.submittedToBpnAt)}.
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-3">
-            <StatusBadge tone={classifyDeadline(duty.due, "OPEN")} label={`Tenggat ${formatDate(duty.due)}`} />
+            <StatusBadge tone={classifyDeadline(duty.due, "OPEN")} label={tp("Tenggat {0}", [formatDate(duty.due)])} />
             {canEdit && (
               <form action={submitPpatToBpn.bind(null, d.id)} className="flex flex-wrap items-center gap-2">
                 <input type="date" name="date" defaultValue={toDateInput(getJakartaToday())} className="rounded-md border border-border bg-background px-2 py-2 text-sm" />
                 <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                  {skmht ? "Tandai APHT sudah dibuat" : "Tandai sudah disampaikan"}
+                  {skmht ? tp("Tandai APHT sudah dibuat") : tp("Tandai sudah disampaikan")}
                 </button>
               </form>
             )}
@@ -84,7 +86,7 @@ export default async function PpatDetailPage(props: Async<{ params: { id: string
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold text-foreground">Data akta</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Data akta")}</h2>
         {canEdit ? (
           <PpatForm
             action={updatePpatDeed.bind(null, d.id)}
@@ -111,11 +113,11 @@ export default async function PpatDetailPage(props: Async<{ params: { id: string
         ) : (
           <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-xs text-muted-foreground">Pihak yang mengalihkan</dt>
+              <dt className="text-xs text-muted-foreground">{tp("Pihak yang mengalihkan")}</dt>
               <dd>{d.partyFrom}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Pihak yang menerima</dt>
+              <dt className="text-xs text-muted-foreground">{tp("Pihak yang menerima")}</dt>
               <dd>{d.partyTo}</dd>
             </div>
           </dl>

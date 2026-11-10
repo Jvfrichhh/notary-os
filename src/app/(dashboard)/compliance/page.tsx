@@ -18,6 +18,7 @@ import {
 } from "@/lib/compliance/monthly";
 import { markReportSent } from "@/app/(dashboard)/compliance/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ const inputCls = "rounded-md border border-border bg-background px-3 py-2 text-s
 
 /** Laporan bulanan wajib (MPD & Daftar Pusat Wasiat) + tenggat hukum setelah akta. */
 export default async function CompliancePage(props: Async<{ searchParams: { month?: string; ok?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canMark = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
@@ -67,25 +69,25 @@ export default async function CompliancePage(props: Async<{ searchParams: { mont
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Laporan Bulanan</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Laporan Bulanan")}</h1>
           <p className="text-sm text-muted-foreground">
-            Laporan wajib dibuat otomatis dari Repertorium, Legalisasi, Waarmerking, Wasiat, dan Buku Akta PPAT. Unduh, tanda tangani, kirim, lalu tandai terkirim.
+            {tp("Laporan wajib dibuat otomatis dari Repertorium, Legalisasi, Waarmerking, Wasiat, dan Buku Akta PPAT. Unduh, tanda tangani, kirim, lalu tandai terkirim.")}
           </p>
         </div>
         <form className="flex flex-wrap items-end gap-2">
           <label>
-            <span className="mb-1 block text-xs text-muted-foreground">Bulan</span>
+            <span className="mb-1 block text-xs text-muted-foreground">{tp("Bulan")}</span>
             <input type="month" name="month" defaultValue={ym} className={inputCls} />
           </label>
           <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">
-            Tampilkan
+            {tp("Tampilkan")}
           </button>
         </form>
       </div>
 
       {searchParams.ok && (
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
-          Laporan ditandai terkirim{searchParams.ok === "wasiat" ? "; akta wasiat bulan itu berstatus Dilaporkan" : ""}.
+          {tp("Laporan ditandai terkirim")}{searchParams.ok === "wasiat" ? tp("; akta wasiat bulan itu berstatus Dilaporkan") : ""}.
         </div>
       )}
 
@@ -99,20 +101,20 @@ export default async function CompliancePage(props: Async<{ searchParams: { mont
                 <div>
                   <h2 className="text-base font-bold text-foreground">{REPORT_LABEL[kind]}</h2>
                   <p className="text-xs text-muted-foreground">
-                    Bulan {monthLabel(ym)} · tenggat {formatDate(due)}
+                    {tp("Bulan")} {monthLabel(ym)} {tp("· tenggat")} {formatDate(due)}
                   </p>
                 </div>
                 {sent ? (
-                  <span className="rounded-full bg-status-on-track/10 px-2.5 py-0.5 text-xs font-medium text-status-on-track">Terkirim</span>
+                  <span className="rounded-full bg-status-on-track/10 px-2.5 py-0.5 text-xs font-medium text-status-on-track">{tp("Terkirim")}</span>
                 ) : (
-                  <StatusBadge tone={classifyDeadline(due, "OPEN")} label={`Belum dikirim`} />
+                  <StatusBadge tone={classifyDeadline(due, "OPEN")} label={tp("Belum dikirim")} />
                 )}
               </div>
               <p className="mb-3 text-sm text-foreground">{counts[kind]}</p>
               {sent && (
                 <p className="mb-3 text-xs text-muted-foreground">
-                  Ditandai terkirim {formatDateTime(sent.at)}
-                  {sent.by ? ` oleh ${sent.by}` : ""}
+                  {tp("Ditandai terkirim")} {formatDateTime(sent.at)}
+                  {sent.by ? tp(" oleh {0}", [sent.by]) : ""}
                   {sent.note ? ` · ${sent.note}` : ""}
                 </p>
               )}
@@ -121,13 +123,13 @@ export default async function CompliancePage(props: Async<{ searchParams: { mont
                   href={`/api/compliance/report?kind=${kind}&month=${ym}`}
                   className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
                 >
-                  Unduh Word
+                  {tp("Unduh Word")}
                 </a>
                 {canMark && !sent && (
                   <form action={markReportSent.bind(null, kind, ym)} className="flex flex-1 flex-wrap items-center gap-2">
-                    <input name="note" maxLength={300} placeholder="Catatan (mis. dikirim via email/kurir)" className={`${inputCls} min-w-0 flex-1`} />
+                    <input name="note" maxLength={300} placeholder={tp("Catatan (mis. dikirim via email/kurir)")} className={`${inputCls} min-w-0 flex-1`} />
                     <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">
-                      Tandai terkirim
+                      {tp("Tandai terkirim")}
                     </button>
                   </form>
                 )}
@@ -138,7 +140,7 @@ export default async function CompliancePage(props: Async<{ searchParams: { mont
       </div>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold text-foreground">Status laporan MPD 6 bulan terakhir</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Status laporan MPD 6 bulan terakhir")}</h2>
         <div className="flex flex-wrap gap-2">
           {history.map(({ m, s }) => (
             <Link
@@ -156,14 +158,13 @@ export default async function CompliancePage(props: Async<{ searchParams: { mont
 
       <Card className="p-0">
         <div className="border-b border-border px-5 py-3">
-          <h2 className="text-base font-bold text-foreground">Tenggat Hukum & Tugas Bertenggat ({tasks.length})</h2>
+          <h2 className="text-base font-bold text-foreground">{tp("Tenggat Hukum & Tugas Bertenggat (")}{tasks.length})</h2>
           <p className="text-xs text-muted-foreground">
-            Termasuk kewajiban setelah akta yang dibuat otomatis saat Sahkan (fidusia 30 hari, pengesahan PT 60 hari, perubahan PT 30 hari).
-            Pengingat dikirim otomatis setiap pagi.
+            {tp("Termasuk kewajiban setelah akta yang dibuat otomatis saat Sahkan (fidusia 30 hari, pengesahan PT 60 hari, perubahan PT 30 hari). Pengingat dikirim otomatis setiap pagi.")}
           </p>
         </div>
         {tasks.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-muted-foreground">Tidak ada tugas bertenggat yang terbuka.</p>
+          <p className="px-5 py-4 text-sm text-muted-foreground">{tp("Tidak ada tugas bertenggat yang terbuka.")}</p>
         ) : (
           <ul className="divide-y divide-border text-sm">
             {tasks.map((t) => (
@@ -173,10 +174,10 @@ export default async function CompliancePage(props: Async<{ searchParams: { mont
                     {t.title}
                   </Link>
                   <p className="text-xs text-muted-foreground">
-                    {t.job.jobNumber} · {t.job.client.fullName} · {t.assignee?.name ?? "belum ditugaskan"}
+                    {t.job.jobNumber} · {t.job.client.fullName} · {t.assignee?.name ?? tp("belum ditugaskan")}
                   </p>
                 </div>
-                <StatusBadge tone={classifyDeadline(t.dueDate, "OPEN")} label={`Tenggat ${formatDate(t.dueDate)}`} />
+                <StatusBadge tone={classifyDeadline(t.dueDate, "OPEN")} label={tp("Tenggat {0}", [formatDate(t.dueDate)])} />
               </li>
             ))}
           </ul>

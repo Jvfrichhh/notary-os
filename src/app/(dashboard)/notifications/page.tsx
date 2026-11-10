@@ -7,6 +7,7 @@ import { formatDateTime } from "@/lib/format";
 import { markNotificationRead, markAllNotificationsRead, openNotification } from "@/app/(dashboard)/notifications/actions";
 import { notificationHref } from "@/lib/notificationLinks";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ interface PageProps {
 }
 
 export default async function NotificationsPage(props: Async<PageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requireUser();
   const filter = searchParams.filter === "unread" ? "unread" : searchParams.filter === "read" ? "read" : "all";
@@ -43,13 +45,13 @@ export default async function NotificationsPage(props: Async<PageProps>) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Notifikasi</h1>
-          <p className="text-sm text-muted-foreground">{unreadCount} belum dibaca</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Notifikasi")}</h1>
+          <p className="text-sm text-muted-foreground">{unreadCount} {tp("belum dibaca")}</p>
         </div>
         {unreadCount > 0 && (
           <form action={markAllNotificationsRead}>
             <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
-              Tandai semua dibaca
+              {tp("Tandai semua dibaca")}
             </button>
           </form>
         )}
@@ -57,20 +59,20 @@ export default async function NotificationsPage(props: Async<PageProps>) {
 
       <div className="flex gap-1 rounded-md bg-muted p-1 text-sm w-fit">
         <Link href="/notifications" className={`rounded px-3 py-1 ${filter === "all" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}>
-          Semua
+          {tp("Semua")}
         </Link>
         <Link href="/notifications?filter=unread" className={`rounded px-3 py-1 ${filter === "unread" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}>
-          Belum Dibaca
+          {tp("Belum Dibaca")}
         </Link>
         <Link href="/notifications?filter=read" className={`rounded px-3 py-1 ${filter === "read" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}>
-          Sudah Dibaca
+          {tp("Sudah Dibaca")}
         </Link>
       </div>
 
       <Card className="!p-0">
         {notifications.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Tidak ada notifikasi." />
+            <EmptyState title={tp("Tidak ada notifikasi.")} />
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -100,7 +102,7 @@ export default async function NotificationsPage(props: Async<PageProps>) {
                   {!n.isRead && (
                     <form action={markNotificationRead.bind(null, n.id)}>
                       <button type="submit" className="shrink-0 text-xs font-medium text-primary hover:underline">
-                        Tandai dibaca
+                        {tp("Tandai dibaca")}
                       </button>
                     </form>
                   )}

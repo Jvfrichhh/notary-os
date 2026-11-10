@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ interface ArchivePageProps {
 }
 
 export default async function ArchivePage(props: Async<ArchivePageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
@@ -90,15 +92,15 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Lemari Arsip</h1>
-          <p className="text-sm text-muted-foreground">Minuta, Salinan, Grosse, dan Kutipan — semua terhubung ke Akta</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Lemari Arsip")}</h1>
+          <p className="text-sm text-muted-foreground">{tp("Minuta, Salinan, Grosse, dan Kutipan — semua terhubung ke Akta")}</p>
         </div>
         {canCreate && (
           <Link
             href="/archive/deed/new"
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
-            + Akta Baru
+            {tp("+ Akta Baru")}
           </Link>
         )}
       </div>
@@ -124,24 +126,24 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
           type="text"
           name="q"
           defaultValue={q}
-          placeholder="Cari nomor akta atau nama klien..."
+          placeholder={tp("Cari nomor akta atau nama klien...")}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-xs"
         />
         <input
           type="number"
           name="year"
           defaultValue={year}
-          placeholder="Tahun akta"
+          placeholder={tp("Tahun akta")}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-32"
         />
         <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-          Filter
+          {tp("Filter")}
         </button>
       </form>
 
       {rows.length === 0 ? (
         <Card>
-          <EmptyState title={`Belum ada ${tab} yang cocok.`} />
+          <EmptyState title={tp("Belum ada {0} yang cocok.", [tab])} />
         </Card>
       ) : (
         <Card className="!p-0">
@@ -149,29 +151,29 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
             <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Nomor Akta</th>
-                  <th className="px-4 py-3 font-medium">Klien</th>
-                  <th className="px-4 py-3 font-medium">Jenis Akta</th>
-                  <th className="px-4 py-3 font-medium">Tanggal</th>
-                  <th className="px-4 py-3 font-medium">File</th>
+                  <th className="px-4 py-3 font-medium">{tp("Nomor Akta")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Klien")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Jenis Akta")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Tanggal")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("File")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {rows.map((row) => (
                   <tr key={row.id} className="hover:bg-muted/50">
-                    <td data-label="Nomor Akta" className="px-4 py-3">
+                    <td data-label={tp("Nomor Akta")} className="px-4 py-3">
                       <Link href={`/archive/${tab}/${row.id}`} className="font-medium text-foreground hover:underline">
                         {row.deed.deedNumber}
                       </Link>
                     </td>
-                    <td data-label="Klien" className="px-4 py-3">
+                    <td data-label={tp("Klien")} className="px-4 py-3">
                       <Link href={`/clients/${row.deed.client.id}`} className="text-foreground hover:underline">
                         {row.deed.client.fullName}
                       </Link>
                     </td>
-                    <td data-label="Jenis Akta" className="px-4 py-3 text-muted-foreground">{row.deed.deedType}</td>
-                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(row.deed.deedDate)}</td>
-                    <td data-label="File" className="px-4 py-3">
+                    <td data-label={tp("Jenis Akta")} className="px-4 py-3 text-muted-foreground">{row.deed.deedType}</td>
+                    <td data-label={tp("Tanggal")} className="px-4 py-3 text-muted-foreground">{formatDate(row.deed.deedDate)}</td>
+                    <td data-label={tp("File")} className="px-4 py-3">
                       {row.document ? (
                         <a
                           href={`/api/documents/${row.document.id}/download`}
@@ -179,10 +181,10 @@ export default async function ArchivePage(props: Async<ArchivePageProps>) {
                           rel="noreferrer"
                           className="text-xs font-medium text-primary hover:underline"
                         >
-                          Buka File
+                          {tp("Buka File")}
                         </a>
                       ) : (
-                        <span className="text-xs text-muted-foreground">Belum ada file</span>
+                        <span className="text-xs text-muted-foreground">{tp("Belum ada file")}</span>
                       )}
                     </td>
                   </tr>

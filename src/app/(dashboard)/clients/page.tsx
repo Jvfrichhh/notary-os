@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ interface ClientsPageProps {
 }
 
 export default async function ClientsPage(props: Async<ClientsPageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_CLIENTS);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.CREATE_CLIENTS);
@@ -45,8 +47,8 @@ export default async function ClientsPage(props: Async<ClientsPageProps>) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Klien</h1>
-          <p className="text-sm text-muted-foreground">Daftar klien kantor notaris</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Klien")}</h1>
+          <p className="text-sm text-muted-foreground">{tp("Daftar klien kantor notaris")}</p>
         </div>
         {canCreate && (
           <Link
@@ -54,7 +56,7 @@ export default async function ClientsPage(props: Async<ClientsPageProps>) {
             className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             <Plus className="h-4 w-4" />
-            Tambah Klien
+            {tp("Tambah Klien")}
           </Link>
         )}
       </div>
@@ -67,7 +69,7 @@ export default async function ClientsPage(props: Async<ClientsPageProps>) {
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Cari nama, no. klien, telepon, email..."
+              placeholder={tp("Cari nama, no. klien, telepon, email...")}
               className="w-full rounded-md border border-border bg-background py-2 pl-8 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {statusFilter === "ARCHIVED" && <input type="hidden" name="status" value="ARCHIVED" />}
@@ -80,7 +82,7 @@ export default async function ClientsPage(props: Async<ClientsPageProps>) {
                 statusFilter === "ACTIVE" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
-              Aktif
+              {tp("Aktif")}
             </Link>
             <Link
               href={`/clients?status=ARCHIVED${q ? `&q=${encodeURIComponent(q)}` : ""}`}
@@ -88,52 +90,52 @@ export default async function ClientsPage(props: Async<ClientsPageProps>) {
                 statusFilter === "ARCHIVED" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
-              Arsip
+              {tp("Arsip")}
             </Link>
           </div>
         </div>
 
         {clients.length === 0 ? (
           <div className="p-6">
-            <EmptyState title={q ? `Tidak ada klien yang cocok dengan "${q}".` : "Belum ada klien."} />
+            <EmptyState title={q ? tp("Tidak ada klien yang cocok dengan \"{0}\".", [q]) : tp("Belum ada klien.")} />
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">No. Klien</th>
-                  <th className="px-4 py-3 font-medium">Nama</th>
-                  <th className="px-4 py-3 font-medium">Tipe</th>
-                  <th className="px-4 py-3 font-medium">Kontak</th>
-                  <th className="px-4 py-3 font-medium">Kota</th>
-                  <th className="px-4 py-3 font-medium">Pekerjaan</th>
+                  <th className="px-4 py-3 font-medium">{tp("No. Klien")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Nama")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Tipe")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Kontak")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Kota")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Pekerjaan")}</th>
                   <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {clients.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/50">
-                    <td data-label="No. Klien" className="px-4 py-3 font-medium text-foreground">{c.clientNumber}</td>
-                    <td data-label="Nama" className="px-4 py-3">
+                    <td data-label={tp("No. Klien")} className="px-4 py-3 font-medium text-foreground">{c.clientNumber}</td>
+                    <td data-label={tp("Nama")} className="px-4 py-3">
                       <Link href={`/clients/${c.id}`} className="font-medium text-foreground hover:underline">
                         {c.fullName}
                       </Link>
                       {c.companyName && <p className="text-xs text-muted-foreground">{c.companyName}</p>}
                     </td>
-                    <td data-label="Tipe" className="px-4 py-3 text-muted-foreground">{c.clientType ?? "-"}</td>
-                    <td data-label="Kontak" className="px-4 py-3 text-muted-foreground">
+                    <td data-label={tp("Tipe")} className="px-4 py-3 text-muted-foreground">{c.clientType ?? "-"}</td>
+                    <td data-label={tp("Kontak")} className="px-4 py-3 text-muted-foreground">
                       <p>{c.phone ?? "-"}</p>
                       <p className="break-all text-xs">{c.email ?? ""}</p>
                     </td>
-                    <td data-label="Kota" className="px-4 py-3 text-muted-foreground">{c.city ?? "-"}</td>
-                    <td data-label="Pekerjaan" className="px-4 py-3 text-muted-foreground">{c._count.jobs}</td>
+                    <td data-label={tp("Kota")} className="px-4 py-3 text-muted-foreground">{c.city ?? "-"}</td>
+                    <td data-label={tp("Pekerjaan")} className="px-4 py-3 text-muted-foreground">{c._count.jobs}</td>
                     <td className="px-4 py-3 text-right">
                       {statusFilter === "ARCHIVED" ? (
                         <StatusBadge tone="archived" />
                       ) : (
                         <Link href={`/clients/${c.id}`} className="text-xs font-medium text-primary hover:underline">
-                          Detail
+                          {tp("Detail")}
                         </Link>
                       )}
                     </td>

@@ -10,6 +10,7 @@ import { classifyDeadline, formatDate, formatStatusLabel } from "@/lib/format";
 import { JOB_STATUSES } from "@/lib/jobStatus";
 import { cn } from "@/lib/utils";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ interface JobsPageProps {
 }
 
 export default async function JobsPage(props: Async<JobsPageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_JOBS);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
@@ -61,8 +63,8 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Daftar Pekerjaan</h1>
-          <p className="text-sm text-muted-foreground">Seluruh pekerjaan aktif kantor</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Daftar Pekerjaan")}</h1>
+          <p className="text-sm text-muted-foreground">{tp("Seluruh pekerjaan aktif kantor")}</p>
         </div>
         {canCreate && (
           <Link
@@ -70,7 +72,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
             className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             <Plus className="h-4 w-4" />
-            Tambah Klien & Pekerjaan
+            {tp("Tambah Klien & Pekerjaan")}
           </Link>
         )}
       </div>
@@ -81,7 +83,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
             type="text"
             name="q"
             defaultValue={q}
-            placeholder="Cari nomor pekerjaan, klien, deskripsi..."
+            placeholder={tp("Cari nomor pekerjaan, klien, deskripsi...")}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {view === "kanban" && <input type="hidden" name="view" value="kanban" />}
@@ -114,13 +116,13 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
             href={`/jobs?view=table${qsSuffix}`}
             className={cn("rounded px-3 py-1", view === "table" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground")}
           >
-            Tabel
+            {tp("Tabel")}
           </Link>
           <Link
             href={`/jobs?view=kanban${qsSuffix}`}
             className={cn("rounded px-3 py-1", view === "kanban" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground")}
           >
-            Kanban
+            {tp("Kanban")}
           </Link>
         </div>
       </div>
@@ -128,7 +130,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
       {jobs.length === 0 ? (
         <Card>
           <EmptyState
-            title={mine || statusFilter ? "Tidak ada pekerjaan untuk filter ini." : "Belum ada pekerjaan."}
+            title={mine || statusFilter ? tp("Tidak ada pekerjaan untuk filter ini.") : tp("Belum ada pekerjaan.")}
             actionLabel={canCreate && !mine && !statusFilter ? "Tambah Klien & Pekerjaan" : undefined}
             actionHref="/clients/new"
           />
@@ -160,7 +162,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
                   ))}
                   {columnJobs.length === 0 && (
                     <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-                      Kosong
+                      {tp("Kosong")}
                     </p>
                   )}
                 </div>
@@ -174,34 +176,34 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
             <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Pekerjaan</th>
-                  <th className="px-4 py-3 font-medium">Klien</th>
-                  <th className="px-4 py-3 font-medium">Layanan</th>
-                  <th className="px-4 py-3 font-medium">Tenggat</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">PIC</th>
+                  <th className="px-4 py-3 font-medium">{tp("Pekerjaan")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Klien")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Layanan")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Tenggat")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Status")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("PIC")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {jobs.map((job) => (
                   <tr key={job.id} className="hover:bg-muted/50">
-                    <td data-label="Pekerjaan" className="px-4 py-3">
+                    <td data-label={tp("Pekerjaan")} className="px-4 py-3">
                       <Link href={`/jobs/${job.id}`} className="font-medium text-foreground hover:underline">
                         {job.jobNumber}
                       </Link>
                       <p className="line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
                     </td>
-                    <td data-label="Klien" className="px-4 py-3">
+                    <td data-label={tp("Klien")} className="px-4 py-3">
                       <Link href={`/clients/${job.client.id}`} className="text-foreground hover:underline">
                         {job.client.fullName}
                       </Link>
                     </td>
-                    <td data-label="Layanan" className="px-4 py-3 text-muted-foreground">{job.serviceType?.name ?? "-"}</td>
-                    <td data-label="Tenggat" className="px-4 py-3">
+                    <td data-label={tp("Layanan")} className="px-4 py-3 text-muted-foreground">{job.serviceType?.name ?? "-"}</td>
+                    <td data-label={tp("Tenggat")} className="px-4 py-3">
                       <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatDate(job.deadline)} />
                     </td>
-                    <td data-label="Status" className="px-4 py-3 text-muted-foreground">{formatStatusLabel(job.status)}</td>
-                    <td data-label="PIC" className="px-4 py-3 text-muted-foreground">{job.pic?.name ?? "-"}</td>
+                    <td data-label={tp("Status")} className="px-4 py-3 text-muted-foreground">{formatStatusLabel(job.status)}</td>
+                    <td data-label={tp("PIC")} className="px-4 py-3 text-muted-foreground">{job.pic?.name ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

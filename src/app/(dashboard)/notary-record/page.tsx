@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Prisma } from "@prisma/client";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ interface PageProps {
 }
 
 export default async function NotaryRecordPage(props: Async<PageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_REPERTORIUM);
   const canCreate = await userHasPermission(user.id, PERMISSIONS.EDIT_REPERTORIUM);
@@ -130,15 +132,15 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Repertorium & Klapper</h1>
-          <p className="text-sm text-muted-foreground">Repertorium dan Klapper — dua tampilan dari data yang sama</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Repertorium & Klapper")}</h1>
+          <p className="text-sm text-muted-foreground">{tp("Repertorium dan Klapper — dua tampilan dari data yang sama")}</p>
         </div>
         {canCreate && (
           <Link
             href="/notary-record/new"
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
-            + Catat Repertorium
+            {tp("+ Catat Repertorium")}
           </Link>
         )}
       </div>
@@ -164,14 +166,14 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
           type="text"
           name="q"
           defaultValue={q}
-          placeholder="Cari nama penghadap, nomor akta, jenis akta..."
+          placeholder={tp("Cari nama penghadap, nomor akta, jenis akta...")}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-xs"
         />
         <input
           type="number"
           name="year"
           defaultValue={year}
-          placeholder="Tahun"
+          placeholder={tp("Tahun")}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-28"
         />
         <input
@@ -181,19 +183,18 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-44"
         />
         <button type="submit" className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-          Filter
+          {tp("Filter")}
         </button>
       </form>
 
       {entries.length === 0 ? (
         <Card>
-          <EmptyState title="Tidak ada data repertorium yang cocok." />
+          <EmptyState title={tp("Tidak ada data repertorium yang cocok.")} />
         </Card>
       ) : tab === "bundel" ? (
         <Card className="!p-0">
           <p className="border-b border-border px-4 py-3 text-xs text-muted-foreground">
-            Minuta dijilid per bulan menjadi buku yang memuat paling banyak {MAKS_PER_JILID} akta; bila lebih, dijilid menjadi beberapa buku. Tandai
-            setelah bundel bulan itu selesai dijilid dan diberi sampul.
+            {tp("Minuta dijilid per bulan menjadi buku yang memuat paling banyak")} {MAKS_PER_JILID} {tp("akta; bila lebih, dijilid menjadi beberapa buku. Tandai setelah bundel bulan itu selesai dijilid dan diberi sampul.")}
           </p>
           <div className="divide-y divide-border">
             {bundles.map((b) => (
@@ -201,25 +202,25 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
                 <div className="min-w-0">
                   <p className="font-medium text-foreground">{b.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    {b.count} akta · nomor urut {b.first}–{b.last} · {b.jilid} jilid
-                    {b.jilid > 1 ? ` (${MAKS_PER_JILID} akta per jilid)` : ""}
+                    {b.count} {tp("akta · nomor urut")} {b.first}–{b.last} · {b.jilid} {tp("jilid")}
+                    {b.jilid > 1 ? tp(" ({0} akta per jilid)", [MAKS_PER_JILID]) : ""}
                   </p>
                 </div>
                 {b.bundledAt ? (
                   <span className="text-xs text-status-on-track">
-                    Sudah dijilid ({formatDate(b.bundledAt)}){b.note ? ` · ${b.note}` : ""}
+                    {tp("Sudah dijilid (")}{formatDate(b.bundledAt)}){b.note ? ` · ${b.note}` : ""}
                   </span>
                 ) : b.ym >= currentYm ? (
-                  <span className="text-xs text-muted-foreground">Bulan berjalan</span>
+                  <span className="text-xs text-muted-foreground">{tp("Bulan berjalan")}</span>
                 ) : canCreate ? (
                   <form action={markMinutaBundled.bind(null, b.ym)} className="flex flex-wrap items-center gap-2">
-                    <input name="note" maxLength={200} placeholder="Catatan (opsional)" className="w-40 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground" />
+                    <input name="note" maxLength={200} placeholder={tp("Catatan (opsional)")} className="w-40 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground" />
                     <button type="submit" className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted">
-                      Tandai sudah dijilid
+                      {tp("Tandai sudah dijilid")}
                     </button>
                   </form>
                 ) : (
-                  <span className="text-xs text-status-due-soon">Belum dijilid</span>
+                  <span className="text-xs text-status-due-soon">{tp("Belum dijilid")}</span>
                 )}
               </div>
             ))}
@@ -231,25 +232,25 @@ export default async function NotaryRecordPage(props: Async<PageProps>) {
             <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">No. Urut</th>
-                  <th className="px-4 py-3 font-medium">Nomor Akta</th>
-                  <th className="px-4 py-3 font-medium">Nama Penghadap</th>
-                  <th className="px-4 py-3 font-medium">Jenis Akta</th>
-                  <th className="px-4 py-3 font-medium">Tanggal</th>
+                  <th className="px-4 py-3 font-medium">{tp("No. Urut")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Nomor Akta")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Nama Penghadap")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Jenis Akta")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Tanggal")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {entries.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/50">
-                    <td data-label="No. Urut" className="px-4 py-3">
+                    <td data-label={tp("No. Urut")} className="px-4 py-3">
                       <Link href={`/notary-record/${r.id}`} className="font-medium text-foreground hover:underline">
                         {r.year}/{String(r.sequenceNumber).padStart(4, "0")}
                       </Link>
                     </td>
-                    <td data-label="Nomor Akta" className="px-4 py-3 text-muted-foreground">{r.deed.deedNumber}</td>
-                    <td data-label="Nama Penghadap" className="px-4 py-3 text-foreground">{r.appearerName}</td>
-                    <td data-label="Jenis Akta" className="px-4 py-3 text-muted-foreground">{r.deedType}</td>
-                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(r.deedDate)}</td>
+                    <td data-label={tp("Nomor Akta")} className="px-4 py-3 text-muted-foreground">{r.deed.deedNumber}</td>
+                    <td data-label={tp("Nama Penghadap")} className="px-4 py-3 text-foreground">{r.appearerName}</td>
+                    <td data-label={tp("Jenis Akta")} className="px-4 py-3 text-muted-foreground">{r.deedType}</td>
+                    <td data-label={tp("Tanggal")} className="px-4 py-3 text-muted-foreground">{formatDate(r.deedDate)}</td>
                   </tr>
                 ))}
               </tbody>

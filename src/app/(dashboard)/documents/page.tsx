@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate, formatDateTime, formatFileSize, formatStatusLabel } from "@/lib/format";
 import type { Prisma } from "@prisma/client";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ interface DocumentsPageProps {
  *  - "Semua file": daftar file seperti sebelumnya (cari nama file/deskripsi).
  */
 export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_DOCUMENTS);
   const canUpload = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
@@ -66,8 +68,8 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Document Vault</h1>
-        <p className="text-sm text-muted-foreground">Dokumen tersusun dalam folder per klien</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Document Vault")}</h1>
+        <p className="text-sm text-muted-foreground">{tp("Dokumen tersusun dalam folder per klien")}</p>
       </div>
       {canUpload && (
         <Link
@@ -75,7 +77,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
           className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
         >
           <Plus className="h-4 w-4" />
-          Upload Dokumen
+          {tp("Upload Dokumen")}
         </Link>
       )}
     </div>
@@ -87,13 +89,13 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
         href={href({ status: undefined, page: undefined })}
         className={`rounded px-3 py-1 ${statusFilter === "ACTIVE" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
       >
-        Aktif
+        {tp("Aktif")}
       </Link>
       <Link
         href={href({ status: "ARCHIVED", page: undefined })}
         className={`rounded px-3 py-1 ${statusFilter === "ARCHIVED" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
       >
-        Arsip
+        {tp("Arsip")}
       </Link>
     </div>
   );
@@ -105,14 +107,14 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
         className={`flex items-center gap-1.5 rounded px-3 py-1 ${view !== "files" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
       >
         <LayoutGrid className="h-3.5 w-3.5" />
-        Folder klien
+        {tp("Folder klien")}
       </Link>
       <Link
         href={href({ view: "files", clientId: undefined, q: undefined, page: undefined })}
         className={`flex items-center gap-1.5 rounded px-3 py-1 ${view === "files" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
       >
         <List className="h-3.5 w-3.5" />
-        Semua file
+        {tp("Semua file")}
       </Link>
     </div>
   );
@@ -163,12 +165,12 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                 name="q"
                 defaultValue={q}
                 autoFocus
-                placeholder="Ketik nama atau nomor klien..."
+                placeholder={tp("Ketik nama atau nomor klien...")}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-sm"
               />
               {statusFilter === "ARCHIVED" && <input type="hidden" name="status" value="ARCHIVED" />}
               <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                Cari
+                {tp("Cari")}
               </button>
             </form>
             <div className="flex flex-wrap gap-2">
@@ -179,7 +181,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
 
           {shown.length === 0 && !noClient ? (
             <div className="p-6">
-              <EmptyState title={q ? `Tidak ada folder klien yang cocok dengan "${q}".` : "Belum ada dokumen."} />
+              <EmptyState title={q ? tp("Tidak ada folder klien yang cocok dengan \"{0}\".", [q]) : tp("Belum ada dokumen.")} />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -197,7 +199,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                       {f.companyName ? ` · ${f.companyName}` : ""}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {f.count} dokumen{f.last ? ` · ${formatDate(f.last)}` : ""}
+                      {f.count} {tp("dokumen")}{f.last ? ` · ${formatDate(f.last)}` : ""}
                     </p>
                   </div>
                 </Link>
@@ -209,8 +211,8 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                 >
                   <Folder className="mt-0.5 h-8 w-8 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
-                    <p className="font-medium text-foreground">Tanpa klien</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{noClient.count} dokumen</p>
+                    <p className="font-medium text-foreground">{tp("Tanpa klien")}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{noClient.count} {tp("dokumen")}</p>
                   </div>
                 </Link>
               )}
@@ -218,7 +220,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
           )}
           {folders.length > FOLDER_LIMIT && (
             <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
-              Menampilkan {FOLDER_LIMIT} dari {folders.length} folder. Ketik nama klien untuk mempersempit.
+              {tp("Menampilkan")} {FOLDER_LIMIT} {tp("dari")} {folders.length} {tp("folder. Ketik nama klien untuk mempersempit.")}
             </p>
           )}
         </Card>
@@ -238,7 +240,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
       return (
         <div className="space-y-6">
           {header}
-          <EmptyState title="Folder klien tidak ditemukan." />
+          <EmptyState title={tp("Folder klien tidak ditemukan.")} />
         </div>
       );
     }
@@ -288,16 +290,16 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
           <div className="flex flex-col gap-3 border-b border-border p-4">
             <nav className="flex flex-wrap items-center gap-1 text-sm">
               <Link href={href({ clientId: undefined, q: undefined, category: undefined, page: undefined })} className="text-muted-foreground hover:text-foreground">
-                Semua folder
+                {tp("Semua folder")}
               </Link>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
               <span className="flex min-w-0 items-center gap-1.5 break-words font-medium text-foreground">
                 <FolderOpen className="h-4 w-4 shrink-0 text-amber-500" />
-                {client ? `${client.fullName} (${client.clientNumber})` : "Tanpa klien"}
+                {client ? `${client.fullName} (${client.clientNumber})` : tp("Tanpa klien")}
               </span>
               {client && (
                 <Link href={`/clients/${client.id}`} className="ml-2 text-xs text-primary hover:underline">
-                  Buka halaman klien
+                  {tp("Buka halaman klien")}
                 </Link>
               )}
             </nav>
@@ -308,7 +310,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                   type="text"
                   name="q"
                   defaultValue={q}
-                  placeholder="Cari file di folder ini..."
+                  placeholder={tp("Cari file di folder ini...")}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-xs"
                 />
                 <select
@@ -316,7 +318,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                   defaultValue={category ?? ""}
                   className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
-                  <option value="">Semua kategori</option>
+                  <option value="">{tp("Semua kategori")}</option>
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>
                       {formatStatusLabel(c)}
@@ -325,7 +327,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                 </select>
                 {statusFilter === "ARCHIVED" && <input type="hidden" name="status" value="ARCHIVED" />}
                 <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                  Cari
+                  {tp("Cari")}
                 </button>
               </form>
               {statusTabs}
@@ -334,7 +336,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
 
           {docs.length === 0 ? (
             <div className="p-6">
-              <EmptyState title={q || category ? "Tidak ada dokumen yang cocok di folder ini." : "Folder ini masih kosong."} />
+              <EmptyState title={q || category ? tp("Tidak ada dokumen yang cocok di folder ini.") : tp("Folder ini masih kosong.")} />
             </div>
           ) : (
             <div className="divide-y divide-border">
@@ -347,10 +349,10 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                       {g.sub && <span className="hidden truncate text-xs text-muted-foreground md:inline">— {g.sub}</span>}
                     </div>
                     <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-                      <span>{g.docs.length} dokumen</span>
+                      <span>{g.docs.length} {tp("dokumen")}</span>
                       {g.jobId && (
                         <Link href={`/jobs/${g.jobId}`} className="text-primary hover:underline">
-                          Buka pekerjaan
+                          {tp("Buka pekerjaan")}
                         </Link>
                       )}
                     </div>
@@ -410,7 +412,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Cari nama file, deskripsi, atau klien..."
+              placeholder={tp("Cari nama file, deskripsi, atau klien...")}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:max-w-xs"
             />
             <select
@@ -418,7 +420,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
               defaultValue={category ?? ""}
               className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
-              <option value="">Semua kategori</option>
+              <option value="">{tp("Semua kategori")}</option>
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
                   {formatStatusLabel(c)}
@@ -427,7 +429,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
             </select>
             {statusFilter === "ARCHIVED" && <input type="hidden" name="status" value="ARCHIVED" />}
             <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
-              Cari
+              {tp("Cari")}
             </button>
           </form>
           <div className="flex flex-wrap gap-2">
@@ -438,7 +440,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
 
         {documents.length === 0 ? (
           <div className="p-6">
-            <EmptyState title={q || category ? "Tidak ada dokumen yang cocok dengan filter." : "Belum ada dokumen."} />
+            <EmptyState title={q || category ? tp("Tidak ada dokumen yang cocok dengan filter.") : tp("Belum ada dokumen.")} />
           </div>
         ) : (
           <DocTable docs={documents} showClient />
@@ -447,17 +449,17 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
         {totalPages > 1 && (
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3 text-sm text-muted-foreground">
             <span>
-              Halaman {page} dari {totalPages} ({total} dokumen)
+              {tp("Halaman")} {page} {tp("dari")} {totalPages} ({total} {tp("dokumen)")}
             </span>
             <div className="flex gap-2">
               {page > 1 && (
                 <Link href={href({ page: String(page - 1) })} className="rounded-md border border-border px-3 py-1.5 hover:bg-muted">
-                  Sebelumnya
+                  {tp("Sebelumnya")}
                 </Link>
               )}
               {page < totalPages && (
                 <Link href={href({ page: String(page + 1) })} className="rounded-md border border-border px-3 py-1.5 hover:bg-muted">
-                  Berikutnya
+                  {tp("Berikutnya")}
                 </Link>
               )}
             </div>

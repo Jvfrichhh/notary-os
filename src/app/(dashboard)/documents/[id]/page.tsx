@@ -14,6 +14,7 @@ import { toAnalysisView } from "@/lib/ai/analysisView";
 import { canAnalyzeFileType, latestAnalysisFor } from "@/lib/ai/documentAnalysis";
 import { isAiEnabled } from "@/lib/ai/client";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -25,6 +26,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 }
 
 export default async function DocumentDetailPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_DOCUMENTS);
   const canUpload = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
@@ -75,7 +77,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
           <h1 className="break-all text-xl font-semibold text-foreground">{document.fileName}</h1>
           {document.status === "ARCHIVED" && (
             <span className="mt-1 inline-block rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">
-              Diarsipkan
+              {tp("Diarsipkan")}
             </span>
           )}
         </div>
@@ -87,7 +89,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
             className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             <Download className="h-4 w-4" />
-            Buka / Unduh
+            {tp("Buka / Unduh")}
           </a>
           {canDelete && document.status === "ACTIVE" && (
             <form action={archiveDocument.bind(null, document.id)}>
@@ -96,7 +98,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
                 className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10"
               >
                 <Archive className="h-4 w-4" />
-                Arsipkan
+                {tp("Arsipkan")}
               </button>
             </form>
           )}
@@ -107,7 +109,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
                 className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
                 <RotateCcw className="h-4 w-4" />
-                Aktifkan Kembali
+                {tp("Aktifkan Kembali")}
               </button>
             </form>
           )}
@@ -136,12 +138,12 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
       )}
 
       <Card>
-        <h2 className="mb-4 text-base font-bold text-foreground">Metadata</h2>
+        <h2 className="mb-4 text-base font-bold text-foreground">{tp("Metadata")}</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <InfoRow label="Tipe File" value={document.fileType} />
-          <InfoRow label="Ukuran" value={formatFileSize(document.fileSize)} />
+          <InfoRow label={tp("Tipe File")} value={document.fileType} />
+          <InfoRow label={tp("Ukuran")} value={formatFileSize(document.fileSize)} />
           <InfoRow
-            label="Diunggah Oleh"
+            label={tp("Diunggah Oleh")}
             value={
               document.uploader?.name ??
               (document.uploadedByClientAccount
@@ -149,9 +151,9 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
                 : undefined)
             }
           />
-          <InfoRow label="Tanggal Unggah" value={formatDateTime(document.uploadedAt)} />
+          <InfoRow label={tp("Tanggal Unggah")} value={formatDateTime(document.uploadedAt)} />
           <div>
-            <p className="text-xs text-muted-foreground">Klien</p>
+            <p className="text-xs text-muted-foreground">{tp("Klien")}</p>
             {document.client ? (
               <Link href={`/clients/${document.client.id}`} className="text-sm text-primary hover:underline">
                 {document.client.fullName}
@@ -161,7 +163,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
             )}
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Pekerjaan</p>
+            <p className="text-xs text-muted-foreground">{tp("Pekerjaan")}</p>
             {document.job ? (
               <Link href={`/jobs/${document.job.id}`} className="text-sm text-primary hover:underline">
                 {document.job.jobNumber}
@@ -173,13 +175,13 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
         </div>
         {document.description && (
           <div className="mt-4">
-            <InfoRow label="Deskripsi" value={document.description} />
+            <InfoRow label={tp("Deskripsi")} value={document.description} />
           </div>
         )}
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold text-foreground">Riwayat Versi</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Riwayat Versi")}</h2>
         <div className="divide-y divide-border">
           {versions.map((v) => (
             <div key={v.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
@@ -188,7 +190,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
                   v{v.versionNumber}
                   {v.isCurrent && (
                     <span className="ml-2 rounded-full bg-status-on-track/10 px-2 py-0.5 text-[10px] font-medium text-status-on-track">
-                      Current
+                      {tp("Current")}
                     </span>
                   )}
                 </p>
@@ -203,7 +205,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
                 rel="noopener noreferrer"
                 className="shrink-0 py-2 text-xs font-medium text-primary hover:underline"
               >
-                Buka
+                {tp("Buka")}
               </a>
             </div>
           ))}

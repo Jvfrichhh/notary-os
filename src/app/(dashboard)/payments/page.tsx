@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate, formatCurrency, formatStatusLabel } from "@/lib/format";
 import { archivePayment, restorePayment } from "@/app/(dashboard)/payments/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ interface PageProps {
 }
 
 export default async function PaymentsPage(props: Async<PageProps>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_FINANCE);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
@@ -51,15 +53,15 @@ export default async function PaymentsPage(props: Async<PageProps>) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Pembayaran</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Pembayaran")}</h1>
           <p className="text-sm text-muted-foreground">
-            Tagihan per pekerjaan; setiap uang masuk dibuatkan kuitansi bernomor. Piutang berjalan:{" "}
+            {tp("Tagihan per pekerjaan; setiap uang masuk dibuatkan kuitansi bernomor. Piutang berjalan:")}{" "}
             <span className="font-medium text-foreground">{formatCurrency(piutang._sum.remainingAmount ?? 0)}</span>
           </p>
         </div>
         {canEdit && (
           <Link href="/payments/new" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-            + Buat Tagihan
+            {tp("+ Buat Tagihan")}
           </Link>
         )}
       </div>
@@ -71,15 +73,15 @@ export default async function PaymentsPage(props: Async<PageProps>) {
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="Cari klien, nomor pekerjaan, metode..."
+              placeholder={tp("Cari klien, nomor pekerjaan, metode...")}
               className="min-w-[200px] flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <select name="status" defaultValue={searchParams.status ?? ""} className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground">
-              <option value="">Semua Status</option>
-              <option value="UNPAID">Belum Bayar</option>
-              <option value="PARTIALLY_PAID">Bayar Sebagian</option>
-              <option value="PAID">Lunas</option>
-              <option value="REFUNDED">Refund</option>
+              <option value="">{tp("Semua Status")}</option>
+              <option value="UNPAID">{tp("Belum Bayar")}</option>
+              <option value="PARTIALLY_PAID">{tp("Bayar Sebagian")}</option>
+              <option value="PAID">{tp("Lunas")}</option>
+              <option value="REFUNDED">{tp("Refund")}</option>
             </select>
             {recordStatus === "ARCHIVED" && <input type="hidden" name="recordStatus" value="ARCHIVED" />}
           </form>
@@ -89,51 +91,51 @@ export default async function PaymentsPage(props: Async<PageProps>) {
               href={`/payments${q ? `?q=${encodeURIComponent(q)}` : ""}`}
               className={`rounded px-3 py-1 ${recordStatus === "ACTIVE" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
             >
-              Aktif
+              {tp("Aktif")}
             </Link>
             <Link
               href={`/payments?recordStatus=ARCHIVED${q ? `&q=${encodeURIComponent(q)}` : ""}`}
               className={`rounded px-3 py-1 ${recordStatus === "ARCHIVED" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
             >
-              Arsip
+              {tp("Arsip")}
             </Link>
           </div>
         </div>
 
         {payments.length === 0 ? (
           <div className="p-6">
-            <EmptyState title="Belum ada tagihan." />
+            <EmptyState title={tp("Belum ada tagihan.")} />
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">No. Tagihan</th>
-                  <th className="px-4 py-3 font-medium">Klien</th>
-                  <th className="px-4 py-3 font-medium">Pekerjaan</th>
-                  <th className="px-4 py-3 font-medium">Total</th>
-                  <th className="px-4 py-3 font-medium">Dibayar</th>
-                  <th className="px-4 py-3 font-medium">Sisa</th>
-                  <th className="px-4 py-3 font-medium">Tanggal</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">{tp("No. Tagihan")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Klien")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Pekerjaan")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Total")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Dibayar")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Sisa")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Tanggal")}</th>
+                  <th className="px-4 py-3 font-medium">{tp("Status")}</th>
                   <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {payments.map((p) => (
                   <tr key={p.id} className="hover:bg-muted/50">
-                    <td data-label="No. Tagihan" className="px-4 py-3">
+                    <td data-label={tp("No. Tagihan")} className="px-4 py-3">
                       <Link href={`/payments/${p.id}`} className="font-medium text-primary hover:underline">
-                        {p.invoiceNumber ?? "Lihat"}
+                        {p.invoiceNumber ?? tp("Lihat")}
                       </Link>
                     </td>
-                    <td data-label="Klien" className="px-4 py-3">
+                    <td data-label={tp("Klien")} className="px-4 py-3">
                       <Link href={`/clients/${p.client.id}`} className="font-medium text-foreground hover:underline">
                         {p.client.fullName}
                       </Link>
                     </td>
-                    <td data-label="Pekerjaan" className="px-4 py-3 text-muted-foreground">
+                    <td data-label={tp("Pekerjaan")} className="px-4 py-3 text-muted-foreground">
                       {p.job ? (
                         <Link href={`/jobs/${p.job.id}`} className="hover:underline">
                           {p.job.jobNumber}
@@ -142,11 +144,11 @@ export default async function PaymentsPage(props: Async<PageProps>) {
                         "-"
                       )}
                     </td>
-                    <td data-label="Total" className="px-4 py-3 text-foreground">{formatCurrency(p.totalAmount)}</td>
-                    <td data-label="Dibayar" className="px-4 py-3 text-foreground">{formatCurrency(p.paidAmount)}</td>
-                    <td data-label="Sisa" className="px-4 py-3 text-foreground">{formatCurrency(p.remainingAmount)}</td>
-                    <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDate(p.paymentDate)}</td>
-                    <td data-label="Status" className="px-4 py-3">
+                    <td data-label={tp("Total")} className="px-4 py-3 text-foreground">{formatCurrency(p.totalAmount)}</td>
+                    <td data-label={tp("Dibayar")} className="px-4 py-3 text-foreground">{formatCurrency(p.paidAmount)}</td>
+                    <td data-label={tp("Sisa")} className="px-4 py-3 text-foreground">{formatCurrency(p.remainingAmount)}</td>
+                    <td data-label={tp("Tanggal")} className="px-4 py-3 text-muted-foreground">{formatDate(p.paymentDate)}</td>
+                    <td data-label={tp("Status")} className="px-4 py-3">
                       <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
                         {formatStatusLabel(p.status)}
                       </span>
@@ -155,18 +157,18 @@ export default async function PaymentsPage(props: Async<PageProps>) {
                       {canEdit && (
                         <div className="flex items-center justify-end gap-3 text-xs">
                           <Link href={`/payments/${p.id}`} className="font-medium text-primary hover:underline">
-                            Catat bayar / kuitansi
+                            {tp("Catat bayar / kuitansi")}
                           </Link>
                           {recordStatus === "ACTIVE" ? (
                             <form action={archivePayment.bind(null, p.id)}>
                               <button type="submit" className="font-medium text-status-overdue hover:underline">
-                                Arsipkan
+                                {tp("Arsipkan")}
                               </button>
                             </form>
                           ) : (
                             <form action={restorePayment.bind(null, p.id)}>
                               <button type="submit" className="font-medium text-foreground hover:underline">
-                                Pulihkan
+                                {tp("Pulihkan")}
                               </button>
                             </form>
                           )}

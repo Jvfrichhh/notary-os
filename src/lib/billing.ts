@@ -311,6 +311,40 @@ export function breakdownFromForm(formData: FormData) {
   return { total, data };
 }
 
+/** Bukti Pengembalian Dana (Word) untuk ditandatangani klien saat menerima uangnya kembali. */
+export function buildRefundDocx(d: BillingDocData, r: { refundNumber: string; amount: number; refundedAt: Date; method: string | null; reason: string }): Buffer {
+  const blocks: DocBlock[] = [
+    ...kop(),
+    { t: "p", text: "BUKTI PENGEMBALIAN DANA", bold: true, align: "center", size: 14, spaceAfter: 0 },
+    { t: "p", text: `Nomor: ${r.refundNumber}`, align: "center", spaceAfter: 240 },
+    {
+      t: "table",
+      header: ["", ""],
+      noHeader: true,
+      widths: [3, 7],
+      rows: [
+        ["Dikembalikan kepada", `${d.client.fullName} (${d.client.clientNumber})`],
+        ["Jumlah", `${rp(r.amount)} (${words(r.amount)})`],
+        ["Tanggal", tglPanjang(r.refundedAt)],
+        ["Cara pengembalian", r.method ?? "-"],
+        ["Atas tagihan", `No. ${d.invoiceNumber ?? "-"}${d.job ? `, pekerjaan ${d.job.jobNumber}` : ""}`],
+        ["Alasan", r.reason]
+      ]
+    },
+    { t: "p", text: `Setelah pengembalian ini: total tagihan ${rp(d.totalAmount)}, sudah dibayar ${rp(d.paidAmount)}, sisa ${rp(d.remainingAmount)}.`, spaceAfter: 360 },
+    { t: "p", text: `${kota}, ${tglPanjang(getJakartaToday())}`, align: "right", spaceAfter: 120 },
+    {
+      t: "table",
+      header: ["", ""],
+      noHeader: true,
+      borderless: true,
+      widths: [5, 5],
+      rows: [["Yang menerima pengembalian,", "Yang mengembalikan,"], ["\n\n\n", "\n\n\n"], [`(${d.client.fullName})`, NOTARIS.namaSingkat]]
+    }
+  ];
+  return buildSimpleDocx(blocks, { title: `Bukti Pengembalian Dana ${r.refundNumber}` });
+}
+
 /** Data lengkap untuk dokumen tagihan/kuitansi. */
 export async function loadBillingDoc(paymentId: string): Promise<(BillingDocData & { clientId: string }) | null> {
   const p = await prisma.payment.findUnique({

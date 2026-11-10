@@ -167,5 +167,62 @@ export const id = {
       REVIEW: "Menunggu persetujuan",
       READY_FOR_SIGNING: "Siap tanda tangan"
     }
+  },
+  records: {
+    common: {
+      number: "Nomor",
+      date: "Tanggal",
+      notes: "Catatan",
+      amount: "Nilai",
+      add: "Tambah",
+      delete: "Hapus",
+      immutable: "Catatan tidak bisa dihapus dan nomornya tidak bisa diubah. Periksa sebelum menyimpan.",
+      numberTaken: "Nomor itu sudah dipakai.",
+      noMatch: "Tidak ada catatan yang cocok."
+    },
+    protes: {
+      title: "Daftar Protes",
+      subtitle: "Buku daftar protes terhadap tidak dibayar atau tidak diterimanya surat berharga (wesel, cek, surat sanggup). Ikut dilaporkan dalam Laporan Bulanan ke MPD; bulan tanpa protes dilaporkan NIHIL.",
+      search: "Cari nomor, pemohon, pihak yang diprotes...",
+      empty: "Belum ada protes yang dicatat.",
+      instrument: "Surat Berharga",
+      reason: "Alasan",
+      requester: "Pemohon",
+      against: "Yang Diprotes",
+      formTitle: "Catat Protes",
+      saved: "Protes dicatat.",
+      invalid: "Lengkapi nomor, tanggal, pemohon, pihak yang diprotes, jenis surat berharga, dan alasan.",
+      fNumber: "Nomor protes",
+      fRequester: "Pemohon (pemegang surat berharga)",
+      fAgainst: "Pihak yang diprotes (tertarik/penerbit)",
+      fInstrument: "Jenis surat berharga",
+      fReason: "Alasan protes",
+      fInstrumentNo: "Nomor surat berharga",
+      fAmount: "Nilai (Rp)",
+      submit: "Catat protes"
+    },
+    legalisir: {
+      title: "Legalisir Fotokopi",
+      subtitle: "Daftar pengesahan kecocokan fotokopi dengan surat aslinya. Berbeda dari Legalisasi (pengesahan tanda tangan) dan Waarmerking (pembukuan surat di bawah tangan).",
+      search: "Cari nomor, pemohon, nama dokumen...",
+      empty: "Belum ada legalisir fotokopi yang dicatat.",
+      document: "Dokumen",
+      requester: "Pemohon",
+      copies: "Rangkap",
+      formTitle: "Catat Legalisir Fotokopi",
+      saved: "Legalisir fotokopi dicatat.",
+      invalid: "Lengkapi nomor, tanggal, pemohon, dan nama dokumen.",
+      fDocument: "Dokumen yang difotokopi",
+      fCopies: "Jumlah rangkap",
+      submit: "Catat"
+    },
+    holidays: {
+      title: "Hari Libur",
+      subtitle: "Libur nasional dan cuti bersama. Tanggal di sini tidak dihitung sebagai hari kerja pada tenggat 7 hari kerja penyampaian akta PPAT dan pendaftaran Hak Tanggungan. Isi sesuai keputusan bersama pemerintah tiap tahun.",
+      name: "Keterangan",
+      namePlaceholder: "mis. Hari Raya Idul Fitri",
+      empty: "Belum ada hari libur yang diisi untuk tahun ini. Tenggat dihitung Senin–Jumat saja.",
+      confirmDelete: "Hapus tanggal ini dari daftar hari libur?"
+    }
   }
 } as const;

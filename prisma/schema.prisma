@@ -781,6 +781,25 @@ model PaymentRefund {
   @@map("payment_refunds")
 }
 
+/// Catatan pelaporan ke PPATK (goAML) atas pengguna jasa/transaksi: LTKM dsb.
+/// Pelaporannya sendiri dilakukan di aplikasi goAML; di sini hanya dicatat
+/// bahwa sudah dilaporkan (tanggal & nomor referensi). Tidak pernah dihapus.
+model PpatkReport {
+  id          String   @id @default(cuid())
+  clientId    String
+  jobId       String?
+  /// LTKM (transaksi keuangan mencurigakan) / LAINNYA.
+  kind        String
+  reportedAt  DateTime
+  reference   String?
+  notes       String
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+  @@map("ppatk_reports")
+}
+
 model Legalisasi {
   id          String              @id @default(cuid())
   number      String              @unique

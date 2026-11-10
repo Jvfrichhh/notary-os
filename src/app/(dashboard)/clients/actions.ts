@@ -439,3 +439,26 @@ export async function recordDataConsent(clientId: string) {
   await writeAuditLog({ userId: user.id, action: "client_data_consent", entityType: "Client", entityId: clientId });
   revalidatePath(`/clients/${clientId}`);
 }
+
+/**
+ * Catat bahwa transaksi/pengguna jasa ini sudah dilaporkan ke PPATK lewat
+ * goAML. Hanya Notaris (izin edit klien + hapus klien tidak cukup): dipagari
+ * izin audit karena sifatnya rahasia (anti tipping-off).
+ */
+export async function recordPpatkReport(clientId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.VIEW_AUDIT_LOG);
+  const kind = String(formData.get("kind") ?? "") === "LAINNYA" ? "LAINNYA" : "LTKM";
+  const date = String(formData.get("reportedAt") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim().slice(0, 1000);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || notes.length < 5) redirect(`/clients/${clientId}?ppatk=invalid#ppatk`);
+  const client = await prisma.client.findUnique({ where: { id: clientId }, select: { id: true } });
+  if (!client) redirect("/clients");
+  const row = await prisma.ppatkReport.create({
+    data: { clientId, kind, reportedAt: new Date(`${date}T00:00:00.000Z`), reference: String(formData.get("reference") ?? "").trim().slice(0, 120) || null, notes, createdById: user.id }
+  });
+  // Isi catatan tidak ditulis ke log audit umum; cukup jejak bahwa pelaporan dicatat.
+  await writeAuditLog({ userId: user.id, action: "ppatk_report_recorded", entityType: "Client", entityId: clientId, newValue: { reportId: row.id, kind } });
+  revalidatePath(`/clients/${clientId}`);
+  redirect(`/clients/${clientId}?ppatk=ok#ppatk`);
+}

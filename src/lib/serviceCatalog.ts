@@ -351,6 +351,18 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     tasks: BASE_TASKS
   },
   {
+    name: "Akta Berita Acara Pembetulan",
+    category: "Umum",
+    description: "Pembetulan kesalahan tulis/ketik pada minuta akta yang sudah ditandatangani (Pasal 51 UUJN).",
+    deedKey: "ba_pembetulan",
+    checklist: [
+      { label: "KTP Para Penghadap Akta Asal" },
+      { label: "Salinan Akta yang Dibetulkan" },
+      { label: "Dokumen Pendukung Pembetulan (KTP/KK/sertipikat yang benar)", isRequired: false }
+    ],
+    tasks: ["Siapkan draft berita acara", "Review draft oleh Notaris", "Jadwalkan penandatanganan", "Beri catatan pada minuta akta asli", "Sampaikan salinan berita acara kepada para pihak"]
+  },
+  {
     name: "Akta Kuasa",
     category: "Kuasa",
     description: "Pemberian kuasa umum/khusus.",

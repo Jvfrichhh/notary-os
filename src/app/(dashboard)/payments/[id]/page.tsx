@@ -213,13 +213,18 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
           {refunds.length > 0 && (
             <ul className="divide-y divide-border text-sm">
               {refunds.map((r) => (
-                <li key={r.id} className="px-5 py-3">
-                  <p className="font-medium text-foreground">
-                    {r.refundNumber} · {formatCurrency(r.amount)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(r.refundedAt)} · {r.method ?? "-"} · {r.reason}
-                  </p>
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground">
+                      {r.refundNumber} · {formatCurrency(r.amount)}
+                    </p>
+                    <p className="break-words text-xs text-muted-foreground">
+                      {formatDate(r.refundedAt)} · {r.method ?? "-"} · {r.reason}
+                    </p>
+                  </div>
+                  <a href={`/api/billing/pengembalian/${r.id}`} className="text-xs font-medium text-primary hover:underline">
+                    Unduh bukti pengembalian
+                  </a>
                 </li>
               ))}
             </ul>

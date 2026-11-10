@@ -160,5 +160,62 @@ export const en: Dict = {
       REVIEW: "Awaiting approval",
       READY_FOR_SIGNING: "Ready for signing"
     }
+  },
+  records: {
+    common: {
+      number: "Number",
+      date: "Date",
+      notes: "Notes",
+      amount: "Amount",
+      add: "Add",
+      delete: "Remove",
+      immutable: "Entries cannot be deleted and their numbers cannot be changed. Check before saving.",
+      numberTaken: "That number is already in use.",
+      noMatch: "No matching entries."
+    },
+    protes: {
+      title: "Protest Register",
+      subtitle: "Register of protests for non-payment or non-acceptance of negotiable instruments (bills of exchange, cheques, promissory notes). Included in the monthly report to the supervisory board (MPD); months without protests are reported as NIL.",
+      search: "Search number, applicant, protested party...",
+      empty: "No protests recorded yet.",
+      instrument: "Instrument",
+      reason: "Reason",
+      requester: "Applicant",
+      against: "Protested Party",
+      formTitle: "Record a Protest",
+      saved: "Protest recorded.",
+      invalid: "Fill in the number, date, applicant, protested party, instrument type, and reason.",
+      fNumber: "Protest number",
+      fRequester: "Applicant (holder of the instrument)",
+      fAgainst: "Protested party (drawee/issuer)",
+      fInstrument: "Instrument type",
+      fReason: "Reason for protest",
+      fInstrumentNo: "Instrument number",
+      fAmount: "Amount (Rp)",
+      submit: "Record protest"
+    },
+    legalisir: {
+      title: "Certified Copies",
+      subtitle: "Register of photocopies certified as true to the original. Different from Legalisasi (signature legalisation) and Waarmerking (registration of private documents).",
+      search: "Search number, applicant, document name...",
+      empty: "No certified copies recorded yet.",
+      document: "Document",
+      requester: "Applicant",
+      copies: "Copies",
+      formTitle: "Record a Certified Copy",
+      saved: "Certified copy recorded.",
+      invalid: "Fill in the number, date, applicant, and document name.",
+      fDocument: "Document copied",
+      fCopies: "Number of copies",
+      submit: "Record"
+    },
+    holidays: {
+      title: "Public Holidays",
+      subtitle: "National holidays and collective leave days. Dates listed here are not counted as working days for the 7-working-day deadlines for submitting PPAT deeds and registering mortgages. Enter them from the government's joint decree each year.",
+      name: "Description",
+      namePlaceholder: "e.g. Eid al-Fitr",
+      empty: "No holidays entered for this year yet. Deadlines count Monday–Friday only.",
+      confirmDelete: "Remove this date from the holiday list?"
+    }
   }
 };

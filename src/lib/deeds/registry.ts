@@ -13,6 +13,7 @@ import { kuasaWaris, waris, wasiat } from "./templates/waris";
 import { ajbPpat, aphbPpat, aphtPpat, hgbAtasHmPpat, hibahPpat, inbrengPpat, skmhtPpat, tukarMenukarPpat } from "./templates/ppatAkta";
 import { pendirianFirma } from "./templates/pendirianFirma";
 import { pendirianKoperasi } from "./templates/pendirianKoperasi";
+import { baPembetulan } from "./templates/baPembetulan";
 import { pengakuanHutang } from "./templates/pengakuanHutang";
 import { pendirianCv } from "./templates/pendirianCv";
 import { pendirianYayasan } from "./templates/pendirianYayasan";
@@ -40,6 +41,7 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     peralihanSaham,
     pendirianFirma,
     pendirianKoperasi,
+    baPembetulan,
     ajbPpat,
     hibahPpat,
     tukarMenukarPpat,

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { getPortalPrincipal } from "@/lib/portalSession";
-import { buildInvoiceDocx, buildReceiptDocx, loadBillingDoc } from "@/lib/billing";
+import { buildInvoiceDocx, buildReceiptDocx, buildRefundDocx, loadBillingDoc } from "@/lib/billing";
 import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const runtime = "nodejs";
@@ -22,7 +22,12 @@ export async function GET(_req: NextRequest, ctx: Async<{ params: { kind: string
 
   let paymentId: string | null = null;
   let receipt: Awaited<ReturnType<typeof findReceipt>> = null;
+  let refund: { paymentId: string; refundNumber: string; amount: { toString(): string }; refundedAt: Date; method: string | null; reason: string } | null = null;
   if (params.kind === "tagihan") paymentId = params.id;
+  else if (params.kind === "pengembalian") {
+    refund = await prisma.paymentRefund.findUnique({ where: { id: params.id } });
+    paymentId = refund?.paymentId ?? null;
+  }
   else if (params.kind === "kuitansi") {
     receipt = await findReceipt(params.id);
     paymentId = receipt?.paymentId ?? null;
@@ -49,7 +54,10 @@ export async function GET(_req: NextRequest, ctx: Async<{ params: { kind: string
 
   let buffer: Buffer;
   let name: string;
-  if (receipt) {
+  if (refund) {
+    buffer = buildRefundDocx(doc, { refundNumber: refund.refundNumber, amount: Number(refund.amount), refundedAt: refund.refundedAt, method: refund.method, reason: refund.reason });
+    name = `Pengembalian_${refund.refundNumber.replace(/\//g, "-")}.docx`;
+  } else if (receipt) {
     // Sudah dibayar sebelum kuitansi ini = total dibayar sekarang dikurangi kuitansi sah sejak kuitansi ini.
     const later = await prisma.paymentReceipt.aggregate({
       where: { paymentId: receipt.paymentId, voidedAt: null, createdAt: { gte: receipt.createdAt } },

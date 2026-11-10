@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatDate, formatDateTime, formatStatusLabel } from "@/lib/format";
-import { archiveClient, createJobForClient, recordDataConsent, restoreClient } from "@/app/(dashboard)/clients/actions";
+import { archiveClient, createJobForClient, recordDataConsent, recordPpatkReport, restoreClient } from "@/app/(dashboard)/clients/actions";
 import { ClientNewJobForm } from "@/components/clients/ClientNewJobForm";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { ClientPortalAccess } from "@/components/clients/ClientPortalAccess";
@@ -23,7 +23,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default async function ClientDetailPage(props: Async<{ params: { id: string }; searchParams?: { portal?: string; jobFailed?: string } }>) {
+export default async function ClientDetailPage(props: Async<{ params: { id: string }; searchParams?: { portal?: string; jobFailed?: string; ppatk?: string } }>) {
   const { params, searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_CLIENTS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
@@ -32,6 +32,10 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
   const canUploadDocuments = await userHasPermission(user.id, PERMISSIONS.UPLOAD_DOCUMENTS);
   const canCreateJobs = await userHasPermission(user.id, PERMISSIONS.CREATE_JOBS);
   const canBill = await userHasPermission(user.id, PERMISSIONS.EDIT_FINANCE);
+  // Catatan pelaporan PPATK bersifat rahasia: hanya pemegang izin log audit (Notaris/Admin).
+  const canSeePpatk = await userHasPermission(user.id, PERMISSIONS.VIEW_AUDIT_LOG);
+  const ppatkReports = canSeePpatk ? await prisma.ppatkReport.findMany({ where: { clientId: params.id }, orderBy: { reportedAt: "desc" } }) : [];
+  const hariIni = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
 
   const client = await prisma.client.findUnique({
     where: { id: params.id },
@@ -161,8 +165,68 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            {client.pmpjUpdatedAt ? `PMPJ terakhir diperbarui ${formatDateTime(client.pmpjUpdatedAt)}.` : "PMPJ belum diisi. Lengkapi lewat tombol Edit bila transaksinya wajib PMPJ."}
+            {client.pmpjUpdatedAt ? `PMPJ terakhir diperbarui ${formatDateTime(client.pmpjUpdatedAt)}.` : "PMPJ belum diisi. Lengkapi lewat tombol Edit bila transaksinya wajib PMPJ."}{" "}
+            <a href={`/api/clients/${client.id}/pmpj-form`} className="font-medium text-primary hover:underline">
+              Unduh formulir PMPJ (Word)
+            </a>
           </p>
+          {canSeePpatk && (
+            <div id="ppatk" className="mt-3 scroll-mt-24 rounded-md border border-border p-3">
+              <h3 className="text-sm font-bold text-foreground">Pelaporan PPATK ({ppatkReports.length})</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Laporan transaksi keuangan mencurigakan dikirim lewat aplikasi goAML PPATK; di sini hanya dicatat bahwa sudah dilaporkan. Bagian
+                ini hanya terlihat oleh Notaris/Admin dan tidak boleh diberitahukan kepada klien.
+              </p>
+              {searchParams?.ppatk === "ok" && <p className="mt-1 text-xs text-status-on-track">Pelaporan dicatat.</p>}
+              {searchParams?.ppatk === "invalid" && (
+                <p role="alert" className="mt-1 text-xs text-status-overdue">
+                  Isi tanggal lapor dan keterangan (minimal 5 huruf).
+                </p>
+              )}
+              {ppatkReports.length > 0 && (
+                <ul className="mt-2 divide-y divide-border text-sm">
+                  {ppatkReports.map((r) => (
+                    <li key={r.id} className="py-2">
+                      <p className="font-medium text-foreground">
+                        {r.kind === "LTKM" ? "LTKM" : "Laporan lain"} · {formatDate(r.reportedAt)}
+                        {r.reference ? ` · ref. ${r.reference}` : ""}
+                      </p>
+                      <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">{r.notes}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <details className="mt-2 text-sm">
+                <summary className="cursor-pointer font-medium text-foreground">Catat pelaporan</summary>
+                <form action={recordPpatkReport.bind(null, client.id)} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <label>
+                    <span className="mb-1 block text-xs text-muted-foreground">Jenis</span>
+                    <select name="kind" defaultValue="LTKM" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground">
+                      <option value="LTKM">LTKM (transaksi mencurigakan)</option>
+                      <option value="LAINNYA">Laporan lain</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs text-muted-foreground">Tanggal lapor</span>
+                    <input type="date" name="reportedAt" required defaultValue={hariIni} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs text-muted-foreground">Nomor referensi goAML</span>
+                    <input name="reference" maxLength={120} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                  </label>
+                  <label className="sm:col-span-3">
+                    <span className="mb-1 block text-xs text-muted-foreground">Keterangan (transaksi & alasan)</span>
+                    <textarea name="notes" required minLength={5} maxLength={1000} rows={2} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                  </label>
+                  <div className="sm:col-span-3">
+                    <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
+                      Simpan catatan
+                    </button>
+                  </div>
+                </form>
+              </details>
+            </div>
+          )}
         </div>
         {client.notes && (
           <div className="mt-4">

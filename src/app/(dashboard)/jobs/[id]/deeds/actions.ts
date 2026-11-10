@@ -514,6 +514,23 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     deedDate,
     assigneeId: jobInfo?.picId ?? user.id
   });
+  // Berita Acara Pembetulan: otomatis tercatat pada akta asal (bila nomor & tanggalnya cocok di arsip).
+  if (draft.templateKey === "ba_pembetulan") {
+    const dd = (draft.data ?? {}) as Record<string, unknown>;
+    const asalNomor = String(dd.aktaNomor ?? "").trim().replace(/\D/g, "");
+    const asalTanggal = String(dd.aktaTanggal ?? "").trim();
+    if (asalNomor && /^\d{4}-\d{2}-\d{2}$/.test(asalTanggal)) {
+      const [ay, am] = asalTanggal.split("-").map(Number);
+      const asal = await prisma.deed.findUnique({ where: { deedNumber: `${Number(asalNomor)}/${pad2(am)}/${ay}` }, select: { id: true } });
+      if (asal && asal.id !== deedId) {
+        const items = Array.isArray(dd.pembetulan) ? (dd.pembetulan as { letak?: string; semula?: string; seharusnya?: string }[]) : [];
+        const uraian = items.map((r, i) => `${i + 1}. ${r.letak ?? ""}: semula "${r.semula ?? ""}", seharusnya "${r.seharusnya ?? ""}".`).join("\n").slice(0, 2000) || "Lihat akta berita acara pembetulan.";
+        await prisma.deedCorrection.create({ data: { deedId: asal.id, baNumber: deedNumber, baDate: deedDate, description: uraian, createdById: user.id } });
+        await writeAuditLog({ userId: user.id, action: "deed_correction_recorded", entityType: "Deed", entityId: asal.id, newValue: { baNumber: deedNumber, viaDraft: draftId } });
+        revalidatePath(`/archive/deed/${asal.id}`);
+      }
+    }
+  }
   // Akta wasiat otomatis masuk register Wasiat (dilaporkan lewat Laporan Bulanan).
   if (draft.templateKey === "wasiat") {
     const rep = await prisma.repertorium.findUnique({ where: { deedId }, select: { id: true } });

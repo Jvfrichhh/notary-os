@@ -113,7 +113,7 @@ export default async function PaymentDetailPage(props: Async<{ params: { id: str
           <Stat label={tp("Total tagihan")} value={formatCurrency(p.totalAmount)} />
           <Stat label={tp("Sudah dibayar")} value={formatCurrency(p.paidAmount)} />
           <Stat label={tp("Sisa")} value={formatCurrency(p.remainingAmount)} strong={remaining > 0} />
-          <Stat label={tp("Status")} value={formatStatusLabel(p.status)} />
+          <Stat label={tp("Status")} value={tp(formatStatusLabel(p.status))} />
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
           <div className="h-full bg-status-on-track" style={{ width: `${pct}%` }} />

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Send, Sparkles, Trash2 } from "lucide-react";
 import { askAssistantAction } from "@/app/(dashboard)/assistant/actions";
 import type { ChatTurn } from "@/lib/ai/assistant";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 type Bubble = ChatTurn & { error?: boolean; toolsUsed?: string[] };
 
@@ -15,6 +16,7 @@ const STORAGE_KEY = "notary-os.assistant.history";
  * tetapi tidak menumpuk data klien di browser.
  */
 export function AssistantChat({ suggestions, userName, model }: { suggestions: string[]; userName: string; model: string }) {
+  const tp = usePhrase();
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [input, setInput] = useState("");
   const [pending, startTransition] = useTransition();
@@ -80,7 +82,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {bubbles.length === 0 && (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Halo {userName}. Coba salah satu pertanyaan ini, atau ketik sendiri:</p>
+            <p className="text-sm text-muted-foreground">{tp("Halo")} {userName}{tp(". Coba salah satu pertanyaan ini, atau ketik sendiri:")}</p>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((s) => (
                 <button
@@ -108,7 +110,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
             >
               {b.role === "assistant" && !b.error && (
                 <div className="mb-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Sparkles className="h-3 w-3" /> Asisten
+                  <Sparkles className="h-3 w-3" /> {tp("Asisten")}
                 </div>
               )}
               <div className="whitespace-pre-wrap">{b.content}</div>
@@ -123,7 +125,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
                   }}
                   className="mt-2 rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-muted"
                 >
-                  Coba lagi
+                  {tp("Coba lagi")}
                 </button>
               )}
             </div>
@@ -132,7 +134,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
         {pending && (
           <div className="flex justify-start">
             <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-              {elapsed < 4 ? "Mencari data..." : elapsed < 15 ? "Menyusun jawaban..." : "Masih diproses, layanan AI sedang lambat..."}
+              {elapsed < 4 ? tp("Mencari data...") : elapsed < 15 ? tp("Menyusun jawaban...") : tp("Masih diproses, layanan AI sedang lambat...")}
               <span className="ml-2 tabular-nums text-xs">{elapsed}s</span>
             </div>
           </div>
@@ -159,7 +161,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
           }}
           rows={1}
           maxLength={1000}
-          placeholder="Tulis pertanyaan... (Enter untuk kirim, Shift+Enter baris baru)"
+          placeholder={tp("Tulis pertanyaan... (Enter untuk kirim, Shift+Enter baris baru)")}
           className="max-h-32 flex-1 resize-y rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
@@ -167,13 +169,13 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
           disabled={pending || !input.trim()}
           className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
         >
-          <Send className="h-4 w-4" /> Kirim
+          <Send className="h-4 w-4" /> {tp("Kirim")}
         </button>
         {bubbles.length > 0 && (
           <button
             type="button"
             onClick={() => setBubbles([])}
-            title="Hapus percakapan"
+            title={tp("Hapus percakapan")}
             className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
           >
             <Trash2 className="h-4 w-4" />
@@ -181,7 +183,7 @@ export function AssistantChat({ suggestions, userName, model }: { suggestions: s
         )}
       </form>
       <p className="px-3 pb-2 text-[11px] text-muted-foreground">
-        Jawaban dibuat AI ({model}) dari data aplikasi dan bisa keliru; periksa di halaman terkait sebelum mengambil keputusan.
+        {tp("Jawaban dibuat AI (")}{model}{tp(") dari data aplikasi dan bisa keliru; periksa di halaman terkait sebelum mengambil keputusan.")}
       </p>
     </div>
   );

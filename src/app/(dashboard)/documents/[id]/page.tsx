@@ -73,7 +73,7 @@ export default async function DocumentDetailPage(props: Async<{ params: { id: st
     <div className="max-w-3xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">{formatStatusLabel(document.category)}</p>
+          <p className="text-xs font-medium text-muted-foreground">{tp(formatStatusLabel(document.category))}</p>
           <h1 className="break-all text-xl font-semibold text-foreground">{document.fileName}</h1>
           {document.status === "ARCHIVED" && (
             <span className="mt-1 inline-block rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">

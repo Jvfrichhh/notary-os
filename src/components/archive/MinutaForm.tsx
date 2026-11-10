@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { ArchiveFormState } from "@/app/(dashboard)/archive/actions";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -43,6 +44,7 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export function MinutaForm({ action, deeds, documents, lockedDeed, defaultValues, cancelHref, submitLabel = "Simpan Minuta" }: MinutaFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
 
@@ -54,7 +56,7 @@ export function MinutaForm({ action, deeds, documents, lockedDeed, defaultValues
 
       <div>
         <label className="mb-1 block text-sm font-medium text-foreground">
-          Akta <span className="text-status-overdue">*</span>
+          {tp("Akta")} <span className="text-status-overdue">*</span>
         </label>
         {lockedDeed ? (
           <>
@@ -64,7 +66,7 @@ export function MinutaForm({ action, deeds, documents, lockedDeed, defaultValues
         ) : (
           <select name="deedId" required defaultValue="" className={fieldClass}>
             <option value="" disabled>
-              — Pilih akta —
+              {tp("— Pilih akta —")}
             </option>
             {deeds.map((d) => (
               <option key={d.id} value={d.id}>
@@ -77,9 +79,9 @@ export function MinutaForm({ action, deeds, documents, lockedDeed, defaultValues
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Dokumen (Document Vault)</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{tp("Dokumen (Document Vault)")}</label>
         <select name="documentId" defaultValue={defaultValues?.documentId ?? ""} className={fieldClass}>
-          <option value="">— Belum ada file terkait —</option>
+          <option value="">{tp("— Belum ada file terkait —")}</option>
           {documents.map((doc) => (
             <option key={doc.id} value={doc.id}>
               {doc.fileName}
@@ -87,22 +89,22 @@ export function MinutaForm({ action, deeds, documents, lockedDeed, defaultValues
           ))}
         </select>
         <p className="mt-1 text-xs text-muted-foreground">
-          Daftar ini berisi dokumen yang sudah diupload lewat Document Vault untuk pekerjaan terkait. Upload dulu di sana kalau file belum ada.
+          {tp("Daftar ini berisi dokumen yang sudah diupload lewat Document Vault untuk pekerjaan terkait. Upload dulu di sana kalau file belum ada.")}
         </p>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Catatan</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{tp("Catatan")}</label>
         <textarea name="notes" rows={3} defaultValue={defaultValues?.notes ?? ""} className={fieldClass} />
         <p className="mt-1 text-xs text-muted-foreground">
-          Repertorium bisa ditautkan setelah Minuta ini disimpan, dari halaman detailnya.
+          {tp("Repertorium bisa ditautkan setelah Minuta ini disimpan, dari halaman detailnya.")}
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <SubmitButton label={submitLabel} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

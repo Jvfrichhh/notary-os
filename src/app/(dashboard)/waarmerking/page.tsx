@@ -127,7 +127,7 @@ export default async function WaarmerkingPage(props: Async<PageProps>) {
                     <td data-label={tp("PIC")} className="px-4 py-3 text-muted-foreground">{r.pic?.name ?? "-"}</td>
                     <td data-label={tp("Status")} className="px-4 py-3">
                       <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
-                        {formatStatusLabel(r.status)}
+                        {tp(formatStatusLabel(r.status))}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">

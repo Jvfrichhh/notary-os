@@ -15,10 +15,12 @@ import { SERVICE_CATALOG } from "@/lib/serviceCatalog";
 import { respondDraftReview } from "./actions";
 import type { JobStatus } from "@prisma/client";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalJobDetailPage(props: Async<{ params: { id: string } }>) {
+  const { tp } = await getT();
   const { params } = await unwrapProps(props);
   const { clientId } = await requireClientAccount();
 
@@ -97,7 +99,7 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
     ...statusLogs.flatMap((log) => {
       const next = (log.newValue as { status?: string } | null)?.status as JobStatus | undefined;
       return next && next in PORTAL_JOB_STATUS
-        ? [{ id: log.id, at: log.timestamp, title: `Status: ${portalStatusLabel(next)}` }]
+        ? [{ id: log.id, at: log.timestamp, title: `Status: ${tp(portalStatusLabel(next))}` }]
         : [];
     })
   ];
@@ -126,23 +128,23 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
     <div className="space-y-6">
       <Link href="/portal" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" />
-        Kembali ke daftar pekerjaan
+        {tp("Kembali ke daftar pekerjaan")}
       </Link>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{job.jobNumber}</h1>
           <p className="text-sm text-muted-foreground">
-            {job.serviceType?.name ?? "Layanan notaris"}
+            {job.serviceType?.name ?? tp("Layanan notaris")}
             {job.description ? ` · ${job.description}` : ""}
           </p>
         </div>
-        <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={portalStatusLabel(job.status)} />
+        <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={tp(portalStatusLabel(job.status))} />
       </div>
 
       <Card className={statusInfo.needsClient ? "border-status-due-today/50" : undefined}>
-        <p className="text-sm font-semibold text-foreground">{statusInfo.label}</p>
-        <p className="mt-1 text-sm text-muted-foreground">{statusInfo.hint}</p>
+        <p className="text-sm font-semibold text-foreground">{tp(statusInfo.label)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{tp(statusInfo.hint)}</p>
       </Card>
 
       {/* Yang perlu dilakukan klien tampil paling atas (penting di HP). */}
@@ -151,31 +153,31 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
         const state = reviewState(r, draftHash(d.data));
         return (
           <Card key={d.id}>
-            <h2 className="mb-1 text-base font-bold text-foreground">Draft {d.title ?? "akta"} untuk Anda periksa</h2>
+            <h2 className="mb-1 text-base font-bold text-foreground">{tp("Draft")} {d.title ?? "akta"} {tp("untuk Anda periksa")}</h2>
             {state === "outdated" ? (
-              <p className="text-sm text-muted-foreground">Kantor sedang memperbarui draft ini. Anda akan diberi tahu bila versi baru siap.</p>
+              <p className="text-sm text-muted-foreground">{tp("Kantor sedang memperbarui draft ini. Anda akan diberi tahu bila versi baru siap.")}</p>
             ) : (
               <>
                 <p className="mb-2 text-xs text-muted-foreground">
-                  Periksa nama, NIK, alamat, objek, dan angka. Draft belum berlaku sampai ditandatangani di hadapan Notaris.
+                  {tp("Periksa nama, NIK, alamat, objek, dan angka. Draft belum berlaku sampai ditandatangani di hadapan Notaris.")}
                 </p>
                 <a
                   href={`/api/portal/deeds/${r.id}`}
                   className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                 >
-                  <Download className="h-4 w-4" /> Unduh draft (Word)
+                  <Download className="h-4 w-4" /> {tp("Unduh draft (Word)")}
                 </a>
-                {state === "approved" && <p className="text-sm text-status-on-track">Anda sudah menyetujui draft ini ({formatDateTime(r.decidedAt)}).</p>}
+                {state === "approved" && <p className="text-sm text-status-on-track">{tp("Anda sudah menyetujui draft ini (")}{formatDateTime(r.decidedAt)}).</p>}
                 {state === "changes" && (
                   <p className="text-sm text-foreground">
-                    Koreksi Anda sudah dikirim: <span className="text-muted-foreground">{r.note}</span>. Kantor akan membagikan versi perbaikan.
+                    {tp("Koreksi Anda sudah dikirim:")} <span className="text-muted-foreground">{r.note}</span>{tp(". Kantor akan membagikan versi perbaikan.")}
                   </p>
                 )}
                 {state === "waiting" && (
                   <div className="space-y-2">
                     <form action={respondDraftReview.bind(null, r.id, "APPROVED")}>
                       <button type="submit" className="w-full rounded-md bg-status-on-track py-2.5 text-sm font-medium text-background hover:opacity-90">
-                        Saya sudah membaca dan setuju
+                        {tp("Saya sudah membaca dan setuju")}
                       </button>
                     </form>
                     <form action={respondDraftReview.bind(null, r.id, "CHANGES")} className="space-y-2">
@@ -184,11 +186,11 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
                         required
                         minLength={3}
                         rows={3}
-                        placeholder="Tulis yang perlu dikoreksi (mis. ejaan nama, alamat, luas tanah)"
+                        placeholder={tp("Tulis yang perlu dikoreksi (mis. ejaan nama, alamat, luas tanah)")}
                         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                       />
                       <button type="submit" className="w-full rounded-md border border-border py-2.5 text-sm font-medium hover:bg-muted">
-                        Kirim koreksi
+                        {tp("Kirim koreksi")}
                       </button>
                     </form>
                   </div>
@@ -201,15 +203,15 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
 
       <Card>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-foreground">Dokumen yang Diperlukan</h2>
+          <h2 className="text-base font-bold text-foreground">{tp("Dokumen yang Diperlukan")}</h2>
           {checklistItems.length > 0 && (
             <span className="text-xs text-muted-foreground">
-              {checklistItems.filter((i) => i.status === "COMPLETE").length}/{checklistItems.length} lengkap
+              {checklistItems.filter((i) => i.status === "COMPLETE").length}/{checklistItems.length} {tp("lengkap")}
             </span>
           )}
         </div>
         {checklistItems.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada daftar dokumen untuk pekerjaan ini.</p>
+          <p className="text-sm text-muted-foreground">{tp("Belum ada daftar dokumen untuk pekerjaan ini.")}</p>
         ) : (
           <ul className="divide-y divide-border">
             {checklistItems.map((item) => {
@@ -226,20 +228,20 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
                         <span className={accepted ? "text-muted-foreground line-through" : "font-medium text-foreground"}>
                           {item.label}
                         </span>
-                        {!item.isRequired && <span className="text-xs text-muted-foreground">(opsional)</span>}
+                        {!item.isRequired && <span className="text-xs text-muted-foreground">{tp("(opsional)")}</span>}
                         <ReviewBadge review={review} />
                       </div>
 
                       {review === "NEEDS_REVISION" && item.reviewNote && (
                         <p className="mt-1 rounded-md border border-status-overdue/30 bg-status-overdue/5 px-2 py-1 text-xs text-foreground">
-                          Catatan kantor: {item.reviewNote}
+                          {tp("Catatan kantor:")} {item.reviewNote}
                         </p>
                       )}
 
                       {doc && (doc.uploadedByClientAccountId || accepted) && (
                         <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span>
-                            File: <span className="break-all text-foreground">{doc.fileName}</span> · {formatDateTime(doc.uploadedAt)}
+                            {tp("File:")} <span className="break-all text-foreground">{doc.fileName}</span> · {formatDateTime(doc.uploadedAt)}
                           </span>
                           {doc.uploadedByClientAccountId && (
                             <a
@@ -248,7 +250,7 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
                               target="_blank"
                               rel="noreferrer"
                             >
-                              <Download className="h-3 w-3" /> Lihat
+                              <Download className="h-3 w-3" /> {tp("Lihat")}
                             </a>
                           )}
                         </p>
@@ -270,42 +272,42 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
           </ul>
         )}
         {jobClosed && (
-          <p className="mt-3 text-xs text-muted-foreground">Pekerjaan sudah ditutup; unggah dokumen tidak tersedia.</p>
+          <p className="mt-3 text-xs text-muted-foreground">{tp("Pekerjaan sudah ditutup; unggah dokumen tidak tersedia.")}</p>
         )}
       </Card>
 
       {jadwal.length > 0 && (
         <Card>
-          <h2 className="mb-2 text-base font-bold text-foreground">Jadwal Anda</h2>
+          <h2 className="mb-2 text-base font-bold text-foreground">{tp("Jadwal Anda")}</h2>
           <ul className="space-y-2 text-sm">
             {jadwal.map((a) => (
               <li key={a.id}>
                 <p className="font-medium text-foreground">
-                  {a.type === "signing" ? "Tanda tangan akta" : a.type === "follow-up" ? "Tindak lanjut" : "Pertemuan"} · {formatDate(a.date)}
-                  {a.time ? ` · pukul ${a.time} WIB` : ""}
+                  {a.type === "signing" ? tp("Tanda tangan akta") : a.type === "follow-up" ? tp("Tindak lanjut") : tp("Pertemuan")} · {formatDate(a.date)}
+                  {a.time ? tp(" · pukul {0} WIB", [a.time]) : ""}
                 </p>
                 {a.notes && <p className="break-words text-xs text-muted-foreground">{a.notes}</p>}
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-muted-foreground">Bila berhalangan hadir, mohon hubungi kantor untuk menjadwalkan ulang.</p>
+          <p className="mt-2 text-xs text-muted-foreground">{tp("Bila berhalangan hadir, mohon hubungi kantor untuk menjadwalkan ulang.")}</p>
         </Card>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>
-          <h2 className="mb-3 text-base font-bold text-foreground">Informasi</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">{tp("Informasi")}</h2>
           <dl className="space-y-2 text-sm">
-            <Row label="Target selesai" value={job.deadline ? formatDate(job.deadline) : "Belum ditentukan"} />
-            <Row label="Mulai dikerjakan" value={job.startDate ? formatDate(job.startDate) : "—"} />
-            <Row label="Selesai" value={job.completionDate ? formatDate(job.completionDate) : "—"} />
-            <Row label="Penanggung jawab" value={job.pic?.name ?? "—"} />
+            <Row label={tp("Target selesai")} value={job.deadline ? formatDate(job.deadline) : "Belum ditentukan"} />
+            <Row label={tp("Mulai dikerjakan")} value={job.startDate ? formatDate(job.startDate) : "—"} />
+            <Row label={tp("Selesai")} value={job.completionDate ? formatDate(job.completionDate) : "—"} />
+            <Row label={tp("Penanggung jawab")} value={job.pic?.name ?? "—"} />
           </dl>
         </Card>
 
         {ppatDefs.length > 0 && (
           <Card>
-            <h2 className="mb-3 text-base font-bold text-foreground">Tahapan Proses</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">{tp("Tahapan Proses")}</h2>
             <ol className="space-y-2 text-sm">
               {ppatDefs.map((d, i) => {
                 const at = ppatDone.get(d.key);
@@ -320,7 +322,7 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
                     >
                       {at ? "✓" : i + 1}
                     </span>
-                    <span className={at ? "text-foreground" : "text-muted-foreground"}>{d.clientLabel}</span>
+                    <span className={at ? "text-foreground" : "text-muted-foreground"}>{tp(d.clientLabel)}</span>
                     {at && <span className="text-xs text-muted-foreground">{formatDateJakarta(at)}</span>}
                   </li>
                 );
@@ -332,15 +334,15 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
         {job.payments.map((p) => (
           <Card key={p.id}>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-base font-bold text-foreground">Tagihan {p.invoiceNumber ?? ""}</h2>
+              <h2 className="text-base font-bold text-foreground">{tp("Tagihan")} {p.invoiceNumber ?? ""}</h2>
               <a href={`/api/portal/billing/tagihan/${p.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                <Download className="h-3.5 w-3.5" /> Unduh tagihan
+                <Download className="h-3.5 w-3.5" /> {tp("Unduh tagihan")}
               </a>
             </div>
             <dl className="space-y-1 text-sm">
-              <Row label="Total biaya" value={formatCurrency(p.totalAmount)} />
-              <Row label="Sudah dibayar" value={formatCurrency(p.paidAmount)} />
-              <Row label="Sisa" value={Number(p.remainingAmount) > 0 ? formatCurrency(p.remainingAmount) : "Lunas"} />
+              <Row label={tp("Total biaya")} value={formatCurrency(p.totalAmount)} />
+              <Row label={tp("Sudah dibayar")} value={formatCurrency(p.paidAmount)} />
+              <Row label={tp("Sisa")} value={Number(p.remainingAmount) > 0 ? formatCurrency(p.remainingAmount) : "Lunas"} />
             </dl>
             {p.receipts.length > 0 && (
               <ul className="mt-3 space-y-1 border-t border-border pt-2 text-xs">
@@ -350,7 +352,7 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
                       {formatDate(r.paidAt)} · {formatCurrency(r.amount)}
                     </span>
                     <a href={`/api/portal/billing/kuitansi/${r.id}`} className="font-medium text-primary hover:underline">
-                      Kuitansi {r.receiptNumber}
+                      {tp("Kuitansi")} {r.receiptNumber}
                     </a>
                   </li>
                 ))}
@@ -360,7 +362,7 @@ export default async function PortalJobDetailPage(props: Async<{ params: { id: s
         ))}
 
         <Card>
-          <h2 className="mb-3 text-base font-bold text-foreground">Riwayat</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">{tp("Riwayat")}</h2>
           <ol className="space-y-3 text-sm">
             {timeline.map((t) => (
               <li key={t.id} className="flex gap-3">
@@ -396,12 +398,13 @@ function ReviewIcon({ review }: { review: ReviewView }) {
   return <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />;
 }
 
-function ReviewBadge({ review }: { review: ReviewView }) {
+async function ReviewBadge({ review }: { review: ReviewView }) {
+  const { tp } = await getT();
   const map: Record<string, { label: string; cls: string }> = {
     ACCEPTED: { label: "Diterima", cls: "bg-status-on-track/10 text-status-on-track" },
     PENDING_REVIEW: { label: "Menunggu pemeriksaan", cls: "bg-status-due-soon/10 text-status-due-soon" },
     NEEDS_REVISION: { label: "Perlu diperbaiki", cls: "bg-status-overdue/10 text-status-overdue" }
   };
   const v = review ? map[review] : { label: "Belum diunggah", cls: "bg-muted text-muted-foreground" };
-  return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${v.cls}`}>{v.label}</span>;
+  return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${v.cls}`}>{tp(v.label)}</span>;
 }

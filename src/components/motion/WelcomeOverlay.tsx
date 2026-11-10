@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 /** Penanda dipasang halaman login tepat setelah berhasil masuk. */
 export const WELCOME_FLAG = "notaryos:welcome";
@@ -27,6 +28,7 @@ function today(): string {
  * dashboard. Klik di mana saja untuk melewati.
  */
 export function WelcomeOverlay({ name, subtitle }: { name: string; subtitle: string }) {
+  const tp = usePhrase();
   const [show, setShow] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [text, setText] = useState({ hello: "", date: "" });
@@ -68,7 +70,7 @@ export function WelcomeOverlay({ name, subtitle }: { name: string; subtitle: str
       className={`welcome-overlay fixed inset-0 z-[70] flex cursor-pointer items-center justify-center bg-brand-deep text-white ${leaving ? "welcome-leaving" : ""}`}
     >
       <div className="px-6 text-center">
-        <img src="/brand/nexora-mark.png" alt="Nexora" className="welcome-mark mx-auto h-24 w-auto" />
+        <img src="/brand/nexora-mark.png" alt={tp("Nexora")} className="welcome-mark mx-auto h-24 w-auto" />
         <p className="welcome-fade-1 mt-6 text-sm uppercase tracking-[0.2em] text-white/70">{text.hello}</p>
         <h1 className="welcome-fade-2 mt-2 text-3xl font-semibold sm:text-4xl">{first}</h1>
         <p className="welcome-fade-3 mt-2 text-sm text-white/70">

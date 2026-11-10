@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -62,6 +63,7 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, initial, cancelHref }: PaymentFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
   const [clientId, setClientId] = useState(lockedClient?.id ?? "");
@@ -91,7 +93,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Klien <span className="text-status-overdue">*</span>
+            {tp("Klien")} <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -100,7 +102,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
             </>
           ) : (
             <select name="clientId" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
-              <option value="">— Pilih klien —</option>
+              <option value="">{tp("— Pilih klien —")}</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}
@@ -112,7 +114,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan Terkait</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Pekerjaan Terkait")}</label>
           {lockedJob ? (
             <>
               <input type="hidden" name="jobId" value={lockedJob.id} />
@@ -120,7 +122,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
             </>
           ) : (
             <select name="jobId" className={fieldClass} disabled={!clientId}>
-              <option value="">— Tidak ada —</option>
+              <option value="">{tp("— Tidak ada —")}</option>
               {filteredJobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.jobNumber}
@@ -131,9 +133,9 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
         </div>
 
         <fieldset className="space-y-3 rounded-md border border-border p-3 sm:col-span-2">
-          <legend className="px-1 text-sm font-medium text-foreground">Rincian tagihan (opsional)</legend>
+          <legend className="px-1 text-sm font-medium text-foreground">{tp("Rincian tagihan (opsional)")}</legend>
           <p className="text-xs text-muted-foreground">
-            Pisahkan honorarium dari uang titipan klien. Bila rincian diisi, total tagihan dihitung otomatis dan rinciannya tercetak di tagihan.
+            {tp("Pisahkan honorarium dari uang titipan klien. Bila rincian diisi, total tagihan dihitung otomatis dan rinciannya tercetak di tagihan.")}
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
@@ -160,7 +162,7 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
         </fieldset>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Total Tagihan (Rp)</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Total Tagihan (Rp)")}</label>
           <input
             type="number"
             min="0"
@@ -171,17 +173,17 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
             readOnly={pakaiRincian}
             className={pakaiRincian ? `${fieldClass} opacity-70` : fieldClass}
           />
-          {pakaiRincian && <p className="mt-1 text-xs text-muted-foreground">Dihitung dari rincian di atas.</p>}
+          {pakaiRincian && <p className="mt-1 text-xs text-muted-foreground">{tp("Dihitung dari rincian di atas.")}</p>}
           {errors.totalAmount?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.totalAmount[0]}</p> : null}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Uang Muka / DP (Rp)</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Uang Muka / DP (Rp)")}</label>
           <input type="number" min="0" step="1000" name="downPayment" defaultValue={initial?.downPayment ?? "0"} className={fieldClass} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Sudah Dibayar (Rp)</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Sudah Dibayar (Rp)")}</label>
           <input
             type="number"
             min="0"
@@ -194,45 +196,44 @@ export function PaymentForm({ action, clients, jobs, lockedClient, lockedJob, in
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Sisa Tagihan (Rp)</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Sisa Tagihan (Rp)")}</label>
           <input disabled value={remaining.toLocaleString("id-ID")} className={`${fieldClass} opacity-70`} />
-          <p className="mt-1 text-xs text-muted-foreground">Dihitung otomatis: Total − Sudah Dibayar.</p>
+          <p className="mt-1 text-xs text-muted-foreground">{tp("Dihitung otomatis: Total − Sudah Dibayar.")}</p>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Status Pembayaran</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Status Pembayaran")}</label>
           <select name="status" defaultValue={initial?.status ?? "UNPAID"} className={fieldClass}>
-            <option value="UNPAID">Belum Bayar</option>
-            <option value="PARTIALLY_PAID">Bayar Sebagian</option>
-            <option value="PAID">Lunas</option>
-            <option value="REFUNDED">Refund</option>
+            <option value="UNPAID">{tp("Belum Bayar")}</option>
+            <option value="PARTIALLY_PAID">{tp("Bayar Sebagian")}</option>
+            <option value="PAID">{tp("Lunas")}</option>
+            <option value="REFUNDED">{tp("Refund")}</option>
           </select>
           <p className="mt-1 text-xs text-muted-foreground">
-            Belum Bayar/Bayar Sebagian/Lunas otomatis mengikuti jumlah dibayar vs total. Pilih &quot;Refund&quot; hanya kalau
-            dana memang dikembalikan ke client.
+            {tp("Belum Bayar/Bayar Sebagian/Lunas otomatis mengikuti jumlah dibayar vs total. Pilih \"Refund\" hanya kalau dana memang dikembalikan ke client.")}
           </p>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Tanggal Pembayaran</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Tanggal Pembayaran")}</label>
           <input type="date" name="paymentDate" defaultValue={initial?.paymentDate ?? ""} className={fieldClass} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Metode Pembayaran</label>
-          <input name="paymentMethod" defaultValue={initial?.paymentMethod ?? ""} placeholder="mis. Transfer BCA" className={fieldClass} />
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Metode Pembayaran")}</label>
+          <input name="paymentMethod" defaultValue={initial?.paymentMethod ?? ""} placeholder={tp("mis. Transfer BCA")} className={fieldClass} />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Catatan</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{tp("Catatan")}</label>
         <textarea name="notes" rows={3} defaultValue={initial?.notes ?? ""} className={fieldClass} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton label={initial ? "Simpan Perubahan" : "Simpan Payment"} />
+        <SubmitButton label={initial ? tp("Simpan Perubahan") : tp("Simpan Payment")} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

@@ -7,10 +7,12 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { classifyDeadline, formatDate } from "@/lib/format";
 import { PORTAL_ACTIVE_STATUSES, PORTAL_NEEDS_CLIENT_STATUSES, portalStatusLabel } from "@/lib/portalLabels";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalDashboardPage(props: Async<{ searchParams: { password?: string } }>) {
+  const { tp } = await getT();
   const { searchParams } = await unwrapProps(props);
   const { clientId, client } = await requireClientAccount();
 
@@ -49,15 +51,15 @@ export default async function PortalDashboardPage(props: Async<{ searchParams: {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Halo, {client.fullName}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Halo,")} {client.fullName}</h1>
         <p className="text-sm text-muted-foreground">
-          Ringkasan pekerjaan Anda di kantor notaris{client.companyName ? ` · ${client.companyName}` : ""}
+          {tp("Ringkasan pekerjaan Anda di kantor notaris")}{client.companyName ? ` · ${client.companyName}` : ""}
         </p>
       </div>
 
       {searchParams.password === "changed" && (
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
-          Password berhasil diganti.
+          {tp("Password berhasil diganti.")}
         </div>
       )}
 
@@ -71,9 +73,9 @@ export default async function PortalDashboardPage(props: Async<{ searchParams: {
       </div>
 
       <Card>
-        <h2 className="mb-3 text-base font-bold text-foreground">Daftar Pekerjaan</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Daftar Pekerjaan")}</h2>
         {jobs.length === 0 ? (
-          <EmptyState title="Belum ada pekerjaan yang terdaftar atas nama Anda." />
+          <EmptyState title={tp("Belum ada pekerjaan yang terdaftar atas nama Anda.")} />
         ) : (
           <div className="divide-y divide-border">
             {jobs.map((job) => (
@@ -90,9 +92,9 @@ export default async function PortalDashboardPage(props: Async<{ searchParams: {
                   <p className="truncate text-xs text-muted-foreground">{job.description || "—"}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                  <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={portalStatusLabel(job.status)} />
+                  <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={tp(portalStatusLabel(job.status))} />
                   <span className="text-xs text-muted-foreground">
-                    {job.deadline ? `Target: ${formatDate(job.deadline)}` : "Target belum ditentukan"}
+                    {job.deadline ? tp("Target: {0}", [formatDate(job.deadline)]) : tp("Target belum ditentukan")}
                   </span>
                 </div>
               </Link>

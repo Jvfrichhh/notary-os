@@ -33,6 +33,7 @@ import {
   Database,
   Map as MapIcon
 } from "lucide-react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 // Pemetaan key ikon (string, aman dikirim server -> klien) ke komponen lucide.
 const ICONS: Record<NavIconKey, React.ComponentType<{ className?: string }>> = {
@@ -251,6 +252,7 @@ function navLabel(t: ReturnType<typeof useT>, item: { href: string; label: strin
 }
 
 function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionConfig[]; pathname: string | null; onClose?: () => void }) {
+  const tp = usePhrase();
   const t = useT();
   return (
     <aside className="sidebar-panel surface flex h-full w-64 flex-col rounded-none border-0 border-r border-border shadow-none">
@@ -258,7 +260,7 @@ function SidebarPanel({ sections, pathname, onClose }: { sections: NavSectionCon
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <img src="/brand/nexora-tile.png" alt="" className="h-10 w-10 rounded-md" />
           <span className="leading-tight">
-            <span className="block text-[15px] font-extrabold tracking-[0.14em] text-foreground">NEXORA</span>
+            <span className="block text-[15px] font-extrabold tracking-[0.14em] text-foreground">{tp("NEXORA")}</span>
             <span className="block text-xs text-muted-foreground">{t("nav.tagline")}</span>
           </span>
         </Link>

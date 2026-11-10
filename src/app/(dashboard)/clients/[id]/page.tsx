@@ -277,7 +277,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
                     <p className="line-clamp-1 text-xs text-muted-foreground">{j.description ?? "-"}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(j.status)}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">{tp(formatStatusLabel(j.status))}</span>
                     {j.deadline && <StatusBadge tone={classifyDeadline(j.deadline, j.status)} label={tp("Target {0}", [formatDate(j.deadline)])} />}
                   </div>
                 </Link>
@@ -304,7 +304,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
               {client.documents.map((doc) => (
                 <Link key={doc.id} href={`/documents/${doc.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:bg-muted/50">
                   <span className="min-w-0 break-all font-medium text-foreground">{doc.fileName}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{formatStatusLabel(doc.category)}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{tp(formatStatusLabel(doc.category))}</span>
                 </Link>
               ))}
             </div>

@@ -291,7 +291,7 @@ export default async function DashboardPage(props: Async<PageProps>) {
                         <td data-label={t("dashboard.colClient")} className="px-3 py-3.5 text-fg-2">{job.client.fullName}</td>
                         <td data-label={t("dashboard.colStatus")} className="px-3 py-3.5">
                           <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-fg-2">
-                            {formatStatusLabel(job.status)}
+                            {tp(formatStatusLabel(job.status))}
                           </span>
                         </td>
                         <td data-label={t("dashboard.colTarget")} className="whitespace-nowrap px-5 py-3.5">

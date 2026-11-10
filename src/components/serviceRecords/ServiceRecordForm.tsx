@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -79,6 +80,7 @@ export function ServiceRecordForm({
   suggestedDate,
   lockNumber = false
 }: ServiceRecordFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
   const [clientId, setClientId] = useState(lockedClient?.id ?? "");
@@ -97,7 +99,7 @@ export function ServiceRecordForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Nomor {moduleLabel} <span className="text-status-overdue">*</span>
+            {tp("Nomor")} {moduleLabel} <span className="text-status-overdue">*</span>
           </label>
           <input
             name="number"
@@ -107,23 +109,23 @@ export function ServiceRecordForm({
             className={lockNumber ? `${fieldClass} opacity-70` : fieldClass}
           />
           {lockNumber ? (
-            <p className="mt-1 text-xs text-muted-foreground">Nomor daftar tidak bisa diubah setelah dicatat.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{tp("Nomor daftar tidak bisa diubah setelah dicatat.")}</p>
           ) : suggestedNumber ? (
-            <p className="mt-1 text-xs text-muted-foreground">Diusulkan otomatis: nomor urut berikutnya tahun ini. Sesuaikan bila format kantor berbeda.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{tp("Diusulkan otomatis: nomor urut berikutnya tahun ini. Sesuaikan bila format kantor berbeda.")}</p>
           ) : null}
           {errors.number?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.number[0]}</p> : null}
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Tanggal <span className="text-status-overdue">*</span>
+            {tp("Tanggal")} <span className="text-status-overdue">*</span>
           </label>
           <input type="date" name="date" defaultValue={initial?.date ?? suggestedDate} required className={fieldClass} />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Klien <span className="text-status-overdue">*</span>
+            {tp("Klien")} <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -132,7 +134,7 @@ export function ServiceRecordForm({
             </>
           ) : (
             <select name="clientId" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
-              <option value="">— Pilih klien —</option>
+              <option value="">{tp("— Pilih klien —")}</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}
@@ -143,23 +145,23 @@ export function ServiceRecordForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Jenis Layanan</label>
-          <input name="serviceType" defaultValue={initial?.serviceType ?? ""} placeholder="mis. Legalisasi tanda tangan" className={fieldClass} />
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Jenis Layanan")}</label>
+          <input name="serviceType" defaultValue={initial?.serviceType ?? ""} placeholder={tp("mis. Legalisasi tanda tangan")} className={fieldClass} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Status</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Status")}</label>
           <select name="status" defaultValue={initial?.status ?? "PROCESS"} className={fieldClass}>
-            <option value="DRAFT">Draft</option>
-            <option value="PROCESS">Process</option>
-            <option value="DONE">Done</option>
+            <option value="DRAFT">{tp("Draft")}</option>
+            <option value="PROCESS">{tp("Process")}</option>
+            <option value="DONE">{tp("Done")}</option>
           </select>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">PIC</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("PIC")}</label>
           <select name="picId" defaultValue={initial?.picId ?? ""} className={fieldClass}>
-            <option value="">— Belum ditentukan —</option>
+            <option value="">{tp("— Belum ditentukan —")}</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -169,9 +171,9 @@ export function ServiceRecordForm({
         </div>
 
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-foreground">Dokumen Terkait</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Dokumen Terkait")}</label>
           <select name="documentId" defaultValue={initial?.documentId ?? ""} className={fieldClass}>
-            <option value="">— Tidak ada —</option>
+            <option value="">{tp("— Tidak ada —")}</option>
             {filteredDocuments.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.fileName}
@@ -179,9 +181,9 @@ export function ServiceRecordForm({
             ))}
           </select>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cuma dokumen yang sudah ada di Document Vault. Belum ada file yang cocok?{" "}
+            {tp("Cuma dokumen yang sudah ada di Document Vault. Belum ada file yang cocok?")}{" "}
             <Link href={clientId ? `/documents/new?clientId=${clientId}` : "/documents/new"} className="text-primary hover:underline">
-              Upload dulu
+              {tp("Upload dulu")}
             </Link>
             .
           </p>
@@ -189,14 +191,14 @@ export function ServiceRecordForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Catatan</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{tp("Catatan")}</label>
         <textarea name="notes" rows={3} defaultValue={initial?.notes ?? ""} className={fieldClass} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton label={initial ? "Simpan Perubahan" : `Simpan ${moduleLabel}`} />
+        <SubmitButton label={initial ? tp("Simpan Perubahan") : tp("Simpan {0}", [moduleLabel])} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

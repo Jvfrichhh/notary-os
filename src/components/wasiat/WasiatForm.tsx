@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -69,6 +70,7 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export function WasiatForm({ action, clients, jobs, documents, lockedClient, initial, cancelHref }: WasiatFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
   const [clientId, setClientId] = useState(lockedClient?.id ?? "");
@@ -82,8 +84,7 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
   return (
     <form action={formAction} className="space-y-5">
       <div className="rounded-md border border-status-due-soon/30 bg-status-due-soon/10 px-3 py-2 text-xs text-foreground">
-        Modul ini hanya pencatatan internal kantor. Bukan pengganti sistem pelaporan resmi ke AHU maupun kewajiban
-        hukum notaris terkait wasiat.
+        {tp("Modul ini hanya pencatatan internal kantor. Bukan pengganti sistem pelaporan resmi ke AHU maupun kewajiban hukum notaris terkait wasiat.")}
       </div>
 
       {state.formError && (
@@ -93,7 +94,7 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Klien <span className="text-status-overdue">*</span>
+            {tp("Klien")} <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -102,7 +103,7 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
             </>
           ) : (
             <select name="clientId" required value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
-              <option value="">— Pilih klien —</option>
+              <option value="">{tp("— Pilih klien —")}</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}
@@ -114,9 +115,9 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
 
         {!lockedClient && (
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan Terkait</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{tp("Pekerjaan Terkait")}</label>
             <select name="jobId" className={fieldClass} disabled={!clientId}>
-              <option value="">— Tidak ada —</option>
+              <option value="">{tp("— Tidak ada —")}</option>
               {filteredJobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.jobNumber}
@@ -127,33 +128,33 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
         )}
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Nomor Akta</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Nomor Akta")}</label>
           <input name="deedNumber" defaultValue={initial?.deedNumber ?? ""} className={fieldClass} />
           {errors.deedNumber?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.deedNumber[0]}</p> : null}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Tanggal</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Tanggal")}</label>
           <input type="date" name="date" defaultValue={initial?.date ?? ""} className={fieldClass} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Jenis Wasiat</label>
-          <input name="wasiatType" defaultValue={initial?.wasiatType ?? ""} placeholder="mis. Wasiat Umum" className={fieldClass} />
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Jenis Wasiat")}</label>
+          <input name="wasiatType" defaultValue={initial?.wasiatType ?? ""} placeholder={tp("mis. Wasiat Umum")} className={fieldClass} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Referensi Repertorium</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Referensi Repertorium")}</label>
           <input
             name="repertoriumId"
             defaultValue={initial?.repertoriumId ?? ""}
-            placeholder="mis. nomor urut repertorium (opsional)"
+            placeholder={tp("mis. nomor urut repertorium (opsional)")}
             className={fieldClass}
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Status</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Status")}</label>
           <select name="status" defaultValue={initial?.status ?? "DIBUAT"} className={fieldClass}>
             {STATUS_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -164,9 +165,9 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Dokumen Bukti</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Dokumen Bukti")}</label>
           <select name="evidenceDocumentId" defaultValue={initial?.evidenceDocumentId ?? ""} className={fieldClass}>
-            <option value="">— Tidak ada —</option>
+            <option value="">{tp("— Tidak ada —")}</option>
             {filteredDocuments.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.fileName}
@@ -174,24 +175,24 @@ export function WasiatForm({ action, clients, jobs, documents, lockedClient, ini
             ))}
           </select>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cuma dokumen yang sudah ada di Document Vault.{" "}
+            {tp("Cuma dokumen yang sudah ada di Document Vault.")}{" "}
             <Link href={clientId ? `/documents/new?clientId=${clientId}` : "/documents/new"} className="text-primary hover:underline">
-              Upload dulu
+              {tp("Upload dulu")}
             </Link>{" "}
-            kalau belum ada.
+            {tp("kalau belum ada.")}
           </p>
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Catatan</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{tp("Catatan")}</label>
         <textarea name="notes" rows={3} defaultValue={initial?.notes ?? ""} className={fieldClass} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton label={initial ? "Simpan Perubahan" : "Simpan Wasiat"} />
+        <SubmitButton label={initial ? tp("Simpan Perubahan") : tp("Simpan Wasiat")} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

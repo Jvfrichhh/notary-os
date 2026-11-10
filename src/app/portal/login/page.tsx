@@ -6,6 +6,7 @@ import { signIn, signOut } from "next-auth/react";
 import { WELCOME_FLAG } from "@/components/motion/WelcomeOverlay";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 // Pesan untuk ?error=... yang dikirim requireClientAccount(). Sengaja tidak
 // membedakan "akun tidak ada" vs "password salah" saat login (anti enumerasi);
@@ -17,6 +18,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 function PortalLoginForm() {
+  const tp = usePhrase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const deniedReason = searchParams.get("error");
@@ -64,12 +66,12 @@ function PortalLoginForm() {
       <div className="flex items-center gap-2.5">
         <img src="/brand/nexora-tile.png" alt="" className="h-11 w-11 rounded-md" />
         <span className="leading-tight">
-          <span className="block text-base font-extrabold tracking-[0.14em] text-foreground">NEXORA</span>
-          <span className="block text-xs font-bold uppercase tracking-[0.08em] text-primary">Portal Klien</span>
+          <span className="block text-base font-extrabold tracking-[0.14em] text-foreground">{tp("NEXORA")}</span>
+          <span className="block text-xs font-bold uppercase tracking-[0.08em] text-primary">{tp("Portal Klien")}</span>
         </span>
       </div>
-      <h1 className="mt-5 text-[22px] font-extrabold text-foreground">Masuk ke portal</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Pantau perkembangan pekerjaan Anda di kantor notaris.</p>
+      <h1 className="mt-5 text-[22px] font-extrabold text-foreground">{tp("Masuk ke portal")}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{tp("Pantau perkembangan pekerjaan Anda di kantor notaris.")}</p>
 
       {deniedMessage && (
         <div className="mt-4 rounded-md border border-status-overdue/40 bg-status-overdue/10 px-3 py-2 text-sm text-foreground">
@@ -79,14 +81,14 @@ function PortalLoginForm() {
             onClick={() => signOut({ callbackUrl: `${window.location.origin}/portal/login` })}
             className="mt-2 text-xs font-medium text-primary hover:underline"
           >
-            Keluar dari sesi ini
+            {tp("Keluar dari sesi ini")}
           </button>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-fg-2">Email</label>
+          <label className="block text-sm font-semibold text-fg-2">{tp("Email")}</label>
           <input
             type="email"
             name="email"
@@ -95,12 +97,12 @@ function PortalLoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1.5 h-12 w-full rounded-md border border-input px-3.5 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
-            placeholder="Email yang didaftarkan kantor"
+            placeholder={tp("Email yang didaftarkan kantor")}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-fg-2">Password</label>
+          <label className="block text-sm font-semibold text-fg-2">{tp("Password")}</label>
           <div className="relative mt-1.5">
             <input
               type={showPassword ? "text" : "password"}
@@ -110,12 +112,12 @@ function PortalLoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-12 w-full rounded-md border border-input px-3.5 pr-11 text-base focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
-              placeholder="Masukkan Password"
+              placeholder={tp("Masukkan Password")}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+              aria-label={showPassword ? tp("Sembunyikan password") : tp("Tampilkan password")}
               aria-pressed={showPassword}
               tabIndex={-1}
               className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
@@ -132,14 +134,14 @@ function PortalLoginForm() {
           disabled={loading}
           className="h-12 w-full rounded-md bg-primary text-base font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60"
         >
-          {loading ? "Memproses..." : "Masuk ke Portal"}
+          {loading ? tp("Memproses...") : tp("Masuk ke Portal")}
         </button>
       </form>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Belum punya akses? Akun portal dibuatkan oleh kantor notaris. Hubungi kantor untuk mendapatkan akun.
+        {tp("Belum punya akses? Akun portal dibuatkan oleh kantor notaris. Hubungi kantor untuk mendapatkan akun.")}
       </p>
-      <p className="mt-2 text-xs text-muted-foreground">© 2026 Java Fauzan. All rights reserved.</p>
+      <p className="mt-2 text-xs text-muted-foreground">{tp("© 2026 Java Fauzan. All rights reserved.")}</p>
     </div>
   );
 }

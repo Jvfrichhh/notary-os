@@ -321,7 +321,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
                   <option value="">{tp("Semua kategori")}</option>
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {formatStatusLabel(c)}
+                      {tp(formatStatusLabel(c))}
                     </option>
                   ))}
                 </select>
@@ -423,7 +423,7 @@ export default async function DocumentsPage(props: Async<DocumentsPageProps>) {
               <option value="">{tp("Semua kategori")}</option>
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {formatStatusLabel(c)}
+                  {tp(formatStatusLabel(c))}
                 </option>
               ))}
             </select>
@@ -483,33 +483,34 @@ type DocRow = {
   uploadedByClientAccount: { name: string | null } | null;
 };
 
-function DocTable({ docs, showClient }: { docs: DocRow[]; showClient: boolean }) {
+async function DocTable({ docs, showClient }: { docs: DocRow[]; showClient: boolean }) {
+  const { tp } = await getT();
   return (
     <div className="overflow-x-auto">
       <table className="table-stack w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-3 font-medium">Nama File</th>
-            <th className="px-4 py-3 font-medium">Kategori</th>
-            {showClient && <th className="px-4 py-3 font-medium">Klien / Pekerjaan</th>}
-            <th className="px-4 py-3 font-medium">Ukuran</th>
-            <th className="px-4 py-3 font-medium">Diunggah oleh</th>
-            <th className="px-4 py-3 font-medium">Tanggal</th>
+            <th className="px-4 py-3 font-medium">{tp("Nama File")}</th>
+            <th className="px-4 py-3 font-medium">{tp("Kategori")}</th>
+            {showClient && <th className="px-4 py-3 font-medium">{tp("Klien / Pekerjaan")}</th>}
+            <th className="px-4 py-3 font-medium">{tp("Ukuran")}</th>
+            <th className="px-4 py-3 font-medium">{tp("Diunggah oleh")}</th>
+            <th className="px-4 py-3 font-medium">{tp("Tanggal")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {docs.map((doc) => (
             <tr key={doc.id} className="hover:bg-muted/50">
-              <td data-label="Nama File" className="px-4 py-3">
+              <td data-label={tp("Nama File")} className="px-4 py-3">
                 <Link href={`/documents/${doc.id}`} className="flex items-start gap-2 font-medium text-foreground hover:underline">
                   <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="break-all">{doc.fileName}</span>
                 </Link>
                 {doc.description && <p className="ml-6 max-w-[16rem] truncate sm:max-w-xs text-xs text-muted-foreground">{doc.description}</p>}
               </td>
-              <td data-label="Kategori" className="px-4 py-3 text-muted-foreground">{formatStatusLabel(doc.category)}</td>
+              <td data-label={tp("Kategori")} className="px-4 py-3 text-muted-foreground">{tp(formatStatusLabel(doc.category))}</td>
               {showClient && (
-                <td data-label="Klien / Pekerjaan" className="px-4 py-3 text-muted-foreground">
+                <td data-label={tp("Klien / Pekerjaan")} className="px-4 py-3 text-muted-foreground">
                   <div className="min-w-0">
                     {doc.client && (
                       <Link href={`/documents?clientId=${doc.client.id}`} className="hover:underline">
@@ -521,9 +522,9 @@ function DocTable({ docs, showClient }: { docs: DocRow[]; showClient: boolean })
                   </div>
                 </td>
               )}
-              <td data-label="Ukuran" className="px-4 py-3 text-muted-foreground">{formatFileSize(doc.fileSize)}</td>
-              <td data-label="Diunggah oleh" className="px-4 py-3 text-muted-foreground">{doc.uploader?.name ?? (doc.uploadedByClientAccount ? "Klien (portal)" : "-")}</td>
-              <td data-label="Tanggal" className="px-4 py-3 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</td>
+              <td data-label={tp("Ukuran")} className="px-4 py-3 text-muted-foreground">{formatFileSize(doc.fileSize)}</td>
+              <td data-label={tp("Diunggah oleh")} className="px-4 py-3 text-muted-foreground">{doc.uploader?.name ?? (doc.uploadedByClientAccount ? tp("Klien (portal)") : "-")}</td>
+              <td data-label={tp("Tanggal")} className="px-4 py-3 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</td>
             </tr>
           ))}
         </tbody>

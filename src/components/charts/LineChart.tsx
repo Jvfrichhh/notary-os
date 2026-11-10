@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 /**
  * Grafik garis ringan tanpa pustaka (SVG). Satu sumbu Y, garis 2px, garis
@@ -52,6 +53,7 @@ export function LineChart({
   height?: number;
   ariaLabel: string;
 }) {
+  const tp = usePhrase();
   const boxRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(640);
   const [active, setActive] = useState<number | null>(null);
@@ -235,12 +237,12 @@ export function LineChart({
       </div>
 
       <details className="mt-3 text-sm">
-        <summary className="cursor-pointer text-xs font-semibold text-primary">Lihat sebagai tabel</summary>
+        <summary className="cursor-pointer text-xs font-semibold text-primary">{tp("Lihat sebagai tabel")}</summary>
         <div className="mt-2 overflow-x-auto">
           <table className="w-full min-w-[520px] text-xs">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="py-1.5 pr-3 font-semibold">Seri</th>
+                <th className="py-1.5 pr-3 font-semibold">{tp("Seri")}</th>
                 {labels.map((l) => (
                   <th key={l} className="px-1.5 py-1.5 text-right font-semibold">
                     {l}

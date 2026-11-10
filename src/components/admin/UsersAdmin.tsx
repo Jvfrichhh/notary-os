@@ -10,6 +10,7 @@ import {
   setInternalUserActive,
   type UserAdminState
 } from "@/app/(dashboard)/admin/users/actions";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 export type AdminUserRow = {
   id: string;
@@ -68,16 +69,17 @@ function TemporaryPasswordBox({ state }: { state: UserAdminState }) {
 const inputCls = "rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
 
 function CreateUserForm({ roles }: { roles: RoleOption[] }) {
+  const tp = usePhrase();
   const [state, action] = useFormState(createInternalUser, initial);
   return (
     <form action={action} className="space-y-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
-        <input name="name" required placeholder="Nama lengkap" className={inputCls} />
-        <input name="email" type="email" required placeholder="Email (untuk login)" className={inputCls} />
-        <input name="phone" placeholder="No. HP (opsional)" className={inputCls} />
+        <input name="name" required placeholder={tp("Nama lengkap")} className={inputCls} />
+        <input name="email" type="email" required placeholder={tp("Email (untuk login)")} className={inputCls} />
+        <input name="phone" placeholder={tp("No. HP (opsional)")} className={inputCls} />
         <select name="roleId" required defaultValue="" className={inputCls}>
           <option value="" disabled>
-            Pilih role
+            {tp("Pilih role")}
           </option>
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
@@ -88,7 +90,7 @@ function CreateUserForm({ roles }: { roles: RoleOption[] }) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Pending className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-          <UserPlus className="h-4 w-4" /> Tambah User
+          <UserPlus className="h-4 w-4" /> {tp("Tambah User")}
         </Pending>
         {state.error && <p className="text-sm text-status-overdue">{state.error}</p>}
       </div>
@@ -98,6 +100,7 @@ function CreateUserForm({ roles }: { roles: RoleOption[] }) {
 }
 
 function UserRow({ user, roles, isSelf }: { user: AdminUserRow; roles: RoleOption[]; isSelf: boolean }) {
+  const tp = usePhrase();
   const [state, resetAction] = useFormState(resetInternalUserPassword.bind(null, user.id), initial);
   return (
     <li className="py-3 text-sm">
@@ -105,15 +108,15 @@ function UserRow({ user, roles, isSelf }: { user: AdminUserRow; roles: RoleOptio
         <div className="min-w-0 break-words">
           <p className="font-medium text-foreground">
             {user.name}
-            {isSelf && <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>}
+            {isSelf && <span className="ml-2 text-xs text-muted-foreground">{tp("(Anda)")}</span>}
             {!user.isActive && (
-              <span className="ml-2 rounded-full bg-status-archived/10 px-2 py-0.5 text-[11px] font-medium text-status-archived">nonaktif</span>
+              <span className="ml-2 rounded-full bg-status-archived/10 px-2 py-0.5 text-[11px] font-medium text-status-archived">{tp("nonaktif")}</span>
             )}
           </p>
           <p className="text-xs text-muted-foreground">
             {user.email}
-            {user.phone ? ` · ${user.phone}` : ""} · login terakhir:{" "}
-            {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString("id-ID") : "belum pernah"}
+            {user.phone ? ` · ${user.phone}` : ""} {tp("· login terakhir:")}{" "}
+            {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString("id-ID") : tp("belum pernah")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -126,12 +129,12 @@ function UserRow({ user, roles, isSelf }: { user: AdminUserRow; roles: RoleOptio
               ))}
             </select>
             {!isSelf && (
-              <Pending className="rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">Ubah role</Pending>
+              <Pending className="rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">{tp("Ubah role")}</Pending>
             )}
           </form>
           <form action={resetAction}>
             <Pending className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">
-              <KeyRound className="h-3.5 w-3.5" /> Reset password
+              <KeyRound className="h-3.5 w-3.5" /> {tp("Reset password")}
             </Pending>
           </form>
           {!isSelf && (
@@ -143,7 +146,7 @@ function UserRow({ user, roles, isSelf }: { user: AdminUserRow; roles: RoleOptio
                     : "rounded-md border border-status-on-track px-2.5 py-1.5 text-xs text-status-on-track hover:bg-status-on-track/10"
                 }
               >
-                {user.isActive ? "Nonaktifkan" : "Aktifkan"}
+                {user.isActive ? tp("Nonaktifkan") : tp("Aktifkan")}
               </Pending>
             </form>
           )}
@@ -156,16 +159,17 @@ function UserRow({ user, roles, isSelf }: { user: AdminUserRow; roles: RoleOptio
 }
 
 export function UsersAdmin({ users, roles, currentUserId }: { users: AdminUserRow[]; roles: RoleOption[]; currentUserId: string }) {
+  const tp = usePhrase();
   return (
     <div className="space-y-6">
       <div className="surface p-5">
-        <h2 className="mb-3 text-base font-bold text-foreground">Tambah User Internal</h2>
+        <h2 className="mb-3 text-base font-bold text-foreground">{tp("Tambah User Internal")}</h2>
         <CreateUserForm roles={roles} />
       </div>
       <div className="surface p-5">
-        <h2 className="mb-1 text-base font-bold text-foreground">Daftar User ({users.length})</h2>
+        <h2 className="mb-1 text-base font-bold text-foreground">{tp("Daftar User (")}{users.length})</h2>
         <p className="mb-3 text-xs text-muted-foreground">
-          Akun Anda sendiri dan NOTARY aktif terakhir tidak bisa dinonaktifkan/diturunkan — supaya kantor tidak kehilangan akses.
+          {tp("Akun Anda sendiri dan NOTARY aktif terakhir tidak bisa dinonaktifkan/diturunkan — supaya kantor tidak kehilangan akses.")}
         </p>
         <ul className="divide-y divide-border">
           {users.map((u) => (

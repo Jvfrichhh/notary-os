@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { ArchiveFormState } from "@/app/(dashboard)/archive/actions";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -48,6 +49,7 @@ function SubmitButton() {
 }
 
 export function DeedForm({ action, clients, jobs, notaries, lockedClient, lockedJob, cancelHref }: DeedFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
 
@@ -60,14 +62,14 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Nomor Akta <span className="text-status-overdue">*</span>
+            {tp("Nomor Akta")} <span className="text-status-overdue">*</span>
           </label>
-          <input name="deedNumber" required className={fieldClass} placeholder="cth. 124/2026" />
+          <input name="deedNumber" required className={fieldClass} placeholder={tp("cth. 124/2026")} />
           {errors.deedNumber?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.deedNumber[0]}</p> : null}
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Tanggal Akta <span className="text-status-overdue">*</span>
+            {tp("Tanggal Akta")} <span className="text-status-overdue">*</span>
           </label>
           <input type="date" name="deedDate" required className={fieldClass} />
           {errors.deedDate?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.deedDate[0]}</p> : null}
@@ -76,16 +78,16 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
 
       <div>
         <label className="mb-1 block text-sm font-medium text-foreground">
-          Jenis Akta <span className="text-status-overdue">*</span>
+          {tp("Jenis Akta")} <span className="text-status-overdue">*</span>
         </label>
-        <input name="deedType" required className={fieldClass} placeholder="cth. Akta Jual Beli" />
+        <input name="deedType" required className={fieldClass} placeholder={tp("cth. Akta Jual Beli")} />
         {errors.deedType?.length ? <p className="mt-1 text-xs text-status-overdue">{errors.deedType[0]}</p> : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Klien <span className="text-status-overdue">*</span>
+            {tp("Klien")} <span className="text-status-overdue">*</span>
           </label>
           {lockedClient ? (
             <>
@@ -95,7 +97,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
           ) : (
             <select name="clientId" required defaultValue="" className={fieldClass}>
               <option value="" disabled>
-                — Pilih klien —
+                {tp("— Pilih klien —")}
               </option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -108,7 +110,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan Terkait</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Pekerjaan Terkait")}</label>
           {lockedJob ? (
             <>
               <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">{lockedJob.label}</p>
@@ -116,7 +118,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
             </>
           ) : (
             <select name="jobId" defaultValue="" className={fieldClass}>
-              <option value="">— Tidak terkait pekerjaan —</option>
+              <option value="">{tp("— Tidak terkait pekerjaan —")}</option>
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.jobNumber} {j.description ? `— ${j.description}` : ""}
@@ -128,9 +130,9 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Notaris</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{tp("Notaris")}</label>
         <select name="notaryId" defaultValue="" className={fieldClass}>
-          <option value="">— Belum ditentukan —</option>
+          <option value="">{tp("— Belum ditentukan —")}</option>
           {notaries.map((n) => (
             <option key={n.id} value={n.id}>
               {n.name}
@@ -142,7 +144,7 @@ export function DeedForm({ action, clients, jobs, notaries, lockedClient, locked
       <div className="flex flex-wrap items-center gap-3">
         <SubmitButton />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

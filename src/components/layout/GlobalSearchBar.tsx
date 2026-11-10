@@ -5,6 +5,7 @@ import { useT } from "@/components/i18n/LocaleProvider";
 import { useRouter } from "next/navigation";
 import { Loader2, Search } from "lucide-react";
 import type { SearchResultGroup } from "@/app/api/search/route";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -17,6 +18,7 @@ const MIN_QUERY_LENGTH = 2;
  * dikelompokkan per entity.
  */
 export function GlobalSearchBar({ autoFocus = false, className = "" }: { autoFocus?: boolean; className?: string }) {
+  const tp = usePhrase();
   const router = useRouter();
   const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -120,10 +122,10 @@ export function GlobalSearchBar({ autoFocus = false, className = "" }: { autoFoc
       {showDropdown && (
         <div className="surface surface-opaque glass-pop absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-lg border border-border bg-background shadow-lg" style={{ "--pop-origin": "top left" } as CSSProperties}>
           {isLoading && totalResults === 0 && (
-            <p className="p-3 text-sm text-muted-foreground">Mencari...</p>
+            <p className="p-3 text-sm text-muted-foreground">{tp("Mencari...")}</p>
           )}
           {!isLoading && hasError && (
-            <p className="p-3 text-sm text-muted-foreground">Gagal memuat hasil pencarian. Coba lagi.</p>
+            <p className="p-3 text-sm text-muted-foreground">{tp("Gagal memuat hasil pencarian. Coba lagi.")}</p>
           )}
           {!isLoading && !hasError && totalResults === 0 && (
             <p className="p-3 text-sm text-muted-foreground">{t("topbar.noResults", { q: trimmedQuery })}</p>

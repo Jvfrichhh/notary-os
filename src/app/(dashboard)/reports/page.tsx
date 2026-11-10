@@ -42,9 +42,10 @@ function BarList({ data }: { data: { label: string; value: number }[] }) {
   );
 }
 
-function Delta({ now, before, year }: { now: number; before: number; year: number }) {
-  if (before === 0 && now === 0) return <span className="text-xs text-muted-foreground">Belum ada data</span>;
-  if (before === 0) return <span className="text-xs text-muted-foreground">Tahun {year - 1}: 0</span>;
+async function Delta({ now, before, year }: { now: number; before: number; year: number }) {
+  const { tp } = await getT();
+  if (before === 0 && now === 0) return <span className="text-xs text-muted-foreground">{tp("Belum ada data")}</span>;
+  if (before === 0) return <span className="text-xs text-muted-foreground">{tp("Tahun")} {year - 1}: 0</span>;
   const pct = Math.round(((now - before) / before) * 100);
   const up = pct >= 0;
   return (
@@ -52,7 +53,7 @@ function Delta({ now, before, year }: { now: number; before: number; year: numbe
       <span className={up ? "font-bold text-status-on-track" : "font-bold text-status-overdue"}>
         {up ? "▲" : "▼"} {Math.abs(pct)}%
       </span>{" "}
-      vs {year - 1}
+      {tp("vs")} {year - 1}
     </span>
   );
 }

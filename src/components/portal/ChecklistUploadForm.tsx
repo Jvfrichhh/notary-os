@@ -8,6 +8,7 @@ import {
   type PortalUploadState
 } from "@/app/portal/(app)/jobs/[id]/actions";
 import { useDirectUpload } from "@/components/upload/useDirectUpload";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const initial: PortalUploadState = {};
 
@@ -23,6 +24,7 @@ export function ChecklistUploadForm({
   /** true = sudah pernah unggah (menunggu/perlu perbaikan), tombol berbunyi "Kirim ulang". */
   replace: boolean;
 }) {
+  const tp = usePhrase();
   const action = uploadChecklistDocument.bind(null, checklistItemId);
   const [state, formAction] = useFormState(action, initial);
   const { onSubmit, busy, uploading, uploadError } = useDirectUpload(
@@ -46,10 +48,10 @@ export function ChecklistUploadForm({
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60 sm:w-auto sm:py-1.5 sm:text-xs"
         >
           <Upload className="h-3.5 w-3.5" />
-          {uploading ? "Mengunggah..." : busy ? "Menyimpan..." : replace ? "Kirim ulang" : "Unggah"}
+          {uploading ? tp("Mengunggah...") : busy ? tp("Menyimpan...") : replace ? tp("Kirim ulang") : tp("Unggah")}
         </button>
       </div>
-      <p className="text-[11px] text-muted-foreground">Format: {allowedLabel}, maks. 20 MB. Pastikan dokumen terbaca jelas.</p>
+      <p className="text-[11px] text-muted-foreground">{tp("Format:")} {allowedLabel}{tp(", maks. 20 MB. Pastikan dokumen terbaca jelas.")}</p>
       {uploadError && <p className="text-xs text-status-overdue">{uploadError}</p>}
       {!uploadError && state.error && <p className="text-xs text-status-overdue">{state.error}</p>}
       {state.success && <p className="text-xs text-status-on-track">{state.success}</p>}

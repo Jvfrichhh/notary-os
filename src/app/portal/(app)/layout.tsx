@@ -6,11 +6,13 @@ import { NavigationProgress } from "@/components/motion/NavigationProgress";
 import { WELCOME_PENDING_SCRIPT, WelcomeOverlay } from "@/components/motion/WelcomeOverlay";
 import { GlassBackdrop } from "@/components/skin/GlassBackdrop";
 import { GlassPointer } from "@/components/skin/GlassPointer";
+import { getT } from "@/lib/i18n/server";
 
 // Layout membaca session + database -> selalu dinamis, tidak di-cache lintas klien.
 export const dynamic = "force-dynamic";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
+  const { tp } = await getT();
   // Satu-satunya pintu masuk area portal: memastikan ini akun klien yang
   // aktif dan terikat ke Client yang aktif. Halaman di bawahnya memanggil
   // requireClientAccount() lagi untuk mendapatkan clientId -- murah, dan
@@ -25,7 +27,7 @@ export default async function PortalLayout({ children }: { children: React.React
       <GlassBackdrop />
       <GlassPointer />
       <script dangerouslySetInnerHTML={{ __html: WELCOME_PENDING_SCRIPT }} />
-      <WelcomeOverlay name={principal.displayName} subtitle="Portal Klien" />
+      <WelcomeOverlay name={principal.displayName} subtitle={tp("Portal Klien")} />
       <Suspense>
         <NavigationProgress />
       </Suspense>
@@ -36,7 +38,7 @@ export default async function PortalLayout({ children }: { children: React.React
       />
       {principal.mustChangePassword && (
         <div className="border-b border-status-due-today/40 bg-status-due-today/10 px-4 py-2 text-center text-sm text-foreground">
-          Demi keamanan, silakan ganti password sementara Anda terlebih dahulu.
+          {tp("Demi keamanan, silakan ganti password sementara Anda terlebih dahulu.")}
         </div>
       )}
       <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6">{children}</main>

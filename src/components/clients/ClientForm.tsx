@@ -7,6 +7,7 @@ import type { ClientFormState } from "@/app/(dashboard)/clients/actions";
 import type { Client } from "@prisma/client";
 import { NewJobSection, type ServiceOption, type StaffOption } from "@/components/clients/NewJobSection";
 import { OCCUPATION_OPTIONS } from "@/lib/occupations";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 interface ClientFormProps {
   action: (prevState: ClientFormState, formData: FormData) => Promise<ClientFormState>;
@@ -71,6 +72,7 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export function ClientForm({ action, client, cancelHref, newJob }: ClientFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
 
@@ -81,11 +83,11 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Nama Lengkap" name="fullName" defaultValue={client?.fullName} errors={errors.fullName} required />
+        <Field label={tp("Nama Lengkap")} name="fullName" defaultValue={client?.fullName} errors={errors.fullName} required />
 
         <div>
           <label htmlFor="clientType" className="mb-1 block text-sm font-medium text-foreground">
-            Tipe Klien
+            {tp("Tipe Klien")}
           </label>
           <select
             id="clientType"
@@ -93,42 +95,42 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
             defaultValue={client?.clientType ?? ""}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            <option value="">— Pilih —</option>
-            <option value="Individu">Individu</option>
-            <option value="Perusahaan">Perusahaan</option>
+            <option value="">{tp("— Pilih —")}</option>
+            <option value="Individu">{tp("Individu")}</option>
+            <option value="Perusahaan">{tp("Perusahaan")}</option>
           </select>
         </div>
 
         <div>
-          <Field label="NIK" name="nik" defaultValue={client?.nik} errors={errors.nik} />
+          <Field label={tp("NIK")} name="nik" defaultValue={client?.nik} errors={errors.nik} />
           {state.duplicateNik && (
             <label className="mt-1 flex items-center gap-2 text-xs text-foreground">
-              <input type="checkbox" name="allowDuplicateNik" /> {client ? "Tetap simpan" : "Tetap simpan sebagai klien baru"}
+              <input type="checkbox" name="allowDuplicateNik" /> {client ? tp("Tetap simpan") : tp("Tetap simpan sebagai klien baru")}
             </label>
           )}
         </div>
-        <Field label="No. Telepon" name="phone" defaultValue={client?.phone} errors={errors.phone} />
+        <Field label={tp("No. Telepon")} name="phone" defaultValue={client?.phone} errors={errors.phone} />
         <div>
-          <Field label="Email" name="email" type="email" defaultValue={client?.email} errors={errors.email} />
+          <Field label={tp("Email")} name="email" type="email" defaultValue={client?.email} errors={errors.email} />
           {!client && newJob && (
             <label className="mt-1 flex items-center gap-2 text-xs text-foreground">
-              <input type="checkbox" name="withPortal" defaultChecked /> Buatkan akses portal klien (bila email diisi)
+              <input type="checkbox" name="withPortal" defaultChecked /> {tp("Buatkan akses portal klien (bila email diisi)")}
             </label>
           )}
         </div>
-        <Field label="Kota" name="city" defaultValue={client?.city} errors={errors.city} />
-        <Field label="Nama Perusahaan" name="companyName" defaultValue={client?.companyName} errors={errors.companyName} />
-        <Field label="NPWP" name="npwp" defaultValue={client?.npwp} errors={errors.npwp} />
+        <Field label={tp("Kota")} name="city" defaultValue={client?.city} errors={errors.city} />
+        <Field label={tp("Nama Perusahaan")} name="companyName" defaultValue={client?.companyName} errors={errors.companyName} />
+        <Field label={tp("NPWP")} name="npwp" defaultValue={client?.npwp} errors={errors.npwp} />
         <div>
           <label htmlFor="occupation" className="mb-1 block text-sm font-medium text-foreground">
-            Pekerjaan (sesuai KTP)
+            {tp("Pekerjaan (sesuai KTP)")}
           </label>
           <input
             id="occupation"
             name="occupation"
             list="occupation-options"
             defaultValue={client?.occupation ?? ""}
-            placeholder="mis. Karyawan Swasta"
+            placeholder={tp("mis. Karyawan Swasta")}
             autoComplete="off"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
@@ -138,36 +140,35 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
             ))}
           </datalist>
           {errors.occupation && <p className="mt-1 text-xs text-status-overdue">{errors.occupation[0]}</p>}
-          <p className="mt-1 text-xs text-muted-foreground">Dipakai untuk laporan tahunan (PKJM). Pilih dari daftar atau ketik sendiri.</p>
+          <p className="mt-1 text-xs text-muted-foreground">{tp("Dipakai untuk laporan tahunan (PKJM). Pilih dari daftar atau ketik sendiri.")}</p>
         </div>
         <div>
           <label htmlFor="maritalStatus" className="mb-1 block text-sm font-medium text-foreground">
-            Status Perkawinan
+            {tp("Status Perkawinan")}
           </label>
           <select id="maritalStatus" name="maritalStatus" defaultValue={client?.maritalStatus ?? ""} className={selectClass}>
-            <option value="">— Belum diisi —</option>
-            <option>Belum Kawin</option>
-            <option>Kawin</option>
-            <option>Cerai Hidup</option>
-            <option>Cerai Mati</option>
+            <option value="">{tp("— Belum diisi —")}</option>
+            <option value="Belum Kawin">{tp("Belum Kawin")}</option>
+            <option value="Kawin">{tp("Kawin")}</option>
+            <option value="Cerai Hidup">{tp("Cerai Hidup")}</option>
+            <option value="Cerai Mati">{tp("Cerai Mati")}</option>
           </select>
-          <p className="mt-1 text-xs text-muted-foreground">Bila “Kawin”, tindakan atas harta bersama perlu persetujuan suami/istri.</p>
+          <p className="mt-1 text-xs text-muted-foreground">{tp("Bila “Kawin”, tindakan atas harta bersama perlu persetujuan suami/istri.")}</p>
         </div>
         <div className="sm:col-span-2">
-          <Field label="Wakil badan usaha (nama & jabatan; khusus klien perusahaan)" name="representative" defaultValue={client?.representative} />
+          <Field label={tp("Wakil badan usaha (nama & jabatan; khusus klien perusahaan)")} name="representative" defaultValue={client?.representative} />
         </div>
       </div>
 
       <fieldset className="space-y-4 rounded-md border border-border p-4">
-        <legend className="px-1 text-sm font-bold text-foreground">Pengenalan Pengguna Jasa (PMPJ)</legend>
+        <legend className="px-1 text-sm font-bold text-foreground">{tp("Pengenalan Pengguna Jasa (PMPJ)")}</legend>
         <p className="text-xs text-muted-foreground">
-          Diisi untuk transaksi yang wajib PMPJ (jual beli properti, pengelolaan uang/efek, pendirian dan jual beli badan usaha). Boleh
-          dilengkapi belakangan dari halaman klien.
+          {tp("Diisi untuk transaksi yang wajib PMPJ (jual beli properti, pengelolaan uang/efek, pendirian dan jual beli badan usaha). Boleh dilengkapi belakangan dari halaman klien.")}
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="sourceOfFunds" className="mb-1 block text-sm font-medium text-foreground">
-              Sumber dana
+              {tp("Sumber dana")}
             </label>
             <input id="sourceOfFunds" name="sourceOfFunds" list="sumber-dana" defaultValue={client?.sourceOfFunds ?? ""} autoComplete="off" maxLength={120} className={selectClass} />
             <datalist id="sumber-dana">
@@ -176,31 +177,31 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
               ))}
             </datalist>
           </div>
-          <Field label="Tujuan transaksi" name="transactionPurpose" defaultValue={client?.transactionPurpose} />
+          <Field label={tp("Tujuan transaksi")} name="transactionPurpose" defaultValue={client?.transactionPurpose} />
           <div className="sm:col-span-2">
-            <Field label="Pemilik manfaat (bila bertindak untuk pihak lain / korporasi)" name="beneficialOwner" defaultValue={client?.beneficialOwner} />
+            <Field label={tp("Pemilik manfaat (bila bertindak untuk pihak lain / korporasi)")} name="beneficialOwner" defaultValue={client?.beneficialOwner} />
           </div>
           <div>
             <label htmlFor="riskLevel" className="mb-1 block text-sm font-medium text-foreground">
-              Profil risiko
+              {tp("Profil risiko")}
             </label>
             <select id="riskLevel" name="riskLevel" defaultValue={client?.riskLevel ?? ""} className={selectClass}>
-              <option value="">— Belum dinilai —</option>
-              <option value="RENDAH">Rendah</option>
-              <option value="SEDANG">Sedang</option>
-              <option value="TINGGI">Tinggi</option>
+              <option value="">{tp("— Belum dinilai —")}</option>
+              <option value="RENDAH">{tp("Rendah")}</option>
+              <option value="SEDANG">{tp("Sedang")}</option>
+              <option value="TINGGI">{tp("Tinggi")}</option>
             </select>
           </div>
           <label className="flex items-start gap-2 self-end pb-2 text-sm text-foreground">
             <input type="checkbox" name="isPep" defaultChecked={client?.isPep ?? false} className="mt-1" />
-            <span>Pejabat publik / orang yang populer secara politis (PEP), atau keluarga dekatnya</span>
+            <span>{tp("Pejabat publik / orang yang populer secara politis (PEP), atau keluarga dekatnya")}</span>
           </label>
         </div>
       </fieldset>
 
       <div>
         <label htmlFor="address" className="mb-1 block text-sm font-medium text-foreground">
-          Alamat
+          {tp("Alamat")}
         </label>
         <textarea
           id="address"
@@ -213,7 +214,7 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
 
       <div>
         <label htmlFor="notes" className="mb-1 block text-sm font-medium text-foreground">
-          Catatan
+          {tp("Catatan")}
         </label>
         <textarea
           id="notes"
@@ -238,17 +239,16 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
         <label className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
           <input type="checkbox" name="dataConsent" required className="mt-1" />
           <span>
-            Klien sudah diberi penjelasan dan <strong>menyetujui pemrosesan data pribadinya</strong> (KTP, KK, dan dokumen lain) untuk keperluan
-            pembuatan akta dan layanan kantor ini, sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.
-            <span className="mt-0.5 block text-xs text-muted-foreground">Formulir persetujuan untuk ditandatangani klien bisa diunduh di halaman klien.</span>
+            {tp("Klien sudah diberi penjelasan dan")} <strong>{tp("menyetujui pemrosesan data pribadinya")}</strong> {tp("(KTP, KK, dan dokumen lain) untuk keperluan pembuatan akta dan layanan kantor ini, sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.")}
+            <span className="mt-0.5 block text-xs text-muted-foreground">{tp("Formulir persetujuan untuk ditandatangani klien bisa diunduh di halaman klien.")}</span>
           </span>
         </label>
       )}
 
       <div className="flex items-center gap-3">
-        <SubmitButton label={client ? "Simpan Perubahan" : newJob ? "Simpan Klien & Pekerjaan" : "Simpan Klien"} />
+        <SubmitButton label={client ? tp("Simpan Perubahan") : newJob ? tp("Simpan Klien & Pekerjaan") : tp("Simpan Klien")} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

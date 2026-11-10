@@ -9,6 +9,7 @@ import {
   setClientPortalAccountActive,
   type PortalAccountActionState
 } from "@/app/(dashboard)/clients/portal-actions";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 type Account = {
   id: string;
@@ -33,6 +34,7 @@ function Pending({ children, className }: { children: React.ReactNode; className
 
 /** Kotak password sementara: tampil sekali, bisa disalin. */
 function TemporaryPasswordBox({ state }: { state: PortalAccountActionState }) {
+  const tp = usePhrase();
   const [copied, setCopied] = useState(false);
   if (!state.temporaryPassword) return null;
   const text = `Akses Portal Klien Nexora\nEmail: ${state.email}\nPassword sementara: ${state.temporaryPassword}\n(Wajib diganti saat login pertama)`;
@@ -57,17 +59,18 @@ function TemporaryPasswordBox({ state }: { state: PortalAccountActionState }) {
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? "Tersalin" : "Salin pesan untuk klien"}
+          {copied ? tp("Tersalin") : tp("Salin pesan untuk klien")}
         </button>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
-        Password ini tidak disimpan dan tidak bisa dilihat lagi setelah halaman ditutup. Jika hilang, gunakan Reset.
+        {tp("Password ini tidak disimpan dan tidak bisa dilihat lagi setelah halaman ditutup. Jika hilang, gunakan Reset.")}
       </p>
     </div>
   );
 }
 
 function CreateForm({ clientId, defaultEmail }: { clientId: string; defaultEmail: string }) {
+  const tp = usePhrase();
   const [state, action] = useFormState(createClientPortalAccount.bind(null, clientId), initial);
   return (
     <form action={action} className="mt-3 space-y-2">
@@ -77,16 +80,16 @@ function CreateForm({ clientId, defaultEmail }: { clientId: string; defaultEmail
           type="email"
           required
           defaultValue={defaultEmail}
-          placeholder="Email klien untuk login"
+          placeholder={tp("Email klien untuk login")}
           className="flex-1 rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <input
           name="name"
-          placeholder="Nama tampilan (opsional)"
+          placeholder={tp("Nama tampilan (opsional)")}
           className="flex-1 rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <Pending className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-          <UserPlus className="h-4 w-4" /> Buat Akses Portal
+          <UserPlus className="h-4 w-4" /> {tp("Buat Akses Portal")}
         </Pending>
       </div>
       {state.error && <p className="text-sm text-status-overdue">{state.error}</p>}
@@ -96,6 +99,7 @@ function CreateForm({ clientId, defaultEmail }: { clientId: string; defaultEmail
 }
 
 function AccountRow({ account, canManage }: { account: Account; canManage: boolean }) {
+  const tp = usePhrase();
   const [state, resetAction] = useFormState(resetClientPortalPassword.bind(null, account.id), initial);
   return (
     <li className="py-3 text-sm">
@@ -105,25 +109,25 @@ function AccountRow({ account, canManage }: { account: Account; canManage: boole
             {account.email}
             {!account.isActive && (
               <span className="ml-2 rounded-full bg-status-archived/10 px-2 py-0.5 text-[11px] font-medium text-status-archived">
-                nonaktif
+                {tp("nonaktif")}
               </span>
             )}
             {account.isActive && account.mustChangePassword && (
               <span className="ml-2 rounded-full bg-status-due-soon/10 px-2 py-0.5 text-[11px] font-medium text-status-due-soon">
-                belum ganti password
+                {tp("belum ganti password")}
               </span>
             )}
           </p>
           <p className="text-xs text-muted-foreground">
-            {account.name ?? "—"} · login terakhir:{" "}
-            {account.lastLoginAt ? new Date(account.lastLoginAt).toLocaleString("id-ID") : "belum pernah"}
+            {account.name ?? "—"} {tp("· login terakhir:")}{" "}
+            {account.lastLoginAt ? new Date(account.lastLoginAt).toLocaleString("id-ID") : tp("belum pernah")}
           </p>
         </div>
         {canManage && (
           <div className="flex flex-wrap items-center gap-2">
             <form action={resetAction}>
               <Pending className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">
-                <KeyRound className="h-3.5 w-3.5" /> Reset password
+                <KeyRound className="h-3.5 w-3.5" /> {tp("Reset password")}
               </Pending>
             </form>
             <form action={setClientPortalAccountActive.bind(null, account.id, !account.isActive)}>
@@ -134,7 +138,7 @@ function AccountRow({ account, canManage }: { account: Account; canManage: boole
                     : "rounded-md border border-status-on-track px-2.5 py-1.5 text-xs text-status-on-track hover:bg-status-on-track/10"
                 }
               >
-                {account.isActive ? "Nonaktifkan" : "Aktifkan"}
+                {account.isActive ? tp("Nonaktifkan") : tp("Aktifkan")}
               </Pending>
             </form>
           </div>
@@ -159,10 +163,11 @@ export function ClientPortalAccess({
   accounts: Account[];
   canManage: boolean;
 }) {
+  const tp = usePhrase();
   return (
     <div>
       {accounts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Klien ini belum memiliki akses portal.</p>
+        <p className="text-sm text-muted-foreground">{tp("Klien ini belum memiliki akses portal.")}</p>
       ) : (
         <ul className="divide-y divide-border">
           {accounts.map((a) => (
@@ -172,7 +177,7 @@ export function ClientPortalAccess({
       )}
       {canManage && clientActive && <CreateForm clientId={clientId} defaultEmail={clientEmail ?? ""} />}
       {canManage && !clientActive && (
-        <p className="mt-2 text-xs text-muted-foreground">Klien diarsipkan — akses portal tidak dapat dibuat.</p>
+        <p className="mt-2 text-xs text-muted-foreground">{tp("Klien diarsipkan — akses portal tidak dapat dibuat.")}</p>
       )}
     </div>
   );

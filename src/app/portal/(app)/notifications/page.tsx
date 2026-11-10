@@ -4,10 +4,12 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDateTime } from "@/lib/format";
 import { markAllClientNotificationsRead, markClientNotificationRead, openClientNotification } from "./actions";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalNotificationsPage() {
+  const { tp } = await getT();
   const { clientId } = await requireClientAccount();
 
   const notifications = await prisma.clientNotification.findMany({
@@ -21,13 +23,13 @@ export default async function PortalNotificationsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Notifikasi</h1>
-          <p className="text-sm text-muted-foreground">{unread > 0 ? `${unread} belum dibaca` : "Semua sudah dibaca"}</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{tp("Notifikasi")}</h1>
+          <p className="text-sm text-muted-foreground">{unread > 0 ? tp("{0} belum dibaca", [unread]) : tp("Semua sudah dibaca")}</p>
         </div>
         {unread > 0 && (
           <form action={markAllClientNotificationsRead}>
             <button type="submit" className="text-xs font-medium text-primary hover:underline">
-              Tandai semua dibaca
+              {tp("Tandai semua dibaca")}
             </button>
           </form>
         )}
@@ -35,7 +37,7 @@ export default async function PortalNotificationsPage() {
 
       <Card>
         {notifications.length === 0 ? (
-          <EmptyState title="Belum ada notifikasi." />
+          <EmptyState title={tp("Belum ada notifikasi.")} />
         ) : (
           <ul className="divide-y divide-border">
             {notifications.map((n) => {
@@ -63,7 +65,7 @@ export default async function PortalNotificationsPage() {
                   {!n.isRead && (
                     <form action={markClientNotificationRead.bind(null, n.id)}>
                       <button type="submit" className="whitespace-nowrap text-xs text-muted-foreground hover:text-foreground">
-                        Tandai dibaca
+                        {tp("Tandai dibaca")}
                       </button>
                     </form>
                   )}

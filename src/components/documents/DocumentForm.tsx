@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ACCEPT_ATTRIBUTE, ALLOWED_EXTENSIONS_LABEL } from "@/lib/uploadValidation";
 import { requestOfficeUploadTicket, type DocumentFormState } from "@/app/(dashboard)/documents/actions";
 import { useDirectUpload } from "@/components/upload/useDirectUpload";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const CATEGORIES = [
   { value: "CLIENT_DOCUMENT", label: "Dokumen Klien" },
@@ -53,6 +54,7 @@ function SubmitButton({ busy, uploading }: { busy: boolean; uploading: boolean }
 }
 
 export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, cancelHref }: DocumentFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
   const { onSubmit, busy, uploading, uploadError } = useDirectUpload((form, meta) => {
@@ -70,15 +72,15 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
 
       <div>
         <label htmlFor="file" className="mb-1 block text-sm font-medium text-foreground">
-          File <span className="text-status-overdue">*</span>
+          {tp("File")} <span className="text-status-overdue">*</span>
         </label>
         <input id="file" name="file" type="file" required accept={ACCEPT_ATTRIBUTE} className={fieldClass} />
-        <p className="mt-1 text-xs text-muted-foreground">Format yang didukung: {ALLOWED_EXTENSIONS_LABEL}. Maksimal 20 MB.</p>
+        <p className="mt-1 text-xs text-muted-foreground">{tp("Format yang didukung:")} {ALLOWED_EXTENSIONS_LABEL}{tp(". Maksimal 20 MB.")}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Klien</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Klien")}</label>
           {lockedClient ? (
             <>
               <p className="break-words rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
@@ -88,7 +90,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
             </>
           ) : (
             <select name="clientId" defaultValue="" className={fieldClass}>
-              <option value="">— Tidak terkait klien —</option>
+              <option value="">{tp("— Tidak terkait klien —")}</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.clientNumber} — {c.fullName}
@@ -99,7 +101,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Pekerjaan</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">{tp("Pekerjaan")}</label>
           {lockedJob ? (
             <>
               <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">{lockedJob.label}</p>
@@ -107,7 +109,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
             </>
           ) : (
             <select name="jobId" defaultValue="" className={fieldClass}>
-              <option value="">— Tidak terkait pekerjaan —</option>
+              <option value="">{tp("— Tidak terkait pekerjaan —")}</option>
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.jobNumber} {j.description ? `— ${j.description}` : ""}
@@ -120,11 +122,11 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
 
       <div>
         <label htmlFor="category" className="mb-1 block text-sm font-medium text-foreground">
-          Kategori <span className="text-status-overdue">*</span>
+          {tp("Kategori")} <span className="text-status-overdue">*</span>
         </label>
         <select id="category" name="category" required defaultValue="" className={cn(fieldClass, errors.category?.length && "border-status-overdue")}>
           <option value="" disabled>
-            — Pilih kategori —
+            {tp("— Pilih kategori —")}
           </option>
           {CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
@@ -137,7 +139,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
 
       <div>
         <label htmlFor="description" className="mb-1 block text-sm font-medium text-foreground">
-          Deskripsi
+          {tp("Deskripsi")}
         </label>
         <textarea id="description" name="description" rows={3} className={fieldClass} />
       </div>
@@ -145,7 +147,7 @@ export function DocumentForm({ action, clients, jobs, lockedClient, lockedJob, c
       <div className="flex flex-wrap items-center gap-3">
         <SubmitButton busy={busy} uploading={uploading} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

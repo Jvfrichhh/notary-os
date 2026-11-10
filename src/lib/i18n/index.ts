@@ -43,7 +43,9 @@ export const makeT = (locale: Locale): Translator => (key, vars) => t(locale, ke
  * Bahasa Indonesia (atau frasa yang belum diterjemahkan) dikembalikan apa adanya.
  */
 export function phrase(locale: Locale, text: string, vars?: readonly unknown[]): string {
-  const raw = locale === "en" ? PHRASES_EN[text] ?? text : text;
+  // "Teks::konteks" membedakan kata yang sama dengan arti berbeda; konteksnya tidak pernah tampil.
+  const plain = text.split("::")[0];
+  const raw = locale === "en" ? PHRASES_EN[text] ?? PHRASES_EN[plain] ?? plain : plain;
   if (!vars) return raw;
   return raw.replace(/\{(\d+)\}/g, (m, i: string) => (Number(i) < vars.length ? String(vars[Number(i)] ?? "") : m));
 }

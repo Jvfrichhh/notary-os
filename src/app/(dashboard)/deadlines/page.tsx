@@ -86,7 +86,7 @@ export default async function DeadlinesPage() {
                           <p className="line-clamp-1 text-xs text-muted-foreground">{job.description}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
-                          <span className="text-xs text-muted-foreground">{formatStatusLabel(job.status)}</span>
+                          <span className="text-xs text-muted-foreground">{tp(formatStatusLabel(job.status))}</span>
                           <StatusBadge tone={group.tone} label={formatDate(job.deadline)} />
                           <span className="text-xs text-muted-foreground">{job.pic?.name ?? "-"}</span>
                         </div>

@@ -232,7 +232,7 @@ export default async function JobDetailPage(props: Async<{
             <span className="text-xs text-muted-foreground">{tp("Tanpa target")}</span>
           )}
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
-            {formatStatusLabel(job.status)}
+            {tp(formatStatusLabel(job.status))}
           </span>
         </div>
       </div>
@@ -245,8 +245,8 @@ export default async function JobDetailPage(props: Async<{
             <h2 className="mb-3 text-base font-bold text-foreground">{tp("Informasi Pekerjaan")}</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
               <Info label={tp("Jenis Layanan")} value={job.serviceType?.name} />
-              <Info label={tp("Status")} value={formatStatusLabel(job.status)} />
-              <Info label={tp("Prioritas")} value={formatStatusLabel(job.priority)} />
+              <Info label={tp("Status")} value={tp(formatStatusLabel(job.status))} />
+              <Info label={tp("Prioritas")} value={tp(formatStatusLabel(job.priority))} />
               <Info label={tp("Target")} value={formatDate(job.deadline)} />
               <Info label={tp("Mulai")} value={formatDateJakarta(job.startDate)} />
               <Info label={tp("Selesai")} value={formatDateJakarta(job.completionDate)} />
@@ -615,14 +615,14 @@ export default async function JobDetailPage(props: Async<{
                   <div className="min-w-0">
                     <p className="break-words font-medium text-foreground">{o.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {tp("Diterima")} {formatDate(o.receivedAt)}
+                      {tp("Diterima::dok")} {formatDate(o.receivedAt)}
                       {o.receivedFrom ? tp(" dari {0}", [o.receivedFrom]) : ""}
                       {o.notes ? ` · ${o.notes}` : ""}
                     </p>
                   </div>
                   {o.returnedAt ? (
                     <span className="text-xs text-status-on-track">
-                      {tp("Dikembalikan")} {formatDate(o.returnedAt)}
+                      {tp("Dikembalikan::dok")} {formatDate(o.returnedAt)}
                       {o.returnedTo ? tp(" kepada {0}", [o.returnedTo]) : ""}
                     </span>
                   ) : canEdit ? (
@@ -680,7 +680,7 @@ export default async function JobDetailPage(props: Async<{
                       <Link href={`/documents/${doc.id}`} className="min-w-0 break-all text-foreground hover:underline">
                         {doc.fileName}
                       </Link>
-                      <span className="shrink-0 text-xs text-muted-foreground">{formatStatusLabel(doc.category)}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{tp(formatStatusLabel(doc.category))}</span>
                     </li>
                   ))}
                 </ul>
@@ -909,7 +909,7 @@ export default async function JobDetailPage(props: Async<{
             <h2 className="mb-3 text-base font-bold text-foreground">{tp("Ubah Status")}</h2>
             <p className="mb-2 text-xs text-muted-foreground">{tp("Status juga berubah otomatis: dokumen lengkap, diajukan, disetujui, dan akta disahkan.")}</p>
             {isFinal ? (
-              <p className="text-sm text-muted-foreground">{tp("Job ini sudah final (")}{formatStatusLabel(job.status)}).</p>
+              <p className="text-sm text-muted-foreground">{tp("Job ini sudah final (")}{tp(formatStatusLabel(job.status))}).</p>
             ) : canEdit && nextStatuses.length > 0 ? (
               <form action={changeJobStatusForm.bind(null, job.id)} className="space-y-2">
                 <select
@@ -923,7 +923,7 @@ export default async function JobDetailPage(props: Async<{
                   </option>
                   {nextStatuses.map((s) => (
                     <option key={s} value={s}>
-                      {formatStatusLabel(s)}
+                      {tp(formatStatusLabel(s))}
                     </option>
                   ))}
                 </select>
@@ -964,7 +964,7 @@ export default async function JobDetailPage(props: Async<{
                     <Row label={tp("DP")} value={formatCurrency(p.downPayment)} />
                     <Row label={tp("Dibayar")} value={formatCurrency(p.paidAmount)} />
                     <Row label={tp("Sisa")} value={formatCurrency(p.remainingAmount)} />
-                    <Row label={tp("Status")} value={formatStatusLabel(p.status)} />
+                    <Row label={tp("Status")} value={tp(formatStatusLabel(p.status))} />
                   </dl>
                 ))
               )}

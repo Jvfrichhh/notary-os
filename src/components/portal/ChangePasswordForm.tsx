@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 export interface ChangePasswordState {
   error?: string;
   /**
@@ -61,6 +62,7 @@ function Submit() {
  * `action` = server action yang memverifikasi password lama & menyimpan yang baru.
  */
 export function ChangePasswordForm({ forced, action: serverAction }: { forced: boolean; action: ChangePasswordAction }) {
+  const tp = usePhrase();
   const [state, action] = useFormState(serverAction, initial);
   const formRef = useRef<HTMLFormElement>(null);
   const [reloginFailed, setReloginFailed] = useState(false);
@@ -79,13 +81,13 @@ export function ChangePasswordForm({ forced, action: serverAction }: { forced: b
 
   return (
     <form ref={formRef} action={action} className="space-y-4">
-      <Field name="currentPassword" label={forced ? "Password sementara" : "Password saat ini"} autoComplete="current-password" />
-      <Field name="newPassword" label="Password baru (min. 10 karakter, huruf & angka)" autoComplete="new-password" />
-      <Field name="confirmPassword" label="Ulangi password baru" autoComplete="new-password" />
+      <Field name="currentPassword" label={forced ? tp("Password sementara") : tp("Password saat ini")} autoComplete="current-password" />
+      <Field name="newPassword" label={tp("Password baru (min. 10 karakter, huruf & angka)")} autoComplete="new-password" />
+      <Field name="confirmPassword" label={tp("Ulangi password baru")} autoComplete="new-password" />
       {state.error && <p className="text-sm text-status-overdue">{state.error}</p>}
       {state.relogin && (
         <p className="text-sm text-muted-foreground">
-          {reloginFailed ? "Password tersimpan. Silakan masuk lagi dengan password baru." : "Password tersimpan. Memuat ulang sesi..."}
+          {reloginFailed ? tp("Password tersimpan. Silakan masuk lagi dengan password baru.") : tp("Password tersimpan. Memuat ulang sesi...")}
         </p>
       )}
       <Submit />

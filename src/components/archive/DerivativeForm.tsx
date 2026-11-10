@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { ArchiveFormState } from "@/app/(dashboard)/archive/actions";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const fieldClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -42,6 +43,7 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export function DerivativeForm({ action, label, deeds, documents, lockedDeed, cancelHref }: DerivativeFormProps) {
+  const tp = usePhrase();
   const [state, formAction] = useFormState(action, initialState);
   const errors = state.errors ?? {};
 
@@ -53,7 +55,7 @@ export function DerivativeForm({ action, label, deeds, documents, lockedDeed, ca
 
       <div>
         <label className="mb-1 block text-sm font-medium text-foreground">
-          Akta <span className="text-status-overdue">*</span>
+          {tp("Akta")} <span className="text-status-overdue">*</span>
         </label>
         {lockedDeed ? (
           <>
@@ -63,7 +65,7 @@ export function DerivativeForm({ action, label, deeds, documents, lockedDeed, ca
         ) : (
           <select name="deedId" required defaultValue="" className={fieldClass}>
             <option value="" disabled>
-              — Pilih akta —
+              {tp("— Pilih akta —")}
             </option>
             {deeds.map((d) => (
               <option key={d.id} value={d.id}>
@@ -76,9 +78,9 @@ export function DerivativeForm({ action, label, deeds, documents, lockedDeed, ca
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Dokumen (Document Vault)</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{tp("Dokumen (Document Vault)")}</label>
         <select name="documentId" defaultValue="" className={fieldClass}>
-          <option value="">— Belum ada file terkait —</option>
+          <option value="">{tp("— Belum ada file terkait —")}</option>
           {documents.map((doc) => (
             <option key={doc.id} value={doc.id}>
               {doc.fileName}
@@ -86,18 +88,18 @@ export function DerivativeForm({ action, label, deeds, documents, lockedDeed, ca
           ))}
         </select>
         <p className="mt-1 text-xs text-muted-foreground">
-          Upload file lewat Document Vault dulu kalau belum ada di daftar ini.
+          {tp("Upload file lewat Document Vault dulu kalau belum ada di daftar ini.")}
         </p>
       </div>
 
       {label === "Salinan" && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Diberikan kepada</label>
-            <input name="recipient" maxLength={200} placeholder="mis. Tuan Budi (Pihak Pertama)" className={fieldClass} />
+            <label className="mb-1 block text-sm font-medium text-foreground">{tp("Diberikan kepada")}</label>
+            <input name="recipient" maxLength={200} placeholder={tp("mis. Tuan Budi (Pihak Pertama)")} className={fieldClass} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Tanggal diberikan</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{tp("Tanggal diberikan")}</label>
             <input type="date" name="issuedAt" className={fieldClass} />
           </div>
         </div>
@@ -106,7 +108,7 @@ export function DerivativeForm({ action, label, deeds, documents, lockedDeed, ca
       <div className="flex flex-wrap items-center gap-3">
         <SubmitButton label={label} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
-          Batal
+          {tp("Batal")}
         </Link>
       </div>
     </form>

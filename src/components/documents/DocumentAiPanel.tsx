@@ -12,6 +12,7 @@ import {
   type ExtractedFields
 } from "@/lib/ai/documentFields";
 import type { AiAnalysisView, ClientCurrentValues } from "@/lib/ai/analysisView";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const initial: AiActionState = {};
 
@@ -49,21 +50,22 @@ const FIELD_LABEL: Record<keyof ExtractedFields, string> = {
 };
 
 function MatchBadge({ verdict }: { verdict: "match" | "mismatch" | "unknown" }) {
+  const tp = usePhrase();
   if (verdict === "match")
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-status-on-track/10 px-2 py-0.5 text-[11px] font-medium text-status-on-track">
-        <CheckCircle2 className="h-3 w-3" /> cocok
+        <CheckCircle2 className="h-3 w-3" /> {tp("cocok")}
       </span>
     );
   if (verdict === "mismatch")
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-status-overdue/10 px-2 py-0.5 text-[11px] font-medium text-status-overdue">
-        <AlertTriangle className="h-3 w-3" /> berbeda
+        <AlertTriangle className="h-3 w-3" /> {tp("berbeda")}
       </span>
     );
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-      <HelpCircle className="h-3 w-3" /> belum ada data klien
+      <HelpCircle className="h-3 w-3" /> {tp("belum ada data klien")}
     </span>
   );
 }
@@ -92,6 +94,7 @@ export function DocumentAiPanel({
   clientValues: ClientCurrentValues | null;
   compact?: boolean;
 }) {
+  const tp = usePhrase();
   const [runState, runAction] = useFormState(runDocumentAnalysis.bind(null, documentId, expectedLabel ?? null, returnPath), initial);
   const [applyState, applyAction] = useFormState(
     applyAnalysisToClient.bind(null, analysis?.id ?? "", returnPath),
@@ -111,7 +114,7 @@ export function DocumentAiPanel({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex items-center gap-1.5 font-medium text-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Analisis AI
+          {tp("Analisis AI")}
           {analysis && (
             <span className="font-normal text-muted-foreground">
               · {new Date(analysis.createdAt).toLocaleString("id-ID")}
@@ -121,7 +124,7 @@ export function DocumentAiPanel({
         {canAnalyze && (
           <form action={runAction}>
             <Pending className="rounded-md border border-primary px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10">
-              {analysis ? "Analisis ulang" : "Analisis dengan AI"}
+              {analysis ? tp("Analisis ulang") : tp("Analisis dengan AI")}
             </Pending>
           </form>
         )}
@@ -130,7 +133,7 @@ export function DocumentAiPanel({
 
       {!analysis && !runState.error && (
         <p className="mt-1 text-muted-foreground">
-          Belum dianalisis. AI akan membaca dokumen, menilai keterbacaan, dan mengusulkan data; keputusan tetap di tangan staf.
+          {tp("Belum dianalisis. AI akan membaca dokumen, menilai keterbacaan, dan mengusulkan data; keputusan tetap di tangan staf.")}
         </p>
       )}
 
@@ -138,11 +141,11 @@ export function DocumentAiPanel({
         <div className="mt-2 space-y-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span>
-              Jenis: <strong className="text-foreground">{DOCUMENT_TYPE_LABEL[(analysis.documentType ?? "LAINNYA") as DocumentType] ?? analysis.documentType}</strong>
+              {tp("Jenis:")} <strong className="text-foreground">{DOCUMENT_TYPE_LABEL[(analysis.documentType ?? "LAINNYA") as DocumentType] ?? analysis.documentType}</strong>
             </span>
             <span>
-              Keterbacaan: <strong className={scoreTone}>{score === null ? "-" : `${score}/100`}</strong>
-              {!analysis.legible && <span className="ml-1 text-status-overdue">(sulit dibaca)</span>}
+              {tp("Keterbacaan:")} <strong className={scoreTone}>{score === null ? "-" : `${score}/100`}</strong>
+              {!analysis.legible && <span className="ml-1 text-status-overdue">{tp("(sulit dibaca)")}</span>}
             </span>
           </div>
           {analysis.summary && <p className="text-foreground">{analysis.summary}</p>}
@@ -174,7 +177,7 @@ export function DocumentAiPanel({
 
           {canApply && clientValues && applicable.length > 0 && (
             <form action={applyAction} className="mt-2 rounded-md border border-border bg-background p-2">
-              <p className="mb-1 font-medium text-foreground">Terapkan ke data klien (pilih kolom):</p>
+              <p className="mb-1 font-medium text-foreground">{tp("Terapkan ke data klien (pilih kolom):")}</p>
               <div className="space-y-1">
                 {applicable.map((f) => {
                   const current = clientValues[f];
@@ -186,11 +189,11 @@ export function DocumentAiPanel({
                       <span className="min-w-0 break-words">
                         <span className="text-foreground">{CLIENT_FIELD_LABEL[f]}:</span> {proposed}
                         {same ? (
-                          <span className="ml-1 text-muted-foreground">(sudah sama)</span>
+                          <span className="ml-1 text-muted-foreground">{tp("(sudah sama)")}</span>
                         ) : current ? (
-                          <span className="ml-1 text-status-due-soon">(akan menggantikan: {current})</span>
+                          <span className="ml-1 text-status-due-soon">{tp("(akan menggantikan:")} {current})</span>
                         ) : (
-                          <span className="ml-1 text-muted-foreground">(saat ini kosong)</span>
+                          <span className="ml-1 text-muted-foreground">{tp("(saat ini kosong)")}</span>
                         )}
                       </span>
                     </label>
@@ -199,14 +202,14 @@ export function DocumentAiPanel({
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Pending className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">
-                  Terapkan
+                  {tp("Terapkan")}
                 </Pending>
                 {applyState.error && <span className="text-status-overdue">{applyState.error}</span>}
                 {applyState.success && <span className="text-status-on-track">{applyState.success}</span>}
               </div>
             </form>
           )}
-          <p className="text-[11px] text-muted-foreground">Model: {analysis.model}. Hasil AI adalah usulan dan bisa keliru; periksa sebelum dipakai.</p>
+          <p className="text-[11px] text-muted-foreground">{tp("Model:")} {analysis.model}{tp(". Hasil AI adalah usulan dan bisa keliru; periksa sebelum dipakai.")}</p>
         </div>
       )}
     </div>

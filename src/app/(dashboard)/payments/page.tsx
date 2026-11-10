@@ -150,7 +150,7 @@ export default async function PaymentsPage(props: Async<PageProps>) {
                     <td data-label={tp("Tanggal")} className="px-4 py-3 text-muted-foreground">{formatDate(p.paymentDate)}</td>
                     <td data-label={tp("Status")} className="px-4 py-3">
                       <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
-                        {formatStatusLabel(p.status)}
+                        {tp(formatStatusLabel(p.status))}
                       </span>
                     </td>
                     <td className="px-4 py-3">

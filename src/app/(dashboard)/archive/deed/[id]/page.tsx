@@ -13,8 +13,9 @@ export const dynamic = "force-dynamic";
 
 const STATUS_OPTIONS = ["DRAFT", "PROCESS", "DONE"] as const;
 
-function FileLink({ documentId }: { documentId: string | null }) {
-  if (!documentId) return <span className="text-xs text-muted-foreground">Belum ada file</span>;
+async function FileLink({ documentId }: { documentId: string | null }) {
+  const { tp } = await getT();
+  if (!documentId) return <span className="text-xs text-muted-foreground">{tp("Belum ada file")}</span>;
   return (
     <a
       href={`/api/documents/${documentId}/download`}
@@ -22,7 +23,7 @@ function FileLink({ documentId }: { documentId: string | null }) {
       rel="noreferrer"
       className="text-xs font-medium text-primary hover:underline"
     >
-      Buka File
+      {tp("Buka File")}
     </a>
   );
 }
@@ -62,7 +63,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
-            {formatStatusLabel(deed.status)}
+            {tp(formatStatusLabel(deed.status))}
           </span>
           {deed.repertorium ? (
             <span className="rounded-full bg-status-on-track/10 px-2.5 py-0.5 text-xs font-medium text-status-on-track">
@@ -181,7 +182,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             {deed.grosse.map((g) => (
               <div key={g.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <Link href={`/archive/grosse/${g.id}`} className="text-foreground hover:underline">
-                  {tp("Grosse ·")} {formatStatusLabel(g.status)}
+                  {tp("Grosse ·")} {tp(formatStatusLabel(g.status))}
                 </Link>
                 <FileLink documentId={g.documentId} />
               </div>
@@ -198,7 +199,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
             {deed.kutipan.map((k) => (
               <div key={k.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <Link href={`/archive/kutipan/${k.id}`} className="text-foreground hover:underline">
-                  {tp("Kutipan ·")} {formatStatusLabel(k.status)}
+                  {tp("Kutipan ·")} {tp(formatStatusLabel(k.status))}
                 </Link>
                 <FileLink documentId={k.documentId} />
               </div>
@@ -292,7 +293,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
-                      {formatStatusLabel(s)}
+                      {tp(formatStatusLabel(s))}
                     </option>
                   ))}
                 </select>
@@ -329,7 +330,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
   );
 }
 
-function ArchiveSection({
+async function ArchiveSection({
   title,
   count,
   addHref,
@@ -342,6 +343,7 @@ function ArchiveSection({
   canEdit: boolean;
   children: React.ReactNode;
 }) {
+  const { tp } = await getT();
   return (
     <Card>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -350,12 +352,12 @@ function ArchiveSection({
         </h2>
         {canEdit && (
           <Link href={addHref} className="text-xs font-medium text-primary hover:underline">
-            + Tambah {title}
+            {tp("+ Tambah")} {title}
           </Link>
         )}
       </div>
       {count === 0 ? (
-        <p className="text-sm text-muted-foreground">Belum ada {title.toLowerCase()} untuk akta ini.</p>
+        <p className="text-sm text-muted-foreground">{tp("Belum ada")} {title.toLowerCase()} {tp("untuk akta ini.")}</p>
       ) : (
         <div className="divide-y divide-border">{children}</div>
       )}

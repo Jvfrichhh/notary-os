@@ -143,7 +143,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
               <div key={status} className="w-72 max-w-[85vw] flex-shrink-0">
                 <div className="mb-2 flex items-center justify-between px-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {formatStatusLabel(status)}
+                    {tp(formatStatusLabel(status))}
                   </p>
                   <span className="text-xs text-muted-foreground">{columnJobs.length}</span>
                 </div>
@@ -202,7 +202,7 @@ export default async function JobsPage(props: Async<JobsPageProps>) {
                     <td data-label={tp("Tenggat")} className="px-4 py-3">
                       <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={formatDate(job.deadline)} />
                     </td>
-                    <td data-label={tp("Status")} className="px-4 py-3 text-muted-foreground">{formatStatusLabel(job.status)}</td>
+                    <td data-label={tp("Status")} className="px-4 py-3 text-muted-foreground">{tp(formatStatusLabel(job.status))}</td>
                     <td data-label={tp("PIC")} className="px-4 py-3 text-muted-foreground">{job.pic?.name ?? "-"}</td>
                   </tr>
                 ))}

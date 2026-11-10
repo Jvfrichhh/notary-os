@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { OfficeIllustration } from "@/components/motion/OfficeIllustration";
 import { useT } from "@/components/i18n/LocaleProvider";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 // useSearchParams butuh Suspense agar halaman login tetap bisa dirender statis.
 export default function LoginPage() {
@@ -19,6 +20,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const tp = usePhrase();
   const t = useT();
   const router = useRouter();
   const replaced = useSearchParams().get("reason") === "elsewhere";
@@ -65,8 +67,8 @@ function LoginForm() {
         <div className="flex items-center gap-3">
           <img src="/brand/nexora-mark.png" alt="" className="h-11 w-auto" />
           <span>
-            <span className="block text-xl font-bold tracking-[0.28em] text-brand-gold">NEXORA</span>
-            <span className="block text-[10px] font-medium uppercase tracking-[0.22em] text-brand-gold/80">Smarter work. Seamless trust.</span>
+            <span className="block text-xl font-bold tracking-[0.28em] text-brand-gold">{tp("NEXORA")}</span>
+            <span className="block text-[10px] font-medium uppercase tracking-[0.22em] text-brand-gold/80">{tp("Smarter work. Seamless trust.")}</span>
           </span>
         </div>
         <OfficeIllustration className="mx-auto w-full max-w-[230px] sm:max-w-[420px] lg:max-w-[520px]" />
@@ -78,7 +80,7 @@ function LoginForm() {
             {t("login.heroSub")}
           </p>
         </div>
-        <p className="hidden text-sm text-white/80 xl:block">Kantor Notaris &amp; PPAT Ari Yudani Aprianti, S.H., M.Kn. · Kota Bogor</p>
+        <p className="hidden text-sm text-white/80 xl:block">{tp("Kantor Notaris & PPAT Ari Yudani Aprianti, S.H., M.Kn. · Kota Bogor")}</p>
       </section>
 
       <div className="flex flex-1 items-center justify-center px-4 py-10">
@@ -94,7 +96,7 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-fg-2">Email</label>
+            <label className="block text-sm font-semibold text-fg-2">{tp("Email")}</label>
             <input
               type="email"
               required
@@ -106,7 +108,7 @@ function LoginForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-fg-2">Password</label>
+            <label className="block text-sm font-semibold text-fg-2">{tp("Password")}</label>
             <div className="relative mt-1.5">
               <input
                 type={showPassword ? "text" : "password"}
@@ -141,7 +143,7 @@ function LoginForm() {
         </form>
 
         <p className="mt-6 text-xs text-muted-foreground">
-          © 2026 Java Fauzan. All rights reserved.
+          {tp("© 2026 Java Fauzan. All rights reserved.")}
         </p>
       </div>
       </div>

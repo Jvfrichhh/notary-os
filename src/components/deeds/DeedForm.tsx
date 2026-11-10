@@ -5,6 +5,7 @@ import { Download, Plus, Save, Send, Trash2 } from "lucide-react";
 import { saveDeedDraft } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
 import { submitJobForReview } from "@/app/(dashboard)/jobs/actions";
 import { isFieldVisible, PERSON_FIELDS, type DeedData, type FieldDef, type Person, type SectionDef } from "@/lib/deeds/schema";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const inputCls =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
@@ -115,6 +116,7 @@ function FieldGrid({ fields, data, onChange }: { fields: FieldDef[]; data: Obj; 
 }
 
 function Field({ def, value, onChange, stretch }: { def: FieldDef; value: unknown; onChange: (v: unknown) => void; stretch?: boolean }) {
+  const tp = usePhrase();
   if (def.kind === "checks") {
     const chosen = Array.isArray(value) ? (value as string[]) : [];
     return (
@@ -166,7 +168,7 @@ function Field({ def, value, onChange, stretch }: { def: FieldDef; value: unknow
                   onClick={() => onChange(items.filter((_, j) => j !== i))}
                   className="inline-flex items-center gap-1 text-xs text-status-overdue hover:underline"
                 >
-                  <Trash2 className="h-3.5 w-3.5" /> Hapus
+                  <Trash2 className="h-3.5 w-3.5" /> {tp("Hapus")}
                 </button>
               )}
             </div>
@@ -183,7 +185,7 @@ function Field({ def, value, onChange, stretch }: { def: FieldDef; value: unknow
             onClick={() => onChange([...items, {}])}
             className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
           >
-            <Plus className="h-3.5 w-3.5" /> Tambah {def.itemLabel.toLowerCase()}
+            <Plus className="h-3.5 w-3.5" /> {tp("Tambah")} {def.itemLabel.toLowerCase()}
           </button>
         )}
       </div>
@@ -246,6 +248,7 @@ export function DeedForm({
   /** Nama unduhan (akta PPAT: Lembar Pertama/Kedua). */
   labels?: { minuta: string; salinan: string; "lembar-salinan"?: string };
 }) {
+  const tp = usePhrase();
   const [data, setData] = useState<DeedData>(() => {
     // Daftar berulang tampil minimal sejumlah `min` item.
     const d: DeedData = { ...initialData };
@@ -328,7 +331,7 @@ export function DeedForm({
             disabled={pending}
             className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            <Save className="h-4 w-4" /> {pending ? "Menyimpan..." : "Simpan"}
+            <Save className="h-4 w-4" /> {pending ? tp("Menyimpan...") : tp("Simpan")}
           </button>
         )}
         {canEdit && submitJobId && (
@@ -338,7 +341,7 @@ export function DeedForm({
             disabled={pending}
             className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
           >
-            <Send className="h-4 w-4" /> Simpan & Ajukan ke Notaris
+            <Send className="h-4 w-4" /> {tp("Simpan & Ajukan ke Notaris")}
           </button>
         )}
         <button
@@ -347,7 +350,7 @@ export function DeedForm({
           disabled={pending}
           className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
         >
-          <Download className="h-4 w-4" /> Unduh {labels.minuta}<span className="hidden sm:inline"> (.docx)</span>
+          <Download className="h-4 w-4" /> {tp("Unduh")} {labels.minuta}<span className="hidden sm:inline"> {tp("(.docx)")}</span>
         </button>
         <button
           type="button"
@@ -355,7 +358,7 @@ export function DeedForm({
           disabled={pending}
           className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-status-overdue/50 px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10 disabled:opacity-60"
         >
-          <Download className="h-4 w-4" /> Unduh {labels.salinan}<span className="hidden sm:inline"> (.docx)</span>
+          <Download className="h-4 w-4" /> {tp("Unduh")} {labels.salinan}<span className="hidden sm:inline"> {tp("(.docx)")}</span>
         </button>
         {labels["lembar-salinan"] && (
           <button
@@ -364,10 +367,10 @@ export function DeedForm({
             disabled={pending}
             className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-status-overdue/50 px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10 disabled:opacity-60"
           >
-            <Download className="h-4 w-4" /> Unduh {labels["lembar-salinan"]}<span className="hidden sm:inline"> (.docx)</span>
+            <Download className="h-4 w-4" /> {tp("Unduh")} {labels["lembar-salinan"]}<span className="hidden sm:inline"> {tp("(.docx)")}</span>
           </button>
         )}
-        <span className="col-span-2 text-center text-xs text-muted-foreground sm:text-left">{dirty ? "Ada perubahan belum disimpan" : status}</span>
+        <span className="col-span-2 text-center text-xs text-muted-foreground sm:text-left">{dirty ? tp("Ada perubahan belum disimpan") : status}</span>
       </div>
     </div>
   );

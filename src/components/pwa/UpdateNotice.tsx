@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
+import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 const CURRENT = process.env.APP_VERSION ?? "dev";
 const CHECK_EVERY_MS = 5 * 60 * 1000;
@@ -13,6 +14,7 @@ const CHECK_EVERY_MS = 5 * 60 * 1000;
  * kali jendela kembali difokuskan.
  */
 export function UpdateNotice() {
+  const tp = usePhrase();
   const [latest, setLatest] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
 
@@ -49,20 +51,20 @@ export function UpdateNotice() {
     >
       <RefreshCw className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
       <p className="min-w-0 flex-1 text-sm text-foreground">
-        <span className="font-bold">Versi baru Nexora tersedia.</span>{" "}
-        <span className="text-muted-foreground">Simpan pekerjaan dulu bila ada, lalu muat ulang.</span>
+        <span className="font-bold">{tp("Versi baru Nexora tersedia.")}</span>{" "}
+        <span className="text-muted-foreground">{tp("Simpan pekerjaan dulu bila ada, lalu muat ulang.")}</span>
       </p>
       <button
         type="button"
         onClick={() => window.location.reload()}
         className="h-10 shrink-0 rounded-md bg-primary px-3.5 text-sm font-bold text-primary-foreground hover:opacity-90"
       >
-        Muat ulang
+        {tp("Muat ulang")}
       </button>
       <button
         type="button"
-        aria-label="Nanti saja"
-        title="Nanti saja"
+        aria-label={tp("Nanti saja")}
+        title={tp("Nanti saja")}
         onClick={() => setDismissed(latest)}
         className="flex h-10 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
       >

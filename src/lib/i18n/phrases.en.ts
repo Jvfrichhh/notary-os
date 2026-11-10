@@ -3,6 +3,11 @@
  * Frasa yang tidak ada di sini tampil dalam Bahasa Indonesia.
  */
 export const PHRASES_EN: Record<string, string> = {
+  "Kantor AI": "AI Office",
+  "Kantor virtual 12 agen yang bekerja sesuai data pekerjaan di Nexora, diperbarui otomatis tiap menit": "A virtual office of 12 agents working from Nexora job data, refreshed automatically every minute",
+  "Menyiapkan kantor...": "Setting up the office...",
+  "Gagal memperbarui data, dicoba lagi otomatis.": "Could not refresh data, retrying automatically.",
+  "Engine Kantor AI gagal dimuat. Muat ulang halaman.": "The AI Office engine failed to load. Reload the page.",
   "Unduh covernote": "Download covernote",
   "Klien {0} dan pekerjaan": "Client {0} and job",
   "Pekerjaan": "Job",

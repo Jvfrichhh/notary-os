@@ -21,6 +21,7 @@ export const id = {
     "/deeds": "Draft Akta",
     "/ppat": "Buku Akta PPAT",
     "/assistant": "Asisten AI",
+    "/kantor-ai": "Kantor AI",
     "/documents": "Document Vault",
     "/archive": "Minuta / Salinan / Grosse / Kutipan",
     "/notary-record": "Repertorium / Klapper",

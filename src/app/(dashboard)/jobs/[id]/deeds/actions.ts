@@ -15,10 +15,12 @@ import { nextDeedNumber } from "@/lib/deeds/numbering";
 import { nextPpatSequence, registerPpatDeed } from "@/lib/ppat";
 import { fromDateInput } from "@/lib/format";
 import { createStatutoryTasks } from "@/lib/compliance/statutory";
-import { draftHash } from "@/lib/deeds/review";
+import { draftHash, reviewState } from "@/lib/deeds/review";
+import { renderDeed } from "@/lib/deeds/render";
+import { personFromClient, type PrefillContext } from "@/lib/deeds/types";
 import { createClientNotification } from "@/lib/clientNotifications";
 import { PT_CHANGE_OPTIONS } from "@/lib/serviceCatalog";
-import type { Person } from "@/lib/deeds/schema";
+import type { DeedData, Person } from "@/lib/deeds/schema";
 import type { ExtractedFields } from "@/lib/ai/documentFields";
 
 /** Perbandingan isi JSON tanpa peduli urutan key (jsonb Postgres mengurutkan ulang key). */
@@ -36,6 +38,9 @@ function sameJson(a: unknown, b: unknown): boolean {
 }
 
 const MAX_DATA_BYTES = 200_000;
+
+/** Kolom klien yang disalin ke identitas penghadap. */
+const CLIENT_FOR_DEED = { fullName: true, nik: true, address: true, city: true, companyName: true, clientType: true, occupation: true, npwp: true } as const;
 
 /** Jenis perubahan PT yang dipilih saat membuat pekerjaan (tersimpan di keterangan job). */
 function parsePtChanges(description: string | null): string[] {
@@ -104,7 +109,7 @@ export async function createDeedDraft(jobId: string, formData: FormData) {
 
   const job = await prisma.job.findUnique({
     where: { id: jobId },
-    select: { id: true, clientId: true, description: true, client: { select: { fullName: true, nik: true, address: true, city: true, companyName: true, clientType: true } } }
+    select: { id: true, clientId: true, description: true, client: { select: CLIENT_FOR_DEED } }
   });
   if (!job) return;
 
@@ -125,6 +130,103 @@ export async function createDeedDraft(jobId: string, formData: FormData) {
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/deeds");
   redirect(`/jobs/${jobId}/deeds/${draft.id}`);
+}
+
+/** Kolom identitas yang bersumber dari data klien / KTP klien. */
+const CLIENT_PERSON_KEYS: (keyof Person)[] = ["nama", "nik", "alamat", "kota", "pekerjaan", "npwp", "sapaan", "tempatLahir", "tanggalLahir", "rt", "rw", "kelurahan", "kecamatan"];
+const norm = (v: unknown) => (typeof v === "string" ? v.trim().toLowerCase() : "");
+
+/**
+ * Timpa identitas penghadap di draft dengan data klien terbaru. Hanya orang
+ * yang di draft masih orang yang sama (NIK atau nama cocok dengan data klien
+ * lama/baru, atau isian masih kosong) yang diperbarui; penghadap lain tidak disentuh.
+ */
+function mergeClientPerson(target: unknown, fresh: unknown, known: { names: string[]; niks: string[] }): { value: unknown; changed: number } {
+  if (Array.isArray(fresh)) {
+    const arr = Array.isArray(target) ? [...target] : [];
+    let changed = 0;
+    fresh.forEach((f, i) => {
+      const r = mergeClientPerson(arr[i], f, known);
+      arr[i] = r.value;
+      changed += r.changed;
+    });
+    return { value: arr, changed };
+  }
+  if (!fresh || typeof fresh !== "object") return { value: target, changed: 0 };
+  const f = fresh as Record<string, unknown>;
+  const t = target && typeof target === "object" && !Array.isArray(target) ? { ...(target as Record<string, unknown>) } : {};
+  if ("nama" in f) {
+    // Objek identitas orang.
+    const same = (!norm(t.nama) && !norm(t.nik)) || (norm(t.nik) && known.niks.includes(norm(t.nik))) || (norm(t.nama) && known.names.includes(norm(t.nama)));
+    if (!same) return { value: target, changed: 0 };
+    let changed = 0;
+    for (const k of CLIENT_PERSON_KEYS) {
+      const v = f[k];
+      if (typeof v === "string" && v.trim() && norm(t[k]) !== norm(v)) {
+        t[k] = v;
+        changed++;
+      }
+    }
+    return { value: t, changed };
+  }
+  let changed = 0;
+  for (const [k, v] of Object.entries(f)) {
+    if (!v || typeof v !== "object") continue; // nilai biasa (kapasitas, uraian) tidak ditimpa
+    const r = mergeClientPerson(t[k], v, known);
+    t[k] = r.value;
+    changed += r.changed;
+  }
+  return { value: t, changed };
+}
+
+/** "Perbarui dari data klien": identitas penghadap mengikuti data klien terbaru. */
+export async function refreshDraftFromClient(draftId: string) {
+  const user = await requireUser();
+  await assertPermission(user.id, PERMISSIONS.EDIT_JOBS);
+  const draft = await prisma.deedDraft.findUnique({
+    where: { id: draftId },
+    select: { id: true, templateKey: true, data: true, deedId: true, ppatDeedId: true, job: { select: { id: true, clientId: true, description: true, client: { select: CLIENT_FOR_DEED } } } }
+  });
+  const template = draft ? getDeedTemplate(draft.templateKey) : null;
+  if (!draft || !template || draft.deedId || draft.ppatDeedId) return;
+  const back = `/jobs/${draft.job.id}/deeds/${draftId}`;
+  if (!template.prefill) redirect(`${back}?synced=0-${Date.now()}`);
+
+  const client = draft.job.client;
+  const ktp = await ktpOfClient(draft.job.clientId, client.nik);
+  const ctx: PrefillContext = { client: { ...client, ktp }, job: { description: draft.job.description, ptChanges: parsePtChanges(draft.job.description) } };
+  const fresh = template.prefill!(ctx);
+  // Nama/NIK lama klien (dari riwayat perubahan) supaya penghadap tetap dikenali setelah datanya dikoreksi.
+  const history = await prisma.auditLog.findMany({
+    where: { entityType: "Client", entityId: draft.job.clientId, action: { in: ["client_updated", "client_created"] } },
+    orderBy: { timestamp: "desc" },
+    take: 20,
+    select: { previousValue: true }
+  });
+  const now = personFromClient(ctx.client);
+  const names = new Set([norm(now.nama)]);
+  const niks = new Set([norm(now.nik)]);
+  const current = (draft.data ?? {}) as DeedData;
+  for (const h of history) {
+    const pv = (h.previousValue ?? {}) as { fullName?: string };
+    if (pv.fullName) names.add(norm(pv.fullName));
+  }
+  names.delete("");
+  niks.delete("");
+  const merged = mergeClientPerson(current, fresh, { names: [...names], niks: [...niks] });
+  if (merged.changed > 0) {
+    const saved = await prisma.deedDraft.updateMany({
+      where: { id: draftId, deedId: null, ppatDeedId: null },
+      data: { data: merged.value as Prisma.InputJsonValue, updatedById: user.id }
+    });
+    if (saved.count > 0) {
+      await syncDraftToVault(draftId, user.id);
+      await writeAuditLog({ userId: user.id, action: "deed_draft_synced_from_client", entityType: "DeedDraft", entityId: draftId, newValue: { fields: merged.changed } });
+    }
+  }
+  revalidatePath(back);
+  revalidatePath("/documents");
+  redirect(`${back}?synced=${merged.changed}-${Date.now()}`);
 }
 
 const CHANGED_DURING_FINALIZE = "Draft diubah orang lain saat sedang disahkan. Periksa isinya lalu sahkan lagi.";
@@ -227,6 +329,25 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
   if (!draft || !template) return { error: "Draft tidak ditemukan." };
   if (draft.deedId || draft.ppatDeedId) return { error: "Draft ini sudah disahkan." };
 
+  // Pengaman: isian kosong dan persetujuan klien diperiksa sebelum akta dikunci.
+  const kosong = renderDeed(template, { ...((draft.data ?? {}) as DeedData), nomorAkta: nomor, tanggalAkta: tanggal }, "minuta", { notes: false }).placeholders;
+  if (kosong > 0 && formData.get("abaikanKosong") !== "on") {
+    return { error: `Masih ada ${kosong} isian kosong ([...]) di akta. Lengkapi dan simpan draft dulu, atau centang konfirmasi isian kosong.` };
+  }
+  const latestReview = await prisma.deedDraftReview.findFirst({ where: { draftId }, orderBy: { sharedAt: "desc" }, select: { dataHash: true, decision: true } });
+  const persetujuan = reviewState(latestReview, draftHash(draft.data));
+  if (persetujuan !== "none" && persetujuan !== "approved" && formData.get("abaikanPersetujuan") !== "on") {
+    return {
+      error:
+        persetujuan === "changes"
+          ? "Klien masih meminta koreksi atas draft ini. Selesaikan koreksinya, atau centang konfirmasi persetujuan klien."
+          : persetujuan === "outdated"
+            ? "Draft diubah setelah disetujui/dibagikan ke klien. Bagikan ulang, atau centang konfirmasi persetujuan klien."
+            : "Klien belum menyetujui draft yang dibagikan. Tunggu persetujuannya, atau centang konfirmasi persetujuan klien."
+    };
+  }
+  const pengaman = { isianKosong: kosong, persetujuanKlien: persetujuan };
+
   // Akta PPAT: nomor urut per tahun di Buku Daftar Akta PPAT (bukan repertorium notaris).
   if (template.ppat) {
     const year = Number(tanggal.slice(0, 4));
@@ -284,7 +405,7 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
       console.error("[deeds] draft PPAT berubah saat disahkan", { draftId, ppatId });
       await prisma.deedDraft.update({ where: { id: draftId }, data: { ppatDeedId: ppatId } });
     }
-    await writeAuditLog({ userId: user.id, action: "deed_draft_finalized", entityType: "PpatDeed", entityId: ppatId, newValue: { draftId, deedNumber: `${seq}/${year}` } });
+    await writeAuditLog({ userId: user.id, action: "deed_draft_finalized", entityType: "PpatDeed", entityId: ppatId, newValue: { draftId, deedNumber: `${seq}/${year}`, ...pengaman } });
     revalidatePath(`/jobs/${draft.job.id}`);
     revalidatePath("/ppat");
     revalidatePath("/deeds");
@@ -368,7 +489,7 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     action: "deed_draft_finalized",
     entityType: "Deed",
     entityId: deedId,
-    newValue: { draftId, deedNumber, templateKey: draft.templateKey }
+    newValue: { draftId, deedNumber, templateKey: draft.templateKey, ...pengaman }
   });
   // Kewajiban setelah akta (fidusia, pengesahan PT, dst) menjadi tugas bertenggat.
   const jobInfo = await prisma.job.findUnique({ where: { id: draft.job.id }, select: { picId: true } });

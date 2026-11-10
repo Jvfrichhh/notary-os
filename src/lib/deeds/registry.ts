@@ -11,6 +11,7 @@ import { fidusia } from "./templates/fidusia";
 import { peralihanSaham, perubahanPt } from "./templates/saham";
 import { kuasaWaris, waris, wasiat } from "./templates/waris";
 import { ajbPpat, hibahPpat } from "./templates/ppatAkta";
+import { pengakuanHutang } from "./templates/pengakuanHutang";
 
 /** Semua template draft akta yang tersedia. Kunci = SERVICE_CATALOG[].deedKey. */
 export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
@@ -25,6 +26,7 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     praNikah,
     pascaNikah,
     fidusia,
+    pengakuanHutang,
     kerjasamaUsaha,
     kerjasamaInvestasi,
     pendirianPt,
@@ -41,7 +43,9 @@ export function getDeedTemplate(key: string): DeedTemplate | null {
 
 /** Bagian form lengkap: bagian khusus akta + data akta & saksi. */
 export function sectionsFor(t: DeedTemplate): SectionDef[] {
-  return [...t.sections, ...COMMON_SECTIONS];
+  // Klausul perubahan (renvoi) hanya ada di penutup akta notaris; akta PPAT memakai penutup blangko PPAT.
+  const common = t.ppat ? COMMON_SECTIONS.map((s) => ({ ...s, fields: s.fields.filter((f) => f.key !== "perubahan") })) : COMMON_SECTIONS;
+  return [...t.sections, ...common];
 }
 
 /** Daftar ringkas untuk pilihan di UI. */

@@ -61,11 +61,12 @@ export async function runDailyChecks() {
   const data = await gatherMonth(ym);
   for (const kind of REPORT_KINDS) {
     const due = REPORT_DUE_DAY[kind];
-    if (kind === "wasiat" && data.wasiat.length === 0) continue;
+    // Laporan wasiat tetap wajib dikirim walau NIHIL (tidak ada akta wasiat bulan itu).
+    const nihil = kind === "wasiat" && data.wasiat.length === 0;
     // Pengingat mulai 5 hari sebelum tenggat, berlanjut setelah tenggat terlewat.
     if (day < Math.max(1, due - 5)) continue;
     if (await reportSentInfo(kind, ym)) continue;
-    const msg = `${REPORT_LABEL[kind]} bulan ${monthLabel(ym)} belum ditandai terkirim (tenggat tanggal ${due}). Buka menu Laporan Bulanan.`;
+    const msg = `${REPORT_LABEL[kind]}${nihil ? " (NIHIL)" : ""} bulan ${monthLabel(ym)} belum ditandai terkirim (tenggat tanggal ${due}). Buka menu Laporan Bulanan.`;
     for (const u of notaryIds) if (await notifyOnce(u, msg, day > due ? "overdue" : "deadline")) reminders++;
   }
 

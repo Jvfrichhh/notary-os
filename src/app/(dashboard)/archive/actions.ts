@@ -476,3 +476,42 @@ export async function archiveKutipan(id: string) {
 export async function restoreKutipan(id: string) {
   return setArchiveRecordStatus("kutipan", id, "ACTIVE");
 }
+
+// ---------------------------------------------------------------------------
+// BERITA ACARA PEMBETULAN (Pasal 51 UUJN) -- akta yang sudah disahkan tidak
+// diubah; pembetulan salah tulis/ketik dicatat dengan nomor & tanggal akta
+// berita acaranya. Catatan tidak bisa dihapus.
+// ---------------------------------------------------------------------------
+
+export async function createDeedCorrection(deedId: string, formData: FormData) {
+  const user = await requireUser();
+  await assertPermission(user.id, EDIT_ARCHIVE);
+  const back = `/archive/deed/${deedId}`;
+  const baNumber = String(formData.get("baNumber") ?? "").trim();
+  const baDate = String(formData.get("baDate") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  if (!baNumber || baNumber.length > 60 || !/^\d{4}-\d{2}-\d{2}$/.test(baDate) || description.length < 10 || description.length > 2000) {
+    redirect(`${back}?pembetulan=invalid#pembetulan`);
+  }
+  const deed = await prisma.deed.findUnique({ where: { id: deedId }, select: { id: true, deedDate: true } });
+  if (!deed) redirect("/archive");
+  const date = new Date(`${baDate}T00:00:00.000Z`);
+  // Berita acara dibuat setelah aktanya: tanggalnya tidak boleh mendahului tanggal akta.
+  if (date.getTime() < new Date(deed!.deedDate.toISOString().slice(0, 10) + "T00:00:00.000Z").getTime()) {
+    redirect(`${back}?pembetulan=tanggal#pembetulan`);
+  }
+  const row = await prisma.deedCorrection.create({ data: { deedId, baNumber, baDate: date, description, createdById: user.id } });
+  await writeAuditLog({ userId: user.id, action: "deed_correction_recorded", entityType: "Deed", entityId: deedId, newValue: { correctionId: row.id, baNumber, baDate, description } });
+  revalidatePath(back);
+  redirect(`${back}?pembetulan=ok#pembetulan`);
+}
+
+export async function markDeedCorrectionDelivered(correctionId: string) {
+  const user = await requireUser();
+  await assertPermission(user.id, EDIT_ARCHIVE);
+  const row = await prisma.deedCorrection.findUnique({ where: { id: correctionId }, select: { id: true, deedId: true, deliveredAt: true } });
+  if (!row || row.deliveredAt) return;
+  await prisma.deedCorrection.update({ where: { id: correctionId }, data: { deliveredAt: new Date() } });
+  await writeAuditLog({ userId: user.id, action: "deed_correction_delivered", entityType: "Deed", entityId: row.deedId, newValue: { correctionId } });
+  revalidatePath(`/archive/deed/${row.deedId}`);
+}

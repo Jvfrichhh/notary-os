@@ -26,8 +26,13 @@ async function getComplianceAlerts() {
   ]);
   const alerts: string[] = [];
   if (!mpd) alerts.push(`Laporan bulanan MPD ${monthLabel(ym)} belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.mpd}).`);
-  if (!wasiatSent && data.wasiat.length > 0)
-    alerts.push(`Laporan ${data.wasiat.length} akta wasiat ${monthLabel(ym)} ke Daftar Pusat Wasiat belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.wasiat}).`);
+  // Laporan wasiat tetap wajib walau NIHIL (tidak ada akta wasiat bulan itu).
+  if (!wasiatSent)
+    alerts.push(
+      data.wasiat.length > 0
+        ? `Laporan ${data.wasiat.length} akta wasiat ${monthLabel(ym)} ke Daftar Pusat Wasiat belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.wasiat}).`
+        : `Laporan wasiat NIHIL ${monthLabel(ym)} ke Daftar Pusat Wasiat belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.wasiat}).`
+    );
   if (!ppatSent) alerts.push(`Laporan bulanan PPAT ${monthLabel(ym)} belum terkirim (tenggat tanggal ${REPORT_DUE_DAY.ppat}).`);
   if (lateTasks > 0) alerts.push(`${lateTasks} tugas bertenggat (termasuk kewajiban hukum setelah akta) sudah lewat tenggat.`);
   return alerts;

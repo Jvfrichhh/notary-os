@@ -12,7 +12,8 @@ import { FinalizeDeedForm } from "@/components/deeds/FinalizeDeedForm";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { nextDeedNumber } from "@/lib/deeds/numbering";
 import { draftHash, reviewState } from "@/lib/deeds/review";
-import { shareDraftWithClient } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
+import { refreshDraftFromClient, shareDraftWithClient } from "@/app/(dashboard)/jobs/[id]/deeds/actions";
+import { renderDeed } from "@/lib/deeds/render";
 import { formatDateTime } from "@/lib/format";
 import { unwrapProps, type Async } from "@/lib/pageProps";
 
@@ -20,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DeedDraftPage(props: Async<{
   params: { id: string; draftId: string };
-  searchParams?: { shared?: string };
+  searchParams?: { shared?: string; synced?: string };
 }>) {
   const {
   params,
@@ -68,6 +69,9 @@ export default async function DeedDraftPage(props: Async<{
   const latestReview = draft.reviews[0];
   const review = reviewState(latestReview, draftHash(draft.data));
   const hasPortal = draft.job.client._count.accounts > 0;
+  // Isian yang masih kosong ([...]) di badan akta -- ditampilkan sebagai pengaman sebelum disahkan.
+  const blanks = canFinalize && !finalized ? renderDeed(template, data, "minuta", { notes: false }).placeholders : 0;
+  const syncedCount = searchParams?.synced ? Number(searchParams.synced.split("-")[0]) : null;
   const todayJakarta = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
   const suggestedNomor =
     canFinalize && !finalized ? (isPpat ? String(await nextPpatSequence(Number(todayJakarta.slice(0, 4)))) : await nextDeedNumber(todayJakarta)) : "";
@@ -171,7 +175,34 @@ export default async function DeedDraftPage(props: Async<{
         </div>
       )}
 
+      {canEdit && template.prefill && (
+        <div className="surface flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-foreground">Data klien</h2>
+            <p className="text-sm text-muted-foreground">
+              Identitas penghadap disalin dari data klien saat draft dibuat. Bila data klien dikoreksi setelahnya, perbarui di sini.
+            </p>
+            {syncedCount !== null && (
+              <p className={syncedCount > 0 ? "text-xs text-status-on-track" : "text-xs text-muted-foreground"}>
+                {syncedCount > 0
+                  ? `${syncedCount} isian identitas diperbarui dari data klien. Periksa kembali sebelum dipakai.`
+                  : "Tidak ada yang berubah: identitas di draft sudah sama dengan data klien."}
+              </p>
+            )}
+          </div>
+          <form action={refreshDraftFromClient.bind(null, draft.id)}>
+            <ConfirmButton
+              message="Perbarui identitas penghadap dari data klien terbaru? Simpan dulu perubahan lain di form; isian yang belum disimpan akan hilang."
+              className="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Perbarui dari data klien
+            </ConfirmButton>
+          </form>
+        </div>
+      )}
+
       <DeedForm
+        key={searchParams?.synced ?? "form"}
         draftId={draft.id}
         sections={sectionsFor(template)}
         initialData={data}
@@ -186,6 +217,8 @@ export default async function DeedDraftPage(props: Async<{
           defaultNomor={suggestedNomor}
           defaultTanggal={todayJakarta}
           ppat={isPpat}
+          blanks={blanks}
+          review={review}
           plannedTanggal={typeof data.tanggalAkta === "string" && data.tanggalAkta !== todayJakarta ? data.tanggalAkta : undefined}
         />
       )}

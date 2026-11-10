@@ -127,7 +127,14 @@ export const COMMON_SECTIONS: SectionDef[] = [
       // Nomor akta baru diketahui saat penandatanganan: diisi Notaris di "Sahkan & Daftarkan".
       { kind: "date", key: "tanggalAkta", label: "Rencana tanggal akta" },
       { kind: "time", key: "jamAkta", label: "Jam", default: "10:00" },
-      { kind: "text", key: "kotaPengadilan", label: "Domisili hukum (Pengadilan Negeri)", default: "Bogor" }
+      { kind: "text", key: "kotaPengadilan", label: "Domisili hukum (Pengadilan Negeri)", default: "Bogor" },
+      {
+        kind: "textarea",
+        key: "perubahan",
+        label: "Perubahan (renvoi) saat pembacaan akta",
+        placeholder: "mis. 2 (dua) perubahan, yaitu 1 (satu) coretan dengan penggantian dan 1 (satu) tambahan",
+        help: "Isi setelah akta dibacakan bila ada coretan, penggantian, atau tambahan yang diparaf. Kosongkan bila tidak ada perubahan."
+      }
     ]
   },
   {

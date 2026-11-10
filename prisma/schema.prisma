@@ -531,11 +531,33 @@ model Deed {
   kutipan      Kutipan[]
   repertorium  Repertorium?
   deedDraft    DeedDraft?
+  corrections  DeedCorrection[]
 
   @@map("deeds")
   @@index([clientId])
   @@index([jobId])
   @@index([notaryId])
+}
+
+/// Berita Acara Pembetulan (Pasal 51 UUJN): pembetulan kesalahan tulis/ketik
+/// pada minuta akta yang sudah ditandatangani. Isi akta di arsip tidak diubah;
+/// yang dicatat adalah nomor & tanggal akta berita acaranya. Tidak pernah dihapus.
+model DeedCorrection {
+  id          String    @id @default(cuid())
+  deedId      String
+  deed        Deed      @relation(fields: [deedId], references: [id])
+  /// Nomor akta Berita Acara Pembetulan.
+  baNumber    String
+  baDate      DateTime
+  /// Apa yang dibetulkan (semula tertulis ... seharusnya ...).
+  description String
+  /// Kapan salinan berita acara disampaikan kepada para pihak.
+  deliveredAt DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([deedId])
+  @@map("deed_corrections")
 }
 
 model Minuta {

@@ -184,7 +184,8 @@ export function penutup(data: DeedData, variant: "minuta" | "salinan", opts: { w
           }
         ] as Block[])),
     { t: "p", text: "{Penghadap} membubuhkan cap ibu jari tangan kanan pada lembar kertas yang dilekatkan pada minuta akta ini." },
-    { t: "p", text: "Dilangsungkan dengan tiada perubahan." }
+    // Perubahan (renvoi) yang diparaf saat pembacaan disebut jumlah & jenisnya (Pasal 48-50 UUJN).
+    { t: "p", text: str(data.perubahan) ? `Dilangsungkan dengan ${str(data.perubahan).replace(/[\s.;]+$/, "")}.` : "Dilangsungkan dengan tiada perubahan." }
   ];
   if (variant === "minuta") blocks.push({ t: "p", text: "Asli akta ini telah ditandatangani sempurna." });
   else {
@@ -247,7 +248,8 @@ export function tandaTanganMinuta(
     const lbl = pair.map((_, k) => labels[i + k] || "Penghadap,");
     // Lebar kolom pertama: minimal 24; melebar bila nama/label pertama lebih panjang.
     const w1 = pair.length > 1 ? Math.max(SIG_COL2 - 2, nama[0].sebutan.length + 1 + nama[0].nama.length, lbl[0].length) : WIDTH;
-    const col2 = pair.length > 1 ? Math.min(w1 + 2, WIDTH - 10) : WIDTH;
+    // Kolom kedua minimal 20 huruf: nama panjang (bergelar) di kolom pertama dilipat, bukan menghimpit kolom kedua.
+    const col2 = pair.length > 1 ? Math.min(w1 + 2, WIDTH - 20) : WIDTH;
     const w2 = WIDTH - col2;
     const pad = (t: string) => t.padEnd(col2, " ");
 

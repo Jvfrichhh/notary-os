@@ -283,6 +283,24 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     tasks: [...BASE_TASKS, "Pendaftaran Fidusia online (maks. 30 hari)"]
   },
   {
+    name: "Akta Pengakuan Hutang",
+    category: "Perjanjian",
+    description: "Perjanjian pinjam meminjam uang dan pengakuan hutang, dengan atau tanpa jaminan.",
+    deedKey: "pengakuan_hutang",
+    checklist: [
+      { label: "KTP Pihak Pertama (Yang Berhutang)" },
+      { label: "KTP Pihak Kedua (Pemberi Pinjaman)" },
+      { label: "Kartu Keluarga Pihak Pertama" },
+      { label: "Buku Nikah & KTP Pasangan Pihak Pertama (persetujuan)", isRequired: false },
+      { label: "NPWP Para Pihak", isRequired: false },
+      { label: "Bukti Penyerahan Uang / Rincian Pinjaman", isRequired: false },
+      { label: "Sertifikat / Bukti Kepemilikan Jaminan", isRequired: false },
+      { label: "SPPT PBB Tahun Berjalan (jaminan tanah)", isRequired: false },
+      { label: "Akta Pendirian & SK (bila badan usaha)", isRequired: false }
+    ],
+    tasks: BASE_TASKS
+  },
+  {
     name: "Akta Kerjasama Usaha",
     category: "Perjanjian",
     description: "Perjanjian kerja sama usaha antar pihak.",

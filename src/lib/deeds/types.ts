@@ -62,6 +62,9 @@ export interface PrefillContext {
     city: string | null;
     companyName: string | null;
     clientType: string | null;
+    /** Pekerjaan sesuai KTP & NPWP dari data klien (ikut tersalin ke identitas penghadap). */
+    occupation?: string | null;
+    npwp?: string | null;
     /** Hasil baca KTP klien oleh AI (bila ada), untuk melengkapi identitas. */
     ktp?: Partial<Person>;
   };
@@ -70,7 +73,15 @@ export interface PrefillContext {
 
 /** Orang dari data klien (untuk prefill), dilengkapi hasil baca KTP bila ada. */
 export function personFromClient(c: PrefillContext["client"]): Person {
-  const base: Person = { nama: c.fullName, nik: c.nik ?? "", alamat: c.address ?? "", kota: c.city ?? "", kewarganegaraan: "Indonesia" };
+  const base: Person = {
+    nama: c.fullName,
+    nik: c.nik ?? "",
+    alamat: c.address ?? "",
+    kota: c.city ?? "",
+    kewarganegaraan: "Indonesia",
+    pekerjaan: c.occupation ?? "",
+    npwp: c.npwp ?? ""
+  };
   const out: Person = { ...base };
   for (const [k, v] of Object.entries(c.ktp ?? {}) as [keyof Person, string | undefined][]) {
     // Data klien yang sudah diisi kantor diutamakan; KTP hanya mengisi yang kosong.

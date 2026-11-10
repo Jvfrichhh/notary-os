@@ -27,7 +27,9 @@ export function FinalizeDeedForm({
   defaultNomor,
   defaultTanggal,
   plannedTanggal,
-  ppat = false
+  ppat = false,
+  blanks = 0,
+  review = "none"
 }: {
   draftId: string;
   defaultNomor: string;
@@ -36,6 +38,10 @@ export function FinalizeDeedForm({
   plannedTanggal?: string;
   /** Akta PPAT: nomor urut per tahun di Buku Daftar Akta PPAT. */
   ppat?: boolean;
+  /** Jumlah isian yang masih kosong ([...]) di badan akta (dari draft tersimpan). */
+  blanks?: number;
+  /** Status pemeriksaan klien di portal atas isi draft saat ini. */
+  review?: "none" | "waiting" | "approved" | "changes" | "outdated";
 }) {
   const [state, action] = useFormState(finalizeDeedDraft.bind(null, draftId), {} as FinalizeState);
   const [nomor, setNomor] = useState(defaultNomor);
@@ -86,9 +92,38 @@ export function FinalizeDeedForm({
           {plannedTanggal && ` Rencana tanggal di draft: ${plannedTanggal}.`}
         </p>
       </div>
+      {(blanks > 0 || (review !== "none" && review !== "approved")) && (
+        <div role="alert" className="space-y-2 rounded-md border border-status-overdue/40 bg-status-overdue/10 px-3 py-2.5">
+          <p className="text-sm font-bold text-foreground">Periksa dulu sebelum mengesahkan</p>
+          {blanks > 0 && (
+            <label className="flex items-start gap-2 text-sm text-foreground">
+              <input type="checkbox" name="abaikanKosong" className="mt-1" />
+              <span>
+                Masih ada <strong>{blanks} isian kosong</strong> yang tercetak [...] di akta. Centang hanya bila isian itu memang sengaja dikosongkan.
+              </span>
+            </label>
+          )}
+          {review !== "none" && review !== "approved" && (
+            <label className="flex items-start gap-2 text-sm text-foreground">
+              <input type="checkbox" name="abaikanPersetujuan" className="mt-1" />
+              <span>
+                {review === "changes" && <>Klien <strong>masih meminta koreksi</strong> atas draft ini di portal. </>}
+                {review === "outdated" && <>Draft <strong>diubah setelah dibagikan</strong>; klien belum membaca versi ini. </>}
+                {review === "waiting" && <>Klien <strong>belum menyetujui</strong> draft yang dibagikan. </>}
+                Centang bila klien sudah menyetujui isi akta ini secara langsung saat pembacaan.
+              </span>
+            </label>
+          )}
+        </div>
+      )}
       <label className="flex items-start gap-2 text-sm text-foreground">
         <input type="checkbox" name="ditandatangani" className="mt-1" /> Akta sudah ditandatangani para pihak, saksi & Notaris
       </label>
+      {!ppat && (
+        <p className="text-xs text-muted-foreground">
+          Bila ada coretan, penggantian, atau tambahan yang diparaf saat pembacaan, isi dulu kolom “Perubahan (renvoi)” di bagian Data Akta lalu simpan.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <Submit />
         {state.error && <span className="text-sm text-status-overdue">{state.error}</span>}

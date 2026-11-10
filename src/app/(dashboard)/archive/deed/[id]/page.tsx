@@ -5,7 +5,7 @@ import { requirePermission } from "@/lib/session";
 import { PERMISSIONS, userHasPermission } from "@/lib/permissions";
 import { Card } from "@/components/ui/Card";
 import { formatDate, formatStatusLabel } from "@/lib/format";
-import { updateDeedStatus, archiveDeed, restoreDeed } from "@/app/(dashboard)/archive/actions";
+import { updateDeedStatus, archiveDeed, restoreDeed, createDeedCorrection, markDeedCorrectionDelivered } from "@/app/(dashboard)/archive/actions";
 import { unwrapProps, type Async } from "@/lib/pageProps";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +26,8 @@ function FileLink({ documentId }: { documentId: string | null }) {
   );
 }
 
-export default async function DeedDetailPage(props: Async<{ params: { id: string } }>) {
-  const { params } = await unwrapProps(props);
+export default async function DeedDetailPage(props: Async<{ params: { id: string }; searchParams?: { pembetulan?: string } }>) {
+  const { params, searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_MINUTA);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_MINUTA);
 
@@ -41,6 +41,7 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
       salinan: { orderBy: { createdAt: "desc" } },
       grosse: { orderBy: { createdAt: "desc" } },
       kutipan: { orderBy: { createdAt: "desc" } },
+      corrections: { orderBy: { baDate: "desc" } },
       repertorium: true
     }
   });
@@ -200,6 +201,81 @@ export default async function DeedDetailPage(props: Async<{ params: { id: string
               </div>
             ))}
           </ArchiveSection>
+
+          {/* Berita Acara Pembetulan (Pasal 51 UUJN) */}
+          <Card>
+            <div id="pembetulan" className="scroll-mt-24">
+              <h2 className="text-base font-bold text-foreground">Berita Acara Pembetulan ({deed.corrections.length})</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Akta yang sudah disahkan tidak diubah. Salah tulis/ketik pada minuta dibetulkan dengan akta Berita Acara Pembetulan; catat nomor
+                dan tanggalnya di sini, beri catatan pada minuta asli, lalu sampaikan salinannya kepada para pihak.
+              </p>
+              {searchParams?.pembetulan === "ok" && <p className="mt-2 text-xs text-status-on-track">Pembetulan dicatat.</p>}
+              {searchParams?.pembetulan === "invalid" && (
+                <p role="alert" className="mt-2 text-xs text-status-overdue">
+                  Isi nomor, tanggal, dan uraian pembetulan (minimal 10 huruf).
+                </p>
+              )}
+              {searchParams?.pembetulan === "tanggal" && (
+                <p role="alert" className="mt-2 text-xs text-status-overdue">
+                  Tanggal berita acara tidak boleh sebelum tanggal akta.
+                </p>
+              )}
+              <div className="mt-2 divide-y divide-border">
+                {deed.corrections.map((c) => (
+                  <div key={c.id} className="space-y-1 py-2.5 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium text-foreground">
+                        BA Nomor {c.baNumber} · {formatDate(c.baDate)}
+                      </span>
+                      {c.deliveredAt ? (
+                        <span className="text-xs text-status-on-track">Salinan disampaikan {formatDate(c.deliveredAt)}</span>
+                      ) : canEdit ? (
+                        <form action={markDeedCorrectionDelivered.bind(null, c.id)}>
+                          <button type="submit" className="text-xs font-medium text-primary hover:underline">
+                            Tandai salinan sudah disampaikan
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="text-xs text-status-due-soon">Salinan belum disampaikan</span>
+                      )}
+                    </div>
+                    <p className="whitespace-pre-wrap break-words text-foreground">{c.description}</p>
+                  </div>
+                ))}
+                {deed.corrections.length === 0 && <p className="py-2.5 text-sm text-muted-foreground">Belum ada pembetulan.</p>}
+              </div>
+              {canEdit && (
+                <form action={createDeedCorrection.bind(null, deed.id)} className="mt-3 space-y-2 border-t border-border pt-3">
+                  <div className="flex flex-wrap gap-2">
+                    <label className="w-40">
+                      <span className="mb-1 block text-xs text-muted-foreground">Nomor akta BA</span>
+                      <input name="baNumber" required maxLength={60} placeholder="mis. 15" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                    </label>
+                    <label className="w-44">
+                      <span className="mb-1 block text-xs text-muted-foreground">Tanggal BA</span>
+                      <input name="baDate" type="date" required className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-muted-foreground">Yang dibetulkan</span>
+                    <textarea
+                      name="description"
+                      required
+                      minLength={10}
+                      maxLength={2000}
+                      rows={3}
+                      placeholder="mis. Halaman 2 baris 7: semula tertulis “1980”, seharusnya “1981”."
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <button type="submit" className="rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+                    Catat pembetulan
+                  </button>
+                </form>
+              )}
+            </div>
+          </Card>
         </div>
 
         <div className="space-y-6">

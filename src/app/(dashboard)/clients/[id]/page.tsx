@@ -13,6 +13,7 @@ import { ClientNewJobForm } from "@/components/clients/ClientNewJobForm";
 import { PortalAccountBanner } from "@/components/clients/PortalAccountBanner";
 import { ClientPortalAccess } from "@/components/clients/ClientPortalAccess";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -24,6 +25,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 }
 
 export default async function ClientDetailPage(props: Async<{ params: { id: string }; searchParams?: { portal?: string; jobFailed?: string; ppatk?: string } }>) {
+  const { tp } = await getT();
   const { params, searchParams } = await unwrapProps(props);
   const user = await requirePermission(PERMISSIONS.VIEW_CLIENTS);
   const canEdit = await userHasPermission(user.id, PERMISSIONS.EDIT_CLIENTS);
@@ -68,7 +70,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
       {searchParams?.portal && <PortalAccountBanner status={searchParams.portal} />}
       {searchParams?.jobFailed && (
         <div className="rounded-md border border-warn-border bg-warn-soft px-4 py-3 text-sm text-warn-strong">
-          Klien sudah tersimpan, tetapi pekerjaannya gagal dibuat. Klik &quot;+ Pekerjaan baru&quot; untuk membuatnya lagi.
+          {tp("Klien sudah tersimpan, tetapi pekerjaannya gagal dibuat. Klik \"+ Pekerjaan baru\" untuk membuatnya lagi.")}
         </div>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -77,7 +79,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
           <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{client.fullName}</h1>
           {client.status === "ARCHIVED" && (
             <span className="mt-1 inline-block rounded-full bg-status-archived/10 px-2.5 py-0.5 text-xs font-medium text-status-archived">
-              Diarsipkan
+              {tp("Diarsipkan")}
             </span>
           )}
         </div>
@@ -88,7 +90,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
               className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
             >
               <Pencil className="h-4 w-4" />
-              Edit
+              {tp("Edit")}
             </Link>
           )}
           {canDelete && client.status === "ACTIVE" && (
@@ -98,7 +100,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
                 className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10"
               >
                 <Archive className="h-4 w-4" />
-                Arsipkan
+                {tp("Arsipkan")}
               </button>
             </form>
           )}
@@ -109,7 +111,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
                 className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
                 <RotateCcw className="h-4 w-4" />
-                Aktifkan Kembali
+                {tp("Aktifkan Kembali")}
               </button>
             </form>
           )}
@@ -117,29 +119,29 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
       </div>
 
       <Card>
-        <h2 className="mb-4 text-base font-bold text-foreground">Informasi Klien</h2>
+        <h2 className="mb-4 text-base font-bold text-foreground">{tp("Informasi Klien")}</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <InfoRow label="Tipe" value={client.clientType} />
-          <InfoRow label="NIK" value={client.nik} />
-          <InfoRow label="Telepon" value={client.phone} />
-          <InfoRow label="Email" value={client.email} />
+          <InfoRow label={tp("Tipe")} value={client.clientType} />
+          <InfoRow label={tp("NIK")} value={client.nik} />
+          <InfoRow label={tp("Telepon")} value={client.phone} />
+          <InfoRow label={tp("Email")} value={client.email} />
           <div className="col-span-2">
-            <InfoRow label="Alamat" value={client.address} />
+            <InfoRow label={tp("Alamat")} value={client.address} />
           </div>
-          <InfoRow label="Kota" value={client.city} />
-          <InfoRow label="NPWP" value={client.npwp} />
-          <InfoRow label="Pekerjaan" value={client.occupation} />
-          <InfoRow label="Status Perkawinan" value={client.maritalStatus} />
-          {client.companyName && <InfoRow label="Perusahaan" value={client.companyName} />}
+          <InfoRow label={tp("Kota")} value={client.city} />
+          <InfoRow label={tp("NPWP")} value={client.npwp} />
+          <InfoRow label={tp("Pekerjaan")} value={client.occupation} />
+          <InfoRow label={tp("Status Perkawinan")} value={client.maritalStatus} />
+          {client.companyName && <InfoRow label={tp("Perusahaan")} value={client.companyName} />}
           {client.representative && (
             <div className="col-span-2">
-              <InfoRow label="Wakil Badan Usaha" value={client.representative} />
+              <InfoRow label={tp("Wakil Badan Usaha")} value={client.representative} />
             </div>
           )}
         </div>
         <div className="mt-4 border-t border-border pt-3">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-bold text-foreground">Pengenalan Pengguna Jasa (PMPJ)</h3>
+            <h3 className="text-sm font-bold text-foreground">{tp("Pengenalan Pengguna Jasa (PMPJ)")}</h3>
             {client.riskLevel ? (
               <span
                 className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -150,37 +152,36 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
                       : "bg-status-on-track/10 text-status-on-track"
                 }`}
               >
-                Risiko {client.riskLevel.toLowerCase()}
+                {tp("Risiko")} {client.riskLevel.toLowerCase()}
               </span>
             ) : (
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">Belum dinilai</span>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{tp("Belum dinilai")}</span>
             )}
-            {client.isPep && <span className="rounded-full bg-status-overdue/10 px-2.5 py-0.5 text-xs font-medium text-status-overdue">PEP</span>}
+            {client.isPep && <span className="rounded-full bg-status-overdue/10 px-2.5 py-0.5 text-xs font-medium text-status-overdue">{tp("PEP")}</span>}
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <InfoRow label="Sumber Dana" value={client.sourceOfFunds} />
-            <InfoRow label="Tujuan Transaksi" value={client.transactionPurpose} />
+            <InfoRow label={tp("Sumber Dana")} value={client.sourceOfFunds} />
+            <InfoRow label={tp("Tujuan Transaksi")} value={client.transactionPurpose} />
             <div className="col-span-2">
-              <InfoRow label="Pemilik Manfaat" value={client.beneficialOwner} />
+              <InfoRow label={tp("Pemilik Manfaat")} value={client.beneficialOwner} />
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            {client.pmpjUpdatedAt ? `PMPJ terakhir diperbarui ${formatDateTime(client.pmpjUpdatedAt)}.` : "PMPJ belum diisi. Lengkapi lewat tombol Edit bila transaksinya wajib PMPJ."}{" "}
+            {client.pmpjUpdatedAt ? tp("PMPJ terakhir diperbarui {0}.", [formatDateTime(client.pmpjUpdatedAt)]) : tp("PMPJ belum diisi. Lengkapi lewat tombol Edit bila transaksinya wajib PMPJ.")}{" "}
             <a href={`/api/clients/${client.id}/pmpj-form`} className="font-medium text-primary hover:underline">
-              Unduh formulir PMPJ (Word)
+              {tp("Unduh formulir PMPJ (Word)")}
             </a>
           </p>
           {canSeePpatk && (
             <div id="ppatk" className="mt-3 scroll-mt-24 rounded-md border border-border p-3">
-              <h3 className="text-sm font-bold text-foreground">Pelaporan PPATK ({ppatkReports.length})</h3>
+              <h3 className="text-sm font-bold text-foreground">{tp("Pelaporan PPATK (")}{ppatkReports.length})</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Laporan transaksi keuangan mencurigakan dikirim lewat aplikasi goAML PPATK; di sini hanya dicatat bahwa sudah dilaporkan. Bagian
-                ini hanya terlihat oleh Notaris/Admin dan tidak boleh diberitahukan kepada klien.
+                {tp("Laporan transaksi keuangan mencurigakan dikirim lewat aplikasi goAML PPATK; di sini hanya dicatat bahwa sudah dilaporkan. Bagian ini hanya terlihat oleh Notaris/Admin dan tidak boleh diberitahukan kepada klien.")}
               </p>
-              {searchParams?.ppatk === "ok" && <p className="mt-1 text-xs text-status-on-track">Pelaporan dicatat.</p>}
+              {searchParams?.ppatk === "ok" && <p className="mt-1 text-xs text-status-on-track">{tp("Pelaporan dicatat.")}</p>}
               {searchParams?.ppatk === "invalid" && (
                 <p role="alert" className="mt-1 text-xs text-status-overdue">
-                  Isi tanggal lapor dan keterangan (minimal 5 huruf).
+                  {tp("Isi tanggal lapor dan keterangan (minimal 5 huruf).")}
                 </p>
               )}
               {ppatkReports.length > 0 && (
@@ -188,8 +189,8 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
                   {ppatkReports.map((r) => (
                     <li key={r.id} className="py-2">
                       <p className="font-medium text-foreground">
-                        {r.kind === "LTKM" ? "LTKM" : "Laporan lain"} · {formatDate(r.reportedAt)}
-                        {r.reference ? ` · ref. ${r.reference}` : ""}
+                        {r.kind === "LTKM" ? tp("LTKM") : tp("Laporan lain")} · {formatDate(r.reportedAt)}
+                        {r.reference ? tp(" · ref. {0}", [r.reference]) : ""}
                       </p>
                       <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">{r.notes}</p>
                     </li>
@@ -197,30 +198,30 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
                 </ul>
               )}
               <details className="mt-2 text-sm">
-                <summary className="cursor-pointer font-medium text-foreground">Catat pelaporan</summary>
+                <summary className="cursor-pointer font-medium text-foreground">{tp("Catat pelaporan")}</summary>
                 <form action={recordPpatkReport.bind(null, client.id)} className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <label>
-                    <span className="mb-1 block text-xs text-muted-foreground">Jenis</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Jenis")}</span>
                     <select name="kind" defaultValue="LTKM" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground">
-                      <option value="LTKM">LTKM (transaksi mencurigakan)</option>
-                      <option value="LAINNYA">Laporan lain</option>
+                      <option value="LTKM">{tp("LTKM (transaksi mencurigakan)")}</option>
+                      <option value="LAINNYA">{tp("Laporan lain")}</option>
                     </select>
                   </label>
                   <label>
-                    <span className="mb-1 block text-xs text-muted-foreground">Tanggal lapor</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Tanggal lapor")}</span>
                     <input type="date" name="reportedAt" required defaultValue={hariIni} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                   </label>
                   <label>
-                    <span className="mb-1 block text-xs text-muted-foreground">Nomor referensi goAML</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Nomor referensi goAML")}</span>
                     <input name="reference" maxLength={120} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                   </label>
                   <label className="sm:col-span-3">
-                    <span className="mb-1 block text-xs text-muted-foreground">Keterangan (transaksi & alasan)</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Keterangan (transaksi & alasan)")}</span>
                     <textarea name="notes" required minLength={5} maxLength={1000} rows={2} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                   </label>
                   <div className="sm:col-span-3">
                     <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
-                      Simpan catatan
+                      {tp("Simpan catatan")}
                     </button>
                   </div>
                 </form>
@@ -230,23 +231,23 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
         </div>
         {client.notes && (
           <div className="mt-4">
-            <InfoRow label="Catatan" value={client.notes} />
+            <InfoRow label={tp("Catatan")} value={client.notes} />
           </div>
         )}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm">
           <span className={client.dataConsentAt ? "text-foreground" : "text-status-overdue"}>
             {client.dataConsentAt
-              ? `Persetujuan data pribadi (UU PDP) dicatat ${formatDateTime(client.dataConsentAt)}${consentBy ? ` oleh ${consentBy}` : ""}.`
-              : "Persetujuan data pribadi (UU PDP) belum dicatat."}
+              ? tp("Persetujuan data pribadi (UU PDP) dicatat {0}{1}.", [formatDateTime(client.dataConsentAt), consentBy ? ` oleh ${consentBy}` : ""])
+              : tp("Persetujuan data pribadi (UU PDP) belum dicatat.")}
           </span>
           <span className="flex flex-wrap items-center gap-3">
             <a href={`/api/clients/${client.id}/consent-form`} className="text-xs font-medium text-primary hover:underline">
-              Unduh formulir persetujuan (Word)
+              {tp("Unduh formulir persetujuan (Word)")}
             </a>
             {canEdit && !client.dataConsentAt && (
               <form action={recordDataConsent.bind(null, client.id)}>
                 <button type="submit" className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">
-                  Catat persetujuan
+                  {tp("Catat persetujuan")}
                 </button>
               </form>
             )}
@@ -257,16 +258,16 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
       <div className={showNewJob ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "grid grid-cols-1 gap-4"}>
         {showNewJob && (
           <Card>
-            <h2 className="mb-1 text-base font-bold text-foreground">+ Pekerjaan baru</h2>
-            <p className="mb-3 text-xs text-muted-foreground">Klien lama datang lagi? Buat pekerjaan baru di sini tanpa menambah data klien.</p>
+            <h2 className="mb-1 text-base font-bold text-foreground">{tp("+ Pekerjaan baru")}</h2>
+            <p className="mb-3 text-xs text-muted-foreground">{tp("Klien lama datang lagi? Buat pekerjaan baru di sini tanpa menambah data klien.")}</p>
             <ClientNewJobForm action={createJobForClient.bind(null, client.id)} services={services} staff={staff} withBilling={canBill} />
           </Card>
         )}
 
         <Card>
-          <h2 className="mb-3 text-base font-bold text-foreground">Pekerjaan Terkait</h2>
+          <h2 className="mb-3 text-base font-bold text-foreground">{tp("Pekerjaan Terkait")}</h2>
           {client.jobs.length === 0 ? (
-            <EmptyState title="Belum ada pekerjaan." />
+            <EmptyState title={tp("Belum ada pekerjaan.")} />
           ) : (
             <div className="divide-y divide-border">
               {client.jobs.map((j) => (
@@ -277,7 +278,7 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">{formatStatusLabel(j.status)}</span>
-                    {j.deadline && <StatusBadge tone={classifyDeadline(j.deadline, j.status)} label={`Target ${formatDate(j.deadline)}`} />}
+                    {j.deadline && <StatusBadge tone={classifyDeadline(j.deadline, j.status)} label={tp("Target {0}", [formatDate(j.deadline)])} />}
                   </div>
                 </Link>
               ))}
@@ -289,15 +290,15 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
       {canViewDocuments && (
         <Card>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-bold text-foreground">Dokumen Terkait</h2>
+            <h2 className="text-base font-bold text-foreground">{tp("Dokumen Terkait")}</h2>
             {canUploadDocuments && (
               <Link href={`/documents/new?clientId=${client.id}`} className="text-xs font-medium text-primary hover:underline">
-                + Unggah Dokumen
+                {tp("+ Unggah Dokumen")}
               </Link>
             )}
           </div>
           {client.documents.length === 0 ? (
-            <EmptyState title="Belum ada dokumen." />
+            <EmptyState title={tp("Belum ada dokumen.")} />
           ) : (
             <div className="divide-y divide-border">
               {client.documents.map((doc) => (
@@ -315,10 +316,9 @@ export default async function ClientDetailPage(props: Async<{ params: { id: stri
           tombol buat/reset/nonaktif hanya untuk pemilik edit_clients. */}
       <Card>
         <div className="mb-3">
-          <h2 className="text-base font-bold text-foreground">Akses Portal Klien</h2>
+          <h2 className="text-base font-bold text-foreground">{tp("Akses Portal Klien")}</h2>
           <p className="text-xs text-muted-foreground">
-            Akun login klien di portal. Kantor membuatkan akun dan menyampaikan password sementara; klien wajib
-            menggantinya saat login pertama.
+            {tp("Akun login klien di portal. Kantor membuatkan akun dan menyampaikan password sementara; klien wajib menggantinya saat login pertama.")}
           </p>
         </div>
         <ClientPortalAccess

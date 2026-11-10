@@ -40,6 +40,7 @@ import { draftHash, reviewState } from "@/lib/deeds/review";
 import { suggestCovernoteItems } from "@/lib/covernote";
 import { stagesFor } from "@/lib/ppatStages";
 import { unwrapProps, type Async } from "@/lib/pageProps";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,7 @@ export default async function JobDetailPage(props: Async<{
   params: { id: string };
   searchParams?: { created?: string; ok?: string; err?: string; portal?: string; doc?: string; cn?: string };
 }>) {
+  const { tp } = await getT();
   const {
   params,
   searchParams
@@ -196,7 +198,7 @@ export default async function JobDetailPage(props: Async<{
             <>
               {" "}
               <a href={`/api/documents/${searchParams.doc}/download`} className="font-medium text-primary hover:underline">
-                Unduh covernote
+                {tp("Unduh covernote")}
               </a>
             </>
           )}
@@ -210,25 +212,24 @@ export default async function JobDetailPage(props: Async<{
       {searchParams?.portal && <PortalAccountBanner status={searchParams.portal} />}
       {(searchParams?.created === "client" || searchParams?.created === "job") && (
         <div className="rounded-md border border-status-on-track/40 bg-status-on-track/10 px-3 py-2 text-sm text-foreground">
-          {searchParams.created === "client" ? `Klien ${job.client.clientNumber} dan pekerjaan` : "Pekerjaan"} {job.jobNumber} berhasil dibuat.
-          Checklist dokumen sudah disiapkan sesuai layanan
-          {job.pic ? `; ${job.pic.name} sudah diberi tahu dan pekerjaan langsung berjalan.` : ". Tentukan PIC lewat \"Ubah pekerjaan\" agar staf mulai bekerja."}
+          {searchParams.created === "client" ? tp("Klien {0} dan pekerjaan", [job.client.clientNumber]) : tp("Pekerjaan")} {job.jobNumber} {tp("berhasil dibuat. Checklist dokumen sudah disiapkan sesuai layanan")}
+          {job.pic ? tp("; {0} sudah diberi tahu dan pekerjaan langsung berjalan.", [job.pic.name]) : tp(". Tentukan PIC lewat \"Ubah pekerjaan\" agar staf mulai bekerja.")}
         </div>
       )}
       {/* Header */}
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{job.jobNumber}</p>
-          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{job.description || "(Tanpa deskripsi)"}</h1>
+          <h1 className="break-words text-2xl font-extrabold tracking-tight text-foreground">{job.description || tp("(Tanpa deskripsi)")}</h1>
           <Link href={`/clients/${job.client.id}`} className="text-sm text-primary hover:underline">
             {job.client.fullName} · {job.client.clientNumber}
           </Link>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {job.deadline ? (
-            <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={`Target ${formatDate(job.deadline)}`} />
+            <StatusBadge tone={classifyDeadline(job.deadline, job.status)} label={tp("Target {0}", [formatDate(job.deadline)])} />
           ) : (
-            <span className="text-xs text-muted-foreground">Tanpa target</span>
+            <span className="text-xs text-muted-foreground">{tp("Tanpa target")}</span>
           )}
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
             {formatStatusLabel(job.status)}
@@ -241,26 +242,26 @@ export default async function JobDetailPage(props: Async<{
         <div className="space-y-6 lg:col-span-2">
           {/* Info */}
           <Card>
-            <h2 className="mb-3 text-base font-bold text-foreground">Informasi Pekerjaan</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">{tp("Informasi Pekerjaan")}</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
-              <Info label="Jenis Layanan" value={job.serviceType?.name} />
-              <Info label="Status" value={formatStatusLabel(job.status)} />
-              <Info label="Prioritas" value={formatStatusLabel(job.priority)} />
-              <Info label="Target" value={formatDate(job.deadline)} />
-              <Info label="Mulai" value={formatDateJakarta(job.startDate)} />
-              <Info label="Selesai" value={formatDateJakarta(job.completionDate)} />
-              <Info label="Staf (PIC)" value={job.pic?.name} />
-              <Info label="Notaris" value={job.notary?.name} />
+              <Info label={tp("Jenis Layanan")} value={job.serviceType?.name} />
+              <Info label={tp("Status")} value={formatStatusLabel(job.status)} />
+              <Info label={tp("Prioritas")} value={formatStatusLabel(job.priority)} />
+              <Info label={tp("Target")} value={formatDate(job.deadline)} />
+              <Info label={tp("Mulai")} value={formatDateJakarta(job.startDate)} />
+              <Info label={tp("Selesai")} value={formatDateJakarta(job.completionDate)} />
+              <Info label={tp("Staf (PIC)")} value={job.pic?.name} />
+              <Info label={tp("Notaris")} value={job.notary?.name} />
             </dl>
             {job.notes && <p className="mt-3 whitespace-pre-line rounded-md bg-muted p-3 text-sm text-muted-foreground">{job.notes}</p>}
             {isNotary && !isFinal && (
               <details className="mt-3 rounded-md border border-border">
-                <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-primary">Ubah pekerjaan (PIC, target, prioritas, catatan)</summary>
+                <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-primary">{tp("Ubah pekerjaan (PIC, target, prioritas, catatan)")}</summary>
                 <form action={updateJobDetails.bind(null, job.id)} className="grid grid-cols-1 gap-3 border-t border-border p-3 sm:grid-cols-3">
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs text-muted-foreground">Staf penanggung jawab (PIC)</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Staf penanggung jawab (PIC)")}</span>
                     <select name="picId" defaultValue={job.picId ?? ""} className={fieldCls}>
-                      <option value="">— Belum ditentukan —</option>
+                      <option value="">{tp("— Belum ditentukan —")}</option>
                       {staffOptions.map((u) => (
                         <option key={u.id} value={u.id}>{u.name}</option>
                       ))}
@@ -268,31 +269,31 @@ export default async function JobDetailPage(props: Async<{
                     </select>
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs text-muted-foreground">Target selesai</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Target selesai")}</span>
                     <input type="date" name="deadline" defaultValue={dateInput(job.deadline)} className={fieldCls} />
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs text-muted-foreground">Prioritas</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Prioritas")}</span>
                     <select name="priority" defaultValue={job.priority} className={fieldCls}>
-                      <option value="LOW">Rendah</option>
-                      <option value="NORMAL">Normal</option>
-                      <option value="HIGH">Tinggi</option>
-                      <option value="URGENT">Mendesak</option>
+                      <option value="LOW">{tp("Rendah")}</option>
+                      <option value="NORMAL">{tp("Normal")}</option>
+                      <option value="HIGH">{tp("Tinggi")}</option>
+                      <option value="URGENT">{tp("Mendesak")}</option>
                     </select>
                   </label>
                   <label className="text-sm sm:col-span-3">
-                    <span className="mb-1 block text-xs text-muted-foreground">Keterangan</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Keterangan")}</span>
                     <input name="description" defaultValue={job.description ?? ""} maxLength={500} className={fieldCls} />
                   </label>
                   <label className="text-sm sm:col-span-3">
-                    <span className="mb-1 block text-xs text-muted-foreground">Catatan</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Catatan")}</span>
                     <textarea name="notes" rows={3} defaultValue={job.notes ?? ""} className={fieldCls} />
                   </label>
                   <div className="sm:col-span-3">
                     <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                      Simpan perubahan
+                      {tp("Simpan perubahan")}
                     </button>
-                    <span className="ml-2 text-xs text-muted-foreground">PIC baru otomatis menerima notifikasi dan tugas yang belum selesai.</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{tp("PIC baru otomatis menerima notifikasi dan tugas yang belum selesai.")}</span>
                   </div>
                 </form>
               </details>
@@ -303,11 +304,11 @@ export default async function JobDetailPage(props: Async<{
           <Card>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-bold text-foreground">
-                Checklist Dokumen ({completedChecklistItems}/{totalChecklistItems})
+                {tp("Checklist Dokumen (")}{completedChecklistItems}/{totalChecklistItems})
               </h2>
             </div>
             {totalChecklistItems === 0 ? (
-              <p className="text-sm text-muted-foreground">Tidak ada checklist untuk pekerjaan ini.</p>
+              <p className="text-sm text-muted-foreground">{tp("Tidak ada checklist untuk pekerjaan ini.")}</p>
             ) : (
               <div className="space-y-1.5">
                 {job.checklists.flatMap((checklist) =>
@@ -335,16 +336,16 @@ export default async function JobDetailPage(props: Async<{
                           {item.label}
                         </span>
                         {item.isRequired && item.status !== "COMPLETE" && (
-                          <span className="text-[10px] font-medium text-status-overdue">wajib</span>
+                          <span className="text-[10px] font-medium text-status-overdue">{tp("wajib")}</span>
                         )}
                         {item.reviewStatus === "PENDING_REVIEW" && (
                           <span className="rounded-full bg-status-due-soon/10 px-2 py-0.5 text-[10px] font-medium text-status-due-soon">
-                            unggahan klien · menunggu pemeriksaan
+                            {tp("unggahan klien · menunggu pemeriksaan")}
                           </span>
                         )}
                         {item.reviewStatus === "NEEDS_REVISION" && item.status !== "COMPLETE" && (
                           <span className="rounded-full bg-status-overdue/10 px-2 py-0.5 text-[10px] font-medium text-status-overdue">
-                            diminta perbaikan
+                            {tp("diminta perbaikan")}
                           </span>
                         )}
                       </button>
@@ -397,15 +398,15 @@ export default async function JobDetailPage(props: Async<{
 
           {/* Draft Akta */}
           <Card>
-            <h2 className="mb-3 text-base font-bold text-foreground">Draft Akta ({job.deedDrafts.length})</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">{tp("Draft Akta (")}{job.deedDrafts.length})</h2>
             {job.deedDrafts.length > 0 && (
               <ul className="mb-3 divide-y divide-border text-sm">
                 {job.deedDrafts.map((d) => (
                   <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <Link href={`/jobs/${job.id}/deeds/${d.id}`} className="font-medium text-primary hover:underline">
                       {d.title ?? d.templateKey}
-                      {d.deed ? <span className="ml-2 text-xs font-normal text-status-on-track">Disahkan · No. {d.deed.deedNumber}</span> : null}
-                      {d.ppatDeed ? <span className="ml-2 text-xs font-normal text-status-on-track">Disahkan · Akta PPAT No. {d.ppatDeed.deedNumber}</span> : null}
+                      {d.deed ? <span className="ml-2 text-xs font-normal text-status-on-track">{tp("Disahkan · No.")} {d.deed.deedNumber}</span> : null}
+                      {d.ppatDeed ? <span className="ml-2 text-xs font-normal text-status-on-track">{tp("Disahkan · Akta PPAT No.")} {d.ppatDeed.deedNumber}</span> : null}
                       {!d.deed && !d.ppatDeed &&
                         (() => {
                           const st = reviewState(d.reviews[0], draftHash(d.data));
@@ -421,7 +422,7 @@ export default async function JobDetailPage(props: Async<{
                         })()}
                     </Link>
                     <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      diperbarui {fmtDeedTime(d.updatedAt)}
+                      {tp("diperbarui")} {fmtDeedTime(d.updatedAt)}
                       <a href={`/api/deeds/${d.id}/minuta`} className="text-foreground hover:underline">{variantLabels(getDeedTemplate(d.templateKey)).minuta}</a>
                       <a href={`/api/deeds/${d.id}/salinan`} className="text-status-overdue hover:underline">{variantLabels(getDeedTemplate(d.templateKey)).salinan}</a>
                     </span>
@@ -449,7 +450,7 @@ export default async function JobDetailPage(props: Async<{
                       ))}
                     </select>
                     <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                      Buat Draft Akta
+                      {tp("Buat Draft Akta")}
                     </button>
                   </form>
                 );
@@ -458,27 +459,27 @@ export default async function JobDetailPage(props: Async<{
                   form
                 ) : (
                   <details>
-                    <summary className="cursor-pointer text-xs font-medium text-primary">+ Draft akta lain untuk pekerjaan ini</summary>
+                    <summary className="cursor-pointer text-xs font-medium text-primary">{tp("+ Draft akta lain untuk pekerjaan ini")}</summary>
                     <div className="mt-2">{form}</div>
                   </details>
                 );
               })()
             ) : (
-              job.deedDrafts.length === 0 && <p className="text-sm text-muted-foreground">Belum ada draft akta.</p>
+              job.deedDrafts.length === 0 && <p className="text-sm text-muted-foreground">{tp("Belum ada draft akta.")}</p>
             )}
             {(job.deeds.length > 0 || job.ppatDeeds.length > 0) && openDrafts > 0 && !isFinal && (
               <p className="mt-2 rounded-md bg-status-due-soon/10 px-3 py-2 text-xs text-foreground">
-                Masih ada {openDrafts} draft belum disahkan. Pekerjaan selesai otomatis setelah semua draft disahkan; hapus draft yang tidak dipakai.
+                {tp("Masih ada")} {openDrafts} {tp("draft belum disahkan. Pekerjaan selesai otomatis setelah semua draft disahkan; hapus draft yang tidak dipakai.")}
               </p>
             )}
             <p className="mt-2 text-xs text-muted-foreground">
-              Data klien terisi otomatis; hasil berupa Word format akta kantor (Minuta hitam, Salinan merah).
+              {tp("Data klien terisi otomatis; hasil berupa Word format akta kantor (Minuta hitam, Salinan merah).")}
             </p>
           </Card>
 
           {/* Tasks */}
           <Card>
-            <h2 className="mb-3 text-base font-bold text-foreground">Tugas ({job.tasks.length})</h2>
+            <h2 className="mb-3 text-base font-bold text-foreground">{tp("Tugas (")}{job.tasks.length})</h2>
             <div className="space-y-1.5">
               {job.tasks.map((task) => (
                 <div key={task.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
@@ -499,7 +500,7 @@ export default async function JobDetailPage(props: Async<{
                   </button>
                 </form>
                 {task.dueDate && task.status !== "DONE" && !isNotary && (
-                  <StatusBadge tone={classifyDeadline(task.dueDate, "OPEN")} label={`Tenggat ${formatDate(task.dueDate)}`} />
+                  <StatusBadge tone={classifyDeadline(task.dueDate, "OPEN")} label={tp("Tenggat {0}", [formatDate(task.dueDate)])} />
                 )}
                 {isNotary && task.status !== "DONE" && (
                   // Notaris dapat mengatur / menyesuaikan tenggat tugas.
@@ -507,13 +508,13 @@ export default async function JobDetailPage(props: Async<{
                     {task.dueDate && <StatusBadge tone={classifyDeadline(task.dueDate, "OPEN")} label={formatDate(task.dueDate)} />}
                     <input type="date" name="dueDate" defaultValue={toDateInput(task.dueDate)} className="rounded border border-border bg-background px-1.5 py-0.5 text-xs" />
                     <button type="submit" className="rounded border border-border px-1.5 py-0.5 text-xs hover:bg-muted">
-                      Simpan
+                      {tp("Simpan")}
                     </button>
                   </form>
                 )}
                 </div>
               ))}
-              {job.tasks.length === 0 && <p className="text-sm text-muted-foreground">Belum ada tugas.</p>}
+              {job.tasks.length === 0 && <p className="text-sm text-muted-foreground">{tp("Belum ada tugas.")}</p>}
             </div>
 
             {canEdit && (
@@ -521,17 +522,17 @@ export default async function JobDetailPage(props: Async<{
                 <input
                   name="title"
                   required
-                  placeholder="Tambah tugas baru..."
+                  placeholder={tp("Tambah tugas baru...")}
                   className="min-w-0 flex-1 basis-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 sm:basis-0"
                 />
                 <input
                   type="date"
                   name="dueDate"
-                  title="Tenggat (opsional)"
+                  title={tp("Tenggat (opsional)")}
                   className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground sm:w-36 sm:flex-none"
                 />
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
-                  Tambah
+                  {tp("Tambah")}
                 </button>
               </form>
             )}
@@ -539,8 +540,8 @@ export default async function JobDetailPage(props: Async<{
 
           {/* Jadwal */}
           <Card>
-            <h2 className="mb-1 text-base font-bold text-foreground">Jadwal ({appointments.length})</h2>
-            <p className="mb-2 text-xs text-muted-foreground">Jadwal tanda tangan atau pertemuan. Tampil di Kalender; klien diberi tahu lewat portal.</p>
+            <h2 className="mb-1 text-base font-bold text-foreground">{tp("Jadwal (")}{appointments.length})</h2>
+            <p className="mb-2 text-xs text-muted-foreground">{tp("Jadwal tanda tangan atau pertemuan. Tampil di Kalender; klien diberi tahu lewat portal.")}</p>
             <div className="divide-y divide-border">
               {appointments.map((a) => {
                 const past = a.date.getTime() < todayStart.getTime();
@@ -548,48 +549,48 @@ export default async function JobDetailPage(props: Async<{
                   <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                     <div className="min-w-0">
                       <p className={past ? "text-muted-foreground" : "font-medium text-foreground"}>
-                        {a.type === "signing" ? "Tanda tangan akta" : a.type === "follow-up" ? "Tindak lanjut" : "Pertemuan"} · {formatDate(a.date)}
-                        {a.time ? ` · ${a.time} WIB` : ""}
+                        {a.type === "signing" ? tp("Tanda tangan akta") : a.type === "follow-up" ? tp("Tindak lanjut") : tp("Pertemuan")} · {formatDate(a.date)}
+                        {a.time ? tp(" · {0} WIB", [a.time]) : ""}
                         {past ? " (lewat)" : ""}
                       </p>
                       {a.notes && <p className="break-words text-xs text-muted-foreground">{a.notes}</p>}
                     </div>
                     {canEdit && !past && (
                       <form action={cancelAppointment.bind(null, a.id)}>
-                        <ConfirmButton message="Batalkan jadwal ini? Klien akan diberi tahu lewat portal." className="text-xs text-status-overdue hover:underline">
-                          Batalkan
+                        <ConfirmButton message={tp("Batalkan jadwal ini? Klien akan diberi tahu lewat portal.")} className="text-xs text-status-overdue hover:underline">
+                          {tp("Batalkan")}
                         </ConfirmButton>
                       </form>
                     )}
                   </div>
                 );
               })}
-              {appointments.length === 0 && <p className="py-2.5 text-sm text-muted-foreground">Belum ada jadwal.</p>}
+              {appointments.length === 0 && <p className="py-2.5 text-sm text-muted-foreground">{tp("Belum ada jadwal.")}</p>}
             </div>
             {canEdit && !isFinal && (
               <form action={createAppointment.bind(null, job.id)} className="mt-3 flex flex-wrap items-end gap-2 border-t border-border pt-3">
                 <label className="w-full sm:w-44">
-                  <span className="mb-1 block text-xs text-muted-foreground">Jenis</span>
+                  <span className="mb-1 block text-xs text-muted-foreground">{tp("Jenis")}</span>
                   <select name="type" defaultValue="signing" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground">
-                    <option value="signing">Tanda tangan akta</option>
-                    <option value="meeting">Pertemuan</option>
-                    <option value="follow-up">Tindak lanjut</option>
+                    <option value="signing">{tp("Tanda tangan akta")}</option>
+                    <option value="meeting">{tp("Pertemuan")}</option>
+                    <option value="follow-up">{tp("Tindak lanjut")}</option>
                   </select>
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs text-muted-foreground">Tanggal</span>
+                  <span className="mb-1 block text-xs text-muted-foreground">{tp("Tanggal")}</span>
                   <input type="date" name="date" required min={toDateInput(todayStart)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs text-muted-foreground">Jam</span>
+                  <span className="mb-1 block text-xs text-muted-foreground">{tp("Jam")}</span>
                   <input type="time" name="time" className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                 </label>
                 <label className="min-w-0 flex-1">
-                  <span className="mb-1 block text-xs text-muted-foreground">Catatan (opsional)</span>
-                  <input name="notes" maxLength={300} placeholder="mis. bawa KTP & sertipikat asli" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                  <span className="mb-1 block text-xs text-muted-foreground">{tp("Catatan (opsional)")}</span>
+                  <input name="notes" maxLength={300} placeholder={tp("mis. bawa KTP & sertipikat asli")} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                 </label>
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
-                  Jadwalkan
+                  {tp("Jadwalkan")}
                 </button>
               </form>
             )}
@@ -599,61 +600,61 @@ export default async function JobDetailPage(props: Async<{
           <Card>
             <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-base font-bold text-foreground">
-                Dokumen Asli Dititipkan ({originals.filter((o) => !o.returnedAt).length} masih di kantor)
+                {tp("Dokumen Asli Dititipkan (")}{originals.filter((o) => !o.returnedAt).length} {tp("masih di kantor)")}
               </h2>
               {originals.length > 0 && (
                 <a href={`/api/jobs/${job.id}/tanda-terima`} className="text-xs font-medium text-primary hover:underline">
-                  Unduh tanda terima (Word)
+                  {tp("Unduh tanda terima (Word)")}
                 </a>
               )}
             </div>
-            <p className="mb-2 text-xs text-muted-foreground">Sertipikat, BPKB, dan surat asli lain yang diterima dari klien. Catat saat diterima dan saat dikembalikan.</p>
+            <p className="mb-2 text-xs text-muted-foreground">{tp("Sertipikat, BPKB, dan surat asli lain yang diterima dari klien. Catat saat diterima dan saat dikembalikan.")}</p>
             <div className="divide-y divide-border">
               {originals.map((o) => (
                 <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                   <div className="min-w-0">
                     <p className="break-words font-medium text-foreground">{o.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      Diterima {formatDate(o.receivedAt)}
-                      {o.receivedFrom ? ` dari ${o.receivedFrom}` : ""}
+                      {tp("Diterima")} {formatDate(o.receivedAt)}
+                      {o.receivedFrom ? tp(" dari {0}", [o.receivedFrom]) : ""}
                       {o.notes ? ` · ${o.notes}` : ""}
                     </p>
                   </div>
                   {o.returnedAt ? (
                     <span className="text-xs text-status-on-track">
-                      Dikembalikan {formatDate(o.returnedAt)}
-                      {o.returnedTo ? ` kepada ${o.returnedTo}` : ""}
+                      {tp("Dikembalikan")} {formatDate(o.returnedAt)}
+                      {o.returnedTo ? tp(" kepada {0}", [o.returnedTo]) : ""}
                     </span>
                   ) : canEdit ? (
                     <form action={returnOriginalDocument.bind(null, o.id)} className="flex flex-wrap items-center gap-2">
-                      <input name="returnedTo" required minLength={2} maxLength={120} placeholder="Dikembalikan kepada" className="w-44 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground" />
+                      <input name="returnedTo" required minLength={2} maxLength={120} placeholder={tp("Dikembalikan kepada")} className="w-44 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground" />
                       <button type="submit" className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted">
-                        Tandai dikembalikan
+                        {tp("Tandai dikembalikan")}
                       </button>
                     </form>
                   ) : (
-                    <span className="text-xs text-status-due-soon">Masih di kantor</span>
+                    <span className="text-xs text-status-due-soon">{tp("Masih di kantor")}</span>
                   )}
                 </div>
               ))}
-              {originals.length === 0 && <p className="py-2.5 text-sm text-muted-foreground">Belum ada dokumen asli yang dicatat.</p>}
+              {originals.length === 0 && <p className="py-2.5 text-sm text-muted-foreground">{tp("Belum ada dokumen asli yang dicatat.")}</p>}
             </div>
             {canEdit && (
               <form action={receiveOriginalDocument.bind(null, job.id)} className="mt-3 flex flex-wrap items-end gap-2 border-t border-border pt-3">
                 <label className="min-w-0 flex-1">
-                  <span className="mb-1 block text-xs text-muted-foreground">Dokumen asli</span>
-                  <input name="description" required minLength={3} maxLength={300} placeholder="mis. Sertipikat Hak Milik Nomor 123/Babakan" className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+                  <span className="mb-1 block text-xs text-muted-foreground">{tp("Dokumen asli")}</span>
+                  <input name="description" required minLength={3} maxLength={300} placeholder={tp("mis. Sertipikat Hak Milik Nomor 123/Babakan")} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs text-muted-foreground">Diterima dari</span>
+                  <span className="mb-1 block text-xs text-muted-foreground">{tp("Diterima dari")}</span>
                   <input name="receivedFrom" maxLength={120} className="w-40 rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs text-muted-foreground">Tanggal</span>
+                  <span className="mb-1 block text-xs text-muted-foreground">{tp("Tanggal")}</span>
                   <input type="date" name="receivedAt" defaultValue={toDateInput(todayStart)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
                 </label>
                 <button type="submit" className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
-                  Catat diterima
+                  {tp("Catat diterima")}
                 </button>
               </form>
             )}
@@ -663,15 +664,15 @@ export default async function JobDetailPage(props: Async<{
           {canViewDocuments && (
             <Card>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-bold text-foreground">Dokumen ({job.documents.length})</h2>
+                <h2 className="text-base font-bold text-foreground">{tp("Dokumen (")}{job.documents.length})</h2>
                 {canUploadDocuments && (
                   <Link href={`/documents/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
-                    + Upload Dokumen
+                    {tp("+ Upload Dokumen")}
                   </Link>
                 )}
               </div>
               {job.documents.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada dokumen untuk pekerjaan ini.</p>
+                <p className="text-sm text-muted-foreground">{tp("Belum ada dokumen untuk pekerjaan ini.")}</p>
               ) : (
                 <ul className="divide-y divide-border text-sm">
                   {job.documents.map((doc) => (
@@ -691,7 +692,7 @@ export default async function JobDetailPage(props: Async<{
           {ppatStageDefs.length > 0 && (
             <Card>
               <h2 className="mb-3 text-base font-bold text-foreground">
-                Proses PPAT ({ppatStageDefs.filter((d) => stageDone.has(d.key)).length}/{ppatStageDefs.length})
+                {tp("Proses PPAT (")}{ppatStageDefs.filter((d) => stageDone.has(d.key)).length}/{ppatStageDefs.length})
               </h2>
               <ol className="space-y-2">
                 {ppatStageDefs.map((d, i) => {
@@ -724,7 +725,7 @@ export default async function JobDetailPage(props: Async<{
                           {d.refLabel && <input name="reference" placeholder={d.refLabel} className="w-40 rounded border border-border bg-background px-2 py-1 text-xs" />}
                           <input type="date" name="date" defaultValue={toDateInput(getJakartaTodayDate())} className="rounded border border-border bg-background px-2 py-1 text-xs" />
                           <button type="submit" className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">
-                            Selesai
+                            {tp("Selesai")}
                           </button>
                         </form>
                       )}
@@ -732,7 +733,7 @@ export default async function JobDetailPage(props: Async<{
                         <form action={setPpatStage.bind(null, job.id, d.key)}>
                           <input type="hidden" name="undo" value="1" />
                           <button type="submit" className="text-xs text-muted-foreground hover:text-status-overdue">
-                            batalkan
+                            {tp("batalkan")}
                           </button>
                         </form>
                       )}
@@ -741,8 +742,7 @@ export default async function JobDetailPage(props: Async<{
                 })}
               </ol>
               <p className="mt-2 text-xs text-muted-foreground">
-                Tanda tangan & penyampaian ke BPN tercentang otomatis dari Buku Akta PPAT. Tahap yang tertahan diingatkan setiap pagi; klien melihat
-                kemajuannya di portal.
+                {tp("Tanda tangan & penyampaian ke BPN tercentang otomatis dari Buku Akta PPAT. Tahap yang tertahan diingatkan setiap pagi; klien melihat kemajuannya di portal.")}
               </p>
             </Card>
           )}
@@ -751,16 +751,16 @@ export default async function JobDetailPage(props: Async<{
           {canViewArchive && (isPpatService || job.ppatDeeds.length > 0) && (
             <Card>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-bold text-foreground">Akta PPAT ({job.ppatDeeds.length})</h2>
+                <h2 className="text-base font-bold text-foreground">{tp("Akta PPAT (")}{job.ppatDeeds.length})</h2>
                 {canEditArchive && !isFinal && (
                   <Link href={`/ppat/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
-                    + Daftarkan akta PPAT
+                    {tp("+ Daftarkan akta PPAT")}
                   </Link>
                 )}
               </div>
               {job.ppatDeeds.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Setelah akta ditandatangani, daftarkan di sini: nomor PPAT otomatis, tugas ke Kantor Pertanahan (7 hari kerja) dibuat, dan pekerjaan selesai.
+                  {tp("Setelah akta ditandatangani, daftarkan di sini: nomor PPAT otomatis, tugas ke Kantor Pertanahan (7 hari kerja) dibuat, dan pekerjaan selesai.")}
                 </p>
               ) : (
                 <ul className="divide-y divide-border text-sm">
@@ -770,7 +770,7 @@ export default async function JobDetailPage(props: Async<{
                         {p.deedNumber} — {p.deedType}
                       </Link>
                       <span className="text-xs text-muted-foreground">
-                        {formatDate(p.deedDate)} · {p.submittedToBpnAt ? "sudah ke BPN" : "belum ke BPN"}
+                        {formatDate(p.deedDate)} · {p.submittedToBpnAt ? tp("sudah ke BPN") : tp("belum ke BPN")}
                       </span>
                     </li>
                   ))}
@@ -783,37 +783,37 @@ export default async function JobDetailPage(props: Async<{
           {isNotary && (isPpatService || job.ppatDeeds.length > 0 || job.deeds.length > 0) && (
             <Card>
               <details>
-                <summary className="cursor-pointer text-sm font-semibold text-foreground">Covernote ke bank</summary>
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">{tp("Covernote ke bank")}</summary>
                 <form action={createCovernote.bind(null, job.id)} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs text-muted-foreground">Kepada (bank & cabang)</span>
-                    <input name="bank" required placeholder="mis. PT Bank Mandiri (Persero) Tbk. KCP Bogor Pajajaran" className={fieldCls} />
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Kepada (bank & cabang)")}</span>
+                    <input name="bank" required placeholder={tp("mis. PT Bank Mandiri (Persero) Tbk. KCP Bogor Pajajaran")} className={fieldCls} />
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs text-muted-foreground">Alamat bank (opsional)</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Alamat bank (opsional)")}</span>
                     <input name="bankAddress" className={fieldCls} />
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs text-muted-foreground">Nama debitur</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Nama debitur")}</span>
                     <input name="debtor" required defaultValue={job.client.fullName} className={fieldCls} />
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1 block text-xs text-muted-foreground">Perkiraan penyerahan sertipikat</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Perkiraan penyerahan sertipikat")}</span>
                     <input name="estimate" type="date" className={fieldCls} />
                   </label>
                   <label className="text-sm sm:col-span-2">
-                    <span className="mb-1 block text-xs text-muted-foreground">Uraian (satu poin per baris; terisi dari akta pekerjaan ini)</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Uraian (satu poin per baris; terisi dari akta pekerjaan ini)")}</span>
                     <textarea name="items" rows={6} required defaultValue={covernoteItems.join("\n")} className={fieldCls} />
                   </label>
                   <label className="text-sm sm:col-span-2">
-                    <span className="mb-1 block text-xs text-muted-foreground">Catatan tambahan (opsional)</span>
+                    <span className="mb-1 block text-xs text-muted-foreground">{tp("Catatan tambahan (opsional)")}</span>
                     <input name="note" className={fieldCls} />
                   </label>
                   <div className="sm:col-span-2">
                     <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                      Buat covernote (Word)
+                      {tp("Buat covernote (Word)")}
                     </button>
-                    <span className="ml-2 text-xs text-muted-foreground">Nomor otomatis; file tersimpan di Dokumen pekerjaan ini.</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{tp("Nomor otomatis; file tersimpan di Dokumen pekerjaan ini.")}</span>
                   </div>
                 </form>
               </details>
@@ -824,15 +824,15 @@ export default async function JobDetailPage(props: Async<{
           {canViewArchive && (
             <Card>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-bold text-foreground">Akta ({job.deeds.length})</h2>
+                <h2 className="text-base font-bold text-foreground">{tp("Akta (")}{job.deeds.length})</h2>
                 {canEditArchive && job.deedDrafts.length === 0 && (
                   <Link href={`/archive/deed/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
-                    + Catat akta manual
+                    {tp("+ Catat akta manual")}
                   </Link>
                 )}
               </div>
               {job.deeds.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada akta untuk pekerjaan ini.</p>
+                <p className="text-sm text-muted-foreground">{tp("Belum ada akta untuk pekerjaan ini.")}</p>
               ) : (
                 <ul className="divide-y divide-border text-sm">
                   {job.deeds.map((deed) => (
@@ -854,62 +854,62 @@ export default async function JobDetailPage(props: Async<{
           {/* Pemeriksaan Notaris */}
           {!isFinal && (
             <Card>
-              <h2 className="mb-2 text-base font-bold text-foreground">Pemeriksaan Notaris</h2>
+              <h2 className="mb-2 text-base font-bold text-foreground">{tp("Pemeriksaan Notaris")}</h2>
               {job.status === "REVIEW" ? (
                 isNotary ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">Pekerjaan ini diajukan untuk Anda periksa.</p>
+                    <p className="text-sm text-muted-foreground">{tp("Pekerjaan ini diajukan untuk Anda periksa.")}</p>
                     <form action={approveJobReview.bind(null, job.id)}>
                       <button type="submit" className="w-full rounded-md bg-status-on-track py-2 text-sm font-medium text-background hover:opacity-90">
-                        Setujui — siap ditandatangani
+                        {tp("Setujui — siap ditandatangani")}
                       </button>
                     </form>
                     <form action={requestJobRevision.bind(null, job.id)} className="space-y-2 border-t border-border pt-3">
-                      <textarea name="note" required minLength={3} rows={3} placeholder="Apa yang perlu diperbaiki?" className={fieldCls} />
+                      <textarea name="note" required minLength={3} rows={3} placeholder={tp("Apa yang perlu diperbaiki?")} className={fieldCls} />
                       <button type="submit" className="w-full rounded-md border border-status-overdue/50 py-2 text-sm font-medium text-status-overdue hover:bg-status-overdue/10">
-                        Minta revisi
+                        {tp("Minta revisi")}
                       </button>
                     </form>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Sudah diajukan; menunggu keputusan Notaris.</p>
+                  <p className="text-sm text-muted-foreground">{tp("Sudah diajukan; menunggu keputusan Notaris.")}</p>
                 )
               ) : job.status === "READY_FOR_SIGNING" ? (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Disetujui Notaris. {isNotary ? "Setelah ditandatangani, buka draft akta lalu klik \"Sahkan & Daftarkan\" — pekerjaan otomatis selesai." : "Siapkan penandatanganan."}
+                    {tp("Disetujui Notaris.")} {isNotary ? tp("Setelah ditandatangani, buka draft akta lalu klik \"Sahkan & Daftarkan\" — pekerjaan otomatis selesai.") : tp("Siapkan penandatanganan.")}
                   </p>
                   {isNotary && (
                     <form action={requestJobRevision.bind(null, job.id)} className="space-y-2">
-                      <textarea name="note" required minLength={3} rows={2} placeholder="Catatan revisi (bila perlu)" className={fieldCls} />
+                      <textarea name="note" required minLength={3} rows={2} placeholder={tp("Catatan revisi (bila perlu)")} className={fieldCls} />
                       <button type="submit" className="w-full rounded-md border border-border py-1.5 text-xs font-medium hover:bg-muted">
-                        Kembalikan untuk revisi
+                        {tp("Kembalikan untuk revisi")}
                       </button>
                     </form>
                   )}
                 </div>
               ) : isNotary ? (
-                <p className="text-sm text-muted-foreground">Menunggu staf mengajukan draft untuk Anda periksa.</p>
+                <p className="text-sm text-muted-foreground">{tp("Menunggu staf mengajukan draft untuk Anda periksa.")}</p>
               ) : canEdit ? (
                 <form action={submitJobForReview.bind(null, job.id)} className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Draft sudah siap? Ajukan ke Notaris untuk diperiksa.</p>
-                  <input name="note" maxLength={500} placeholder="Catatan untuk Notaris (opsional)" className={fieldCls} />
+                  <p className="text-sm text-muted-foreground">{tp("Draft sudah siap? Ajukan ke Notaris untuk diperiksa.")}</p>
+                  <input name="note" maxLength={500} placeholder={tp("Catatan untuk Notaris (opsional)")} className={fieldCls} />
                   <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                    Ajukan ke Notaris
+                    {tp("Ajukan ke Notaris")}
                   </button>
                 </form>
               ) : (
-                <p className="text-sm text-muted-foreground">Belum diajukan.</p>
+                <p className="text-sm text-muted-foreground">{tp("Belum diajukan.")}</p>
               )}
             </Card>
           )}
 
           {/* Status change */}
           <Card>
-            <h2 className="mb-3 text-base font-bold text-foreground">Ubah Status</h2>
-            <p className="mb-2 text-xs text-muted-foreground">Status juga berubah otomatis: dokumen lengkap, diajukan, disetujui, dan akta disahkan.</p>
+            <h2 className="mb-3 text-base font-bold text-foreground">{tp("Ubah Status")}</h2>
+            <p className="mb-2 text-xs text-muted-foreground">{tp("Status juga berubah otomatis: dokumen lengkap, diajukan, disetujui, dan akta disahkan.")}</p>
             {isFinal ? (
-              <p className="text-sm text-muted-foreground">Job ini sudah final ({formatStatusLabel(job.status)}).</p>
+              <p className="text-sm text-muted-foreground">{tp("Job ini sudah final (")}{formatStatusLabel(job.status)}).</p>
             ) : canEdit && nextStatuses.length > 0 ? (
               <form action={changeJobStatusForm.bind(null, job.id)} className="space-y-2">
                 <select
@@ -919,7 +919,7 @@ export default async function JobDetailPage(props: Async<{
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   <option value="" disabled>
-                    — Pilih status baru —
+                    {tp("— Pilih status baru —")}
                   </option>
                   {nextStatuses.map((s) => (
                     <option key={s} value={s}>
@@ -928,13 +928,13 @@ export default async function JobDetailPage(props: Async<{
                   ))}
                 </select>
                 <button type="submit" className="w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                  Simpan Status
+                  {tp("Simpan Status")}
                 </button>
               </form>
             ) : canEdit ? (
-              <p className="text-sm text-muted-foreground">Tidak ada perubahan status manual yang tersedia.</p>
+              <p className="text-sm text-muted-foreground">{tp("Tidak ada perubahan status manual yang tersedia.")}</p>
             ) : (
-              <p className="text-sm text-muted-foreground">Anda tidak punya akses mengubah status pekerjaan ini.</p>
+              <p className="text-sm text-muted-foreground">{tp("Anda tidak punya akses mengubah status pekerjaan ini.")}</p>
             )}
           </Card>
 
@@ -942,29 +942,29 @@ export default async function JobDetailPage(props: Async<{
           {canViewFinance && (
             <Card>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-bold text-foreground">Pembayaran</h2>
+                <h2 className="text-base font-bold text-foreground">{tp("Pembayaran")}</h2>
                 {canEditFinance && job.payments.length === 0 && (
                   <Link href={`/payments/new?jobId=${job.id}`} className="text-xs font-medium text-primary hover:underline">
-                    + Buat tagihan
+                    {tp("+ Buat tagihan")}
                   </Link>
                 )}
               </div>
               {job.payments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada data pembayaran untuk pekerjaan ini.</p>
+                <p className="text-sm text-muted-foreground">{tp("Belum ada data pembayaran untuk pekerjaan ini.")}</p>
               ) : (
                 job.payments.map((p) => (
                   <dl key={p.id} className="space-y-1.5 text-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="text-xs text-muted-foreground">{p.invoiceNumber ?? "Tagihan"}</span>
+                      <span className="text-xs text-muted-foreground">{p.invoiceNumber ?? tp("Tagihan")}</span>
                       <Link href={`/payments/${p.id}`} className="text-xs font-medium text-primary hover:underline">
-                        {canEditFinance ? "Catat bayar / kuitansi" : "Detail"}
+                        {canEditFinance ? tp("Catat bayar / kuitansi") : tp("Detail")}
                       </Link>
                     </div>
-                    <Row label="Total" value={formatCurrency(p.totalAmount)} />
-                    <Row label="DP" value={formatCurrency(p.downPayment)} />
-                    <Row label="Dibayar" value={formatCurrency(p.paidAmount)} />
-                    <Row label="Sisa" value={formatCurrency(p.remainingAmount)} />
-                    <Row label="Status" value={formatStatusLabel(p.status)} />
+                    <Row label={tp("Total")} value={formatCurrency(p.totalAmount)} />
+                    <Row label={tp("DP")} value={formatCurrency(p.downPayment)} />
+                    <Row label={tp("Dibayar")} value={formatCurrency(p.paidAmount)} />
+                    <Row label={tp("Sisa")} value={formatCurrency(p.remainingAmount)} />
+                    <Row label={tp("Status")} value={formatStatusLabel(p.status)} />
                   </dl>
                 ))
               )}
@@ -973,16 +973,16 @@ export default async function JobDetailPage(props: Async<{
 
           {/* Riwayat */}
           <Card>
-            <h2 className="mb-2 text-base font-bold text-foreground">Riwayat</h2>
+            <h2 className="mb-2 text-base font-bold text-foreground">{tp("Riwayat")}</h2>
             {timeline.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Belum ada riwayat.</p>
+              <p className="text-sm text-muted-foreground">{tp("Belum ada riwayat.")}</p>
             ) : (
               <ol className="space-y-2 text-sm">
                 {timeline.map((t) => (
                   <li key={t.id} className="border-l-2 border-border pl-3">
                     <p className="text-foreground">{timelineLabel(t.action, t.newValue)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {fmtDeedTime(t.timestamp)} · {t.user?.name ?? "Sistem"}
+                      {fmtDeedTime(t.timestamp)} · {t.user?.name ?? tp("Sistem")}
                     </p>
                   </li>
                 ))}

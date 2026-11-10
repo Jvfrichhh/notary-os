@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, makeT, type Locale } from "./index";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, makeT, makeTp, type Locale } from "./index";
 
 /** Bahasa pengguna dari cookie (server component / action / route). */
 export async function getLocale(): Promise<Locale> {
@@ -10,5 +10,5 @@ export async function getLocale(): Promise<Locale> {
 /** Penerjemah terikat bahasa pengguna, untuk server component. */
 export async function getT() {
   const locale = await getLocale();
-  return { locale, t: makeT(locale) };
+  return { locale, t: makeT(locale), tp: makeTp(locale) };
 }

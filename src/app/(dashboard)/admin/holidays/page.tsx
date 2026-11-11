@@ -6,14 +6,16 @@ import { Card } from "@/components/ui/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
+import { unwrapProps, type Async } from "@/lib/pageProps";
 import { addHoliday, removeHoliday } from "@/app/(dashboard)/admin/holidays/actions";
 
 export const dynamic = "force-dynamic";
 
 const field = "rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
 
-export default async function HolidaysPage() {
+export default async function HolidaysPage(props: Async<{ searchParams?: { err?: string; ok?: string } }>) {
   const { tp } = await getT();
+  const { searchParams } = await unwrapProps(props);
   await requirePermission(PERMISSIONS.MANAGE_USERS);
   const { t } = await getT();
   const from = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1));
@@ -32,6 +34,12 @@ export default async function HolidaysPage() {
       </div>
 
       <Card>
+        {searchParams?.ok && <p className="mb-2 text-xs text-status-on-track">{t("records.holidays.saved")}</p>}
+        {searchParams?.err === "invalid" && (
+          <p role="alert" className="mb-2 text-xs text-status-overdue">
+            {t("records.holidays.invalid")}
+          </p>
+        )}
         <form action={addHoliday} className="flex flex-wrap items-end gap-2">
           <label>
             <span className="mb-1 block text-xs text-muted-foreground">{t("records.common.date")}</span>

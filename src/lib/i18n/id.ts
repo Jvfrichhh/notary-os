@@ -222,7 +222,9 @@ export const id = {
       name: "Keterangan",
       namePlaceholder: "mis. Hari Raya Idul Fitri",
       empty: "Belum ada hari libur yang diisi untuk tahun ini. Tenggat dihitung Senin–Jumat saja.",
-      confirmDelete: "Hapus tanggal ini dari daftar hari libur?"
+      confirmDelete: "Hapus tanggal ini dari daftar hari libur?",
+      saved: "Hari libur tersimpan.",
+      invalid: "Tanggal atau keterangan belum benar. Isi tanggal dan keterangan minimal 2 huruf."
     }
   }
 } as const;

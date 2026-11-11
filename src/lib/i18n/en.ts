@@ -215,7 +215,9 @@ export const en: Dict = {
       name: "Description",
       namePlaceholder: "e.g. Eid al-Fitr",
       empty: "No holidays entered for this year yet. Deadlines count Monday–Friday only.",
-      confirmDelete: "Remove this date from the holiday list?"
+      confirmDelete: "Remove this date from the holiday list?",
+      saved: "Holiday saved.",
+      invalid: "Date or description is not valid. Fill in a date and a description of at least 2 characters."
     }
   }
 };

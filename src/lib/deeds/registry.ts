@@ -81,7 +81,10 @@ export function sectionsFor(t: DeedTemplate): SectionDef[] {
 
 /** Daftar ringkas untuk pilihan di UI. */
 export function deedTemplateOptions(): { key: string; title: string; description: string }[] {
-  return Object.values(DEED_TEMPLATES).map((t) => ({ key: t.key, title: t.ppat ? `${t.title} (PPAT)` : t.title, description: t.description }));
+  // Diurutkan menurut abjad: daftarnya panjang, jadi urutan pendaftaran sulit dicari.
+  return Object.values(DEED_TEMPLATES)
+    .map((t) => ({ key: t.key, title: t.ppat ? `${t.title} (PPAT)` : t.title, description: t.description }))
+    .sort((a, b) => a.title.localeCompare(b.title, "id"));
 }
 
 /** Label unduhan: akta notaris = Minuta/Salinan; akta PPAT = Lembar Pertama/Kedua/Salinan. */

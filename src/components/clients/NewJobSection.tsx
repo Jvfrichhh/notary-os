@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PT_CHANGE_OPTIONS } from "@/lib/serviceCatalog";
+import { PT_CHANGE_OPTIONS } from "@/lib/serviceOptions";
 import { usePhrase } from "@/components/i18n/LocaleProvider";
 
 export type ServiceOption = { id: string; name: string; category: string | null };

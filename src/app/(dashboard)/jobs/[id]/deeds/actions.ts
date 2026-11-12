@@ -20,7 +20,8 @@ import { renderDeed } from "@/lib/deeds/render";
 import { stagesFor } from "@/lib/ppatStages";
 import { personFromClient, type PrefillContext } from "@/lib/deeds/types";
 import { createClientNotification } from "@/lib/clientNotifications";
-import { PT_CHANGE_OPTIONS } from "@/lib/serviceCatalog";
+import { PT_CHANGE_OPTIONS } from "@/lib/serviceOptions";
+import { KUNCI_LAPOR_WASIAT } from "@/lib/deeds/tambahan/index";
 import type { DeedData, Person } from "@/lib/deeds/schema";
 import type { ExtractedFields } from "@/lib/ai/documentFields";
 
@@ -532,7 +533,7 @@ export async function finalizeDeedDraft(draftId: string, _prev: FinalizeState, f
     }
   }
   // Akta wasiat otomatis masuk register Wasiat (dilaporkan lewat Laporan Bulanan).
-  if (draft.templateKey === "wasiat") {
+  if (draft.templateKey === "wasiat" || KUNCI_LAPOR_WASIAT.includes(draft.templateKey)) {
     const rep = await prisma.repertorium.findUnique({ where: { deedId }, select: { id: true } });
     await prisma.wasiat.create({
       data: {

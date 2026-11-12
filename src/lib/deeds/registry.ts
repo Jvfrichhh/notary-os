@@ -22,6 +22,7 @@ import { pengoperanHak } from "./templates/pengoperanHak";
 import { perubahanCv, perubahanPerkumpulan, perubahanYayasan } from "./templates/perubahanBadan";
 import { pendirianCv } from "./templates/pendirianCv";
 import { pendirianYayasan } from "./templates/pendirianYayasan";
+import { TEMPLATE_TAMBAHAN } from "./tambahan/templates";
 
 /** Semua template draft akta yang tersedia. Kunci = SERVICE_CATALOG[].deedKey. */
 export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
@@ -54,6 +55,7 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     perubahanYayasan,
     perubahanPerkumpulan,
     perubahanCv,
+    ...TEMPLATE_TAMBAHAN,
     ajbPpat,
     hibahPpat,
     tukarMenukarPpat,

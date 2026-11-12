@@ -6,7 +6,7 @@ import { ayat, daftarPenghadap, denganPasangan, dikenal, domisili, judul, kompar
 import type { FieldDef, SectionDef } from "../schema";
 import { nomorPenghadap, parties, partyList, peranDari } from "../parties";
 import { angka, formatThousands, rupiah, tanggalHuruf, terbilang } from "../words";
-import { PT_CHANGE_OPTIONS } from "../../serviceCatalog";
+import { PT_CHANGE_OPTIONS } from "../../serviceOptions";
 
 type Pengurus = { jabatan?: string; orang?: Person };
 type Alih = { dari?: string; kepada?: string; jumlah?: string };

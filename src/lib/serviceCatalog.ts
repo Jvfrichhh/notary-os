@@ -4,11 +4,16 @@
  * SATU sumber kebenaran: dipakai untuk mengisi tabel service_types +
  * service_templates (scripts/service-catalog-sql.ts menghasilkan SQL
  * idempoten dari file ini), dan oleh form (pilihan jenis perubahan PT).
- * File ini sengaja tanpa import supaya aman di server, client, dan script.
+ * File ini hanya mengimpor data murni (tanpa Prisma/React) supaya aman di
+ * server dan script. Pilihan tetap untuk form ada di serviceOptions.ts.
  *
  * Checklist adalah dokumen yang LAZIM diminta; kantor bisa menambah/mengurangi
  * per job. `isRequired: false` = tergantung kasus.
  */
+
+import { TAMBAHAN } from "./deeds/tambahan/index";
+
+export { PPAT_DEED_TYPES, PT_CHANGE_OPTIONS } from "./serviceOptions";
 
 export interface CatalogItem {
   name: string;
@@ -21,18 +26,6 @@ export interface CatalogItem {
   /** Jenis perbuatan hukum di Buku Daftar Akta PPAT (layanan selaku PPAT). */
   ppatType?: string;
 }
-
-/** Jenis akta PPAT (bentuk perbuatan hukum) untuk Buku Daftar Akta PPAT. */
-export const PPAT_DEED_TYPES = [
-  "Jual Beli",
-  "Hibah",
-  "Tukar Menukar",
-  "Pemasukan ke Dalam Perusahaan (Inbreng)",
-  "Pembagian Hak Bersama",
-  "Pemberian Hak Tanggungan (APHT)",
-  "Surat Kuasa Membebankan Hak Tanggungan (SKMHT)",
-  "Pemberian HGB/Hak Pakai atas Tanah Hak Milik"
-] as const;
 
 const PPAT_PAJAK = [
   { label: "SSP PPh Final Penjual/Pemberi (tervalidasi)", isRequired: false },
@@ -48,18 +41,7 @@ const PPAT_TASKS = [
 
 const BASE_TASKS = ["Verifikasi kelengkapan dokumen", "Siapkan draft akta", "Review draft oleh Notaris", "Jadwalkan penandatanganan"];
 
-/** Pilihan jenis perubahan untuk Akta Perubahan PT (boleh lebih dari satu). */
-export const PT_CHANGE_OPTIONS = [
-  "Perubahan KBLI / maksud dan tujuan",
-  "Perubahan Direksi",
-  "Perubahan Dewan Komisaris",
-  "Peralihan saham",
-  "Perubahan modal",
-  "Perubahan alamat / tempat kedudukan",
-  "Perubahan nama perseroan"
-] as const;
-
-export const SERVICE_CATALOG: CatalogItem[] = [
+const KATALOG_DASAR: CatalogItem[] = [
   {
     name: "Akta Jual Beli",
     category: "PPAT",
@@ -615,3 +597,15 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     tasks: [...BASE_TASKS, "Pemberitahuan perubahan pemegang saham melalui SABH"]
   }
 ];
+
+/** Layanan dari akta tambahan (lib/deeds/tambahan): nama layanan = judul template. */
+const KATALOG_TAMBAHAN: CatalogItem[] = TAMBAHAN.map((c) => ({
+  name: c.title,
+  category: c.category,
+  description: c.description,
+  deedKey: c.key,
+  checklist: c.checklist.map((l) => (l.startsWith("?") ? { label: l.slice(1), isRequired: false } : { label: l })),
+  tasks: c.tasks ?? BASE_TASKS
+}));
+
+export const SERVICE_CATALOG: CatalogItem[] = [...KATALOG_DASAR, ...KATALOG_TAMBAHAN];

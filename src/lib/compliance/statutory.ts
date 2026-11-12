@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { formatDate } from "@/lib/format";
+import { TAMBAHAN } from "@/lib/deeds/tambahan/index";
 
 /**
  * Kewajiban setelah akta disahkan, dengan batas waktu dihitung dari tanggal
@@ -9,7 +10,7 @@ import { formatDate } from "@/lib/format";
  * Batas waktu mengikuti ketentuan umum; Notaris dapat menyesuaikan
  * tanggalnya di halaman job.
  */
-export const STATUTORY_DUTIES: Record<string, { title: string; days: number; basis: string }[]> = {
+const DUTIES_DASAR: Record<string, { title: string; days: number; basis: string }[]> = {
   fidusia: [{ title: "Daftarkan Jaminan Fidusia secara elektronik (AHU Online)", days: 30, basis: "PP 21/2015: 30 hari sejak akta" }],
   pendirian_pt: [
     { title: "Ajukan pengesahan badan hukum PT (AHU Online)", days: 60, basis: "UUPT Pasal 10: 60 hari sejak akta ditandatangani" }
@@ -42,6 +43,11 @@ export const STATUTORY_DUTIES: Record<string, { title: string; days: number; bas
   peralihan_saham: [
     { title: "Sampaikan pemberitahuan perubahan susunan pemegang saham (AHU Online)", days: 30, basis: "UUPT Pasal 56: 30 hari sejak pencatatan" }
   ]
+};
+
+export const STATUTORY_DUTIES: Record<string, { title: string; days: number; basis: string }[]> = {
+  ...DUTIES_DASAR,
+  ...Object.fromEntries(TAMBAHAN.filter((c) => c.duty?.length).map((c) => [c.key, c.duty!]))
 };
 
 /** Tanggal-saja (UTC-midnight) + n hari. */

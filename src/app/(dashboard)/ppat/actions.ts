@@ -8,7 +8,7 @@ import { assertPermission, PERMISSIONS } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
 import { fromDateInput, getJakartaToday } from "@/lib/format";
 import { markSubmittedToBpn, registerPpatDeed, type PpatInput } from "@/lib/ppat";
-import { PPAT_DEED_TYPES } from "@/lib/serviceCatalog";
+import { PPAT_DEED_TYPES } from "@/lib/serviceOptions";
 
 const txt = (f: FormData, k: string, max = 300) => {
   const v = String(f.get(k) ?? "").trim().slice(0, max);

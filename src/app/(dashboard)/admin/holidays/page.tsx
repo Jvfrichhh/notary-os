@@ -34,7 +34,7 @@ export default async function HolidaysPage(props: Async<{ searchParams?: { err?:
       </div>
 
       <Card>
-        {searchParams?.ok && <p className="mb-2 text-xs text-status-on-track">{t("records.holidays.saved")}</p>}
+        {searchParams?.ok && <p role="status" className="mb-2 text-xs text-status-on-track">{t("records.holidays.saved")}</p>}
         {searchParams?.err === "invalid" && (
           <p role="alert" className="mb-2 text-xs text-status-overdue">
             {t("records.holidays.invalid")}

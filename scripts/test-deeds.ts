@@ -56,6 +56,24 @@ const sample2: Record<string, unknown> = {
   saksi1: P("Rina Marlina", "Nyonya"), saksi2: { ...P("Dedi Kurniawan"), pekerjaan: "Karyawan Kantor Notaris" }
 };
 
+/**
+ * Data contoh dipakai bersama oleh semua template; kunci yang sama bisa berbeda bentuk
+ * (mis. "objek" berupa daftar di fidusia tetapi teks di akta lain). Buang nilai yang
+ * bentuknya tidak cocok dengan isian template ini, seperti form yang tidak akan mengirimnya.
+ */
+function cocokkan(fields: { kind: string; key: string }[], data: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...data };
+  for (const f of fields) {
+    const v = out[f.key];
+    if (v === undefined || v === null) continue;
+    const daftar = Array.isArray(v);
+    const objek = typeof v === "object" && !daftar;
+    const cocok = f.kind === "list" || f.kind === "checks" ? daftar : f.kind === "person" ? objek : typeof v !== "object";
+    if (!cocok) delete out[f.key];
+  }
+  return out;
+}
+
 let failures = 0;
 const fail = (msg: string) => {
   failures++;
@@ -65,13 +83,16 @@ const fail = (msg: string) => {
 for (const t of Object.values(DEED_TEMPLATES)) {
   for (const base of [sample, sample2, {}]) {
     const data = base === sample2 && t.key === "sewa" ? { ...base, caraBayar: "dibayar setiap tahun di muka", harga: "300000000", objek: "sebidang tanah Hak Milik Nomor 123/Babakan berikut bangunan ruko dua lantai." } : base;
-    const filled = applyDefaults(sectionsFor(t).flatMap((s) => s.fields), data);
+    const fields = sectionsFor(t).flatMap((s) => s.fields);
+    const filled = applyDefaults(fields, cocokkan(fields, data));
     for (const variant of ["minuta", "salinan"] as const) {
       const { title, body } = blocksToLines(resolvePenghadap(t.build(filled, variant), t.signers(filled).length));
       if (title.length < 4) fail(`${t.key}: judul ${title.length} baris`);
       body.forEach((l, i) => {
-        const len = l.col + l.segs.reduce((n, s) => n + s.text.length, 0);
-        if (len !== LINE_WIDTH) fail(`${t.key} ${variant} baris ${i + 1}: ${len} huruf`);
+        const len = l.col - (l.hanging ?? 0) + l.segs.reduce((n, s) => n + s.text.length, 0); // baris pertama butir mulai di posisi nomor
+        // Sisa baris ditutup garis oleh tab ber-leader (bukan strip diketik), jadi teks cukup tidak melebihi lebar baris.
+        if (len > LINE_WIDTH) fail(`${t.key} ${variant} baris ${i + 1}: ${len} huruf (maks ${LINE_WIDTH})`);
+        if (!l.fill) fail(`${t.key} ${variant} baris ${i + 1}: tanpa garis penutup`);
       });
       // Teks yang tidak boleh muncul di akta.
       const text = body.map((l) => l.segs.map((sg) => sg.text).join("")).join("\n");
@@ -95,7 +116,7 @@ for (const t of Object.values(DEED_TEMPLATES)) {
         if (b - prev !== LINES_PER_PAGE) fail(`${t.key} ${variant}: halaman berisi ${b - prev} baris`);
         prev = b;
       }
-      const r = renderDeed(t, data, variant);
+      const r = renderDeed(t, cocokkan(fields, data), variant);
       if (r.buffer.subarray(0, 2).toString() !== "PK") fail(`${t.key}: bukan file zip`);
       if (out && base === sample) writeFileSync(`${out}/${t.key}_${variant}.docx`, r.buffer);
       if (out && base === sample2) writeFileSync(`${out}/${t.key}_2_${variant}.docx`, r.buffer);

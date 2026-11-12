@@ -350,6 +350,40 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     tasks: [...BASE_TASKS, "Beri catatan pembatalan pada minuta akta asal"]
   },
   {
+    name: "Akta Pernyataan Pengampuan Anak di Bawah Umur",
+    category: "Keluarga",
+    description: "Pernyataan orang tua/wali yang mewakili anak di bawah umur untuk suatu perbuatan hukum.",
+    deedKey: "pengampuan_anak",
+    checklist: [
+      { label: "KTP Orang Tua / Wali" },
+      { label: "Kartu Keluarga" },
+      { label: "Akta Kelahiran Setiap Anak" },
+      { label: "Buku Nikah / Akta Perkawinan Orang Tua" },
+      { label: "Akta Kematian & Surat Keterangan Waris (bila salah satu orang tua meninggal)", isRequired: false },
+      { label: "Penetapan Pengadilan (perwalian / izin menjual)", isRequired: false },
+      { label: "Dokumen Objek yang Akan Diurus (sertipikat, PBB)", isRequired: false }
+    ],
+    tasks: BASE_TASKS
+  },
+  {
+    name: "Akta Pengoperan Hak atas Tanah",
+    category: "Pertanahan",
+    description: "Pengoperan dan penyerahan hak (oper alih) atas tanah yang belum bersertipikat, dengan ganti rugi.",
+    deedKey: "pengoperan_hak",
+    checklist: [
+      { label: "KTP Pihak Pertama (Yang Mengoperkan)" },
+      { label: "KTP Pihak Kedua (Penerima)" },
+      { label: "Kartu Keluarga & Buku Nikah Pihak Pertama" },
+      { label: "KTP Pasangan Pihak Pertama (persetujuan)", isRequired: false },
+      { label: "Bukti Penguasaan Tanah (surat garapan / girik / Letter C / SPPT PBB)" },
+      { label: "Surat Keterangan Riwayat Tanah & Tidak Sengketa dari Desa/Kelurahan" },
+      { label: "Surat Pernyataan Penguasaan Fisik Bidang Tanah" },
+      { label: "NPWP Para Pihak", isRequired: false },
+      { label: "Bukti Pembayaran Ganti Rugi", isRequired: false }
+    ],
+    tasks: [...BASE_TASKS, "Serahkan salinan untuk permohonan hak ke Kantor Pertanahan"]
+  },
+  {
     name: "Akta Kerjasama Usaha",
     category: "Perjanjian",
     description: "Perjanjian kerja sama usaha antar pihak.",

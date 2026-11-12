@@ -535,6 +535,53 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     tasks: ["Pengajuan nama Koperasi di AHU", ...BASE_TASKS, "Permohonan pengesahan badan hukum Koperasi"]
   },
   {
+    name: "Akta Perubahan Yayasan",
+    category: "Korporasi",
+    description: "Pernyataan keputusan Rapat Pembina: nama, kedudukan, kegiatan, susunan organ, atau perubahan anggaran dasar Yayasan.",
+    deedKey: "perubahan_yayasan",
+    checklist: [
+      { label: "Akta Pendirian & Seluruh Akta Perubahan Yayasan" },
+      { label: "SK Pengesahan / Persetujuan / Penerimaan Pemberitahuan Menteri" },
+      { label: "Berita Acara / Risalah Rapat Pembina & Daftar Hadir" },
+      { label: "KTP & NPWP Penghadap (Kuasa Rapat)" },
+      { label: "KTP & NPWP Pembina, Pengurus, dan Pengawas yang Baru", isRequired: false },
+      { label: "NPWP Yayasan" },
+      { label: "Surat Keterangan Domisili / Pernyataan Alamat (bila alamat berubah)", isRequired: false }
+    ],
+    tasks: [...BASE_TASKS, "Ajukan persetujuan/pemberitahuan perubahan ke Menteri (AHU Online)"]
+  },
+  {
+    name: "Akta Perubahan Perkumpulan",
+    category: "Korporasi",
+    description: "Pernyataan keputusan Rapat Umum Anggota: nama, kedudukan, kegiatan, susunan pengurus, atau perubahan anggaran dasar Perkumpulan.",
+    deedKey: "perubahan_perkumpulan",
+    checklist: [
+      { label: "Akta Pendirian & Seluruh Akta Perubahan Perkumpulan" },
+      { label: "SK Pengesahan Badan Hukum / Persetujuan Perubahan" },
+      { label: "Berita Acara / Risalah Rapat Umum Anggota & Daftar Hadir" },
+      { label: "KTP & NPWP Penghadap (Kuasa Rapat)" },
+      { label: "KTP & NPWP Pengurus dan Pengawas yang Baru", isRequired: false },
+      { label: "NPWP Perkumpulan" },
+      { label: "Surat Keterangan Domisili / Pernyataan Alamat (bila alamat berubah)", isRequired: false }
+    ],
+    tasks: [...BASE_TASKS, "Ajukan persetujuan/pemberitahuan perubahan ke Menteri (AHU Online)"]
+  },
+  {
+    name: "Akta Perubahan CV",
+    category: "Korporasi",
+    description: "Masuk dan keluarnya sekutu serta perubahan nama, kedudukan, kegiatan usaha, modal, atau ketentuan lain CV.",
+    deedKey: "perubahan_cv",
+    checklist: [
+      { label: "Akta Pendirian & Seluruh Akta Perubahan CV" },
+      { label: "Surat Keterangan Terdaftar (SKT) AHU / Pendaftaran di Pengadilan Negeri" },
+      { label: "KTP & NPWP Seluruh Sekutu (lama dan baru)" },
+      { label: "KTP Pasangan Sekutu yang Keluar (persetujuan)", isRequired: false },
+      { label: "NPWP & NIB CV" },
+      { label: "Rincian Perubahan (KBLI baru, modal, alamat)", isRequired: false }
+    ],
+    tasks: [...BASE_TASKS, "Daftarkan perubahan CV melalui SABU (maks. 30 hari)", "Perbarui data NIB di OSS"]
+  },
+  {
     name: "Akta Perubahan PT",
     category: "Korporasi",
     description: "Perubahan anggaran dasar/data PT berdasarkan keputusan RUPS (KBLI, Direksi, Komisaris, saham, dll.).",

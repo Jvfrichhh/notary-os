@@ -30,6 +30,15 @@ export const STATUTORY_DUTIES: Record<string, { title: string; days: number; bas
       basis: "UUPT Pasal 21 & 94/111: 30 hari sejak akta"
     }
   ],
+  perubahan_yayasan: [
+    { title: "Ajukan persetujuan / pemberitahuan perubahan anggaran dasar & data Yayasan (AHU Online)", days: 30, basis: "UU Yayasan & PP 63/2008: tenggat umum 30 hari sejak akta (verifikasi sesuai jenis perubahan)" }
+  ],
+  perubahan_perkumpulan: [
+    { title: "Ajukan persetujuan / pemberitahuan perubahan anggaran dasar & data Perkumpulan (AHU Online)", days: 30, basis: "Permenkumham 3/2016: tenggat umum 30 hari sejak akta (verifikasi sesuai jenis perubahan)" }
+  ],
+  perubahan_cv: [
+    { title: "Daftarkan perubahan CV di Sistem Administrasi Badan Usaha (AHU Online)", days: 30, basis: "Permenkumham 17/2018: 30 hari sejak akta perubahan ditandatangani" }
+  ],
   peralihan_saham: [
     { title: "Sampaikan pemberitahuan perubahan susunan pemegang saham (AHU Online)", days: 30, basis: "UUPT Pasal 56: 30 hari sejak pencatatan" }
   ]

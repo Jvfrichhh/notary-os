@@ -19,6 +19,7 @@ import { penitipanUang } from "./templates/penitipanUang";
 import { pembatalan } from "./templates/pembatalan";
 import { pengampuanAnak } from "./templates/pengampuanAnak";
 import { pengoperanHak } from "./templates/pengoperanHak";
+import { perubahanCv, perubahanPerkumpulan, perubahanYayasan } from "./templates/perubahanBadan";
 import { pendirianCv } from "./templates/pendirianCv";
 import { pendirianYayasan } from "./templates/pendirianYayasan";
 
@@ -50,6 +51,9 @@ export const DEED_TEMPLATES: Record<string, DeedTemplate> = Object.fromEntries(
     pembatalan,
     pengampuanAnak,
     pengoperanHak,
+    perubahanYayasan,
+    perubahanPerkumpulan,
+    perubahanCv,
     ajbPpat,
     hibahPpat,
     tukarMenukarPpat,

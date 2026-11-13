@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState, useTransition } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ClientFormState } from "@/app/(dashboard)/clients/actions";
@@ -58,8 +58,7 @@ function Field({
   );
 }
 
-function SubmitButton({ label }: { label: string }) {
-  const { pending } = useFormStatus();
+function SubmitButton({ label, pending }: { label: string; pending: boolean }) {
   return (
     <button
       type="submit"
@@ -73,17 +72,49 @@ function SubmitButton({ label }: { label: string }) {
 
 export function ClientForm({ action, client, cancelHref, newJob }: ClientFormProps) {
   const tp = usePhrase();
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction, actionPending] = useActionState(action, initialState);
+  const [transitionPending, startTransition] = useTransition();
+  const pending = actionPending || transitionPending;
   const errors = state.errors ?? {};
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form
+      action={formAction}
+      // Dikirim lewat onSubmit supaya isian TIDAK dikosongkan saat server membalas peringatan
+      // (NIK/nama ganda, isian salah): React mengosongkan form yang dikirim lewat `action`.
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        startTransition(() => formAction(fd));
+      }}
+      className="space-y-6"
+    >
       {state.formError && (
         <p className="rounded-md bg-status-overdue/10 px-3 py-2 text-sm text-status-overdue">{state.formError}</p>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label={tp("Nama Lengkap")} name="fullName" defaultValue={client?.fullName} errors={errors.fullName} required />
+        <div>
+          <Field label={tp("Nama Lengkap")} name="fullName" defaultValue={client?.fullName} errors={errors.fullName} required />
+          {state.duplicateName?.length ? (
+            <div className="mt-1 space-y-1 text-xs text-foreground">
+              <p>
+                {tp("Buka klien yang sudah ada:")}{" "}
+                {state.duplicateName.map((c, i) => (
+                  <span key={c.id}>
+                    {i > 0 ? ", " : ""}
+                    <Link href={`/clients/${c.id}`} className="font-medium text-primary hover:underline">
+                      {c.fullName} ({c.clientNumber})
+                    </Link>
+                  </span>
+                ))}
+              </p>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="allowDuplicateName" /> {tp("Tetap simpan sebagai klien baru")}
+              </label>
+            </div>
+          ) : null}
+        </div>
 
         <div>
           <label htmlFor="clientType" className="mb-1 block text-sm font-medium text-foreground">
@@ -246,7 +277,7 @@ export function ClientForm({ action, client, cancelHref, newJob }: ClientFormPro
       )}
 
       <div className="flex items-center gap-3">
-        <SubmitButton label={client ? tp("Simpan Perubahan") : newJob ? tp("Simpan Klien & Pekerjaan") : tp("Simpan Klien")} />
+        <SubmitButton pending={pending} label={client ? tp("Simpan Perubahan") : newJob ? tp("Simpan Klien & Pekerjaan") : tp("Simpan Klien")} />
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           {tp("Batal")}
         </Link>

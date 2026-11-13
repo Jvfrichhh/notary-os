@@ -11,6 +11,7 @@ import { createJobWithTemplate } from "@/lib/jobCreation";
 import { fromDateInput } from "@/lib/format";
 import { createPortalAccountForNewClient } from "@/lib/portalAccounts";
 import { createInvoiceForJob } from "@/lib/billing";
+import { normalizeClientName } from "@/lib/clientNames";
 
 const clientSchema = z.object({
   fullName: z.string().min(2, "Nama minimal 2 karakter"),
@@ -65,6 +66,8 @@ export type ClientFormState = {
   formError?: string;
   /** NIK sudah dipakai klien lain -> form menampilkan pilihan "tetap simpan". */
   duplicateNik?: boolean;
+  /** Nama mirip klien yang sudah ada -> form menampilkan klien tersebut dan pilihan "tetap simpan". */
+  duplicateName?: { id: string; fullName: string; clientNumber: string }[];
 };
 
 /** Validasi isian bagian "pekerjaan baru" (layanan wajib, izin create_jobs). */
@@ -206,6 +209,35 @@ export async function createClient(_prevState: ClientFormState, formData: FormDa
   }
 
   const data = parsed.data;
+
+  // Nama sama dengan klien yang sudah ada (tanpa melihat sapaan/gelar/huruf besar-kecil):
+  // peringatkan dulu, karena klien lama cukup dibuatkan pekerjaan baru. Dilewati bila
+  // kedua NIK terisi dan berbeda (orang lain yang kebetulan bernama sama).
+  // NIK ganda yang sudah disetujui ("tetap simpan") tidak ditanyakan lagi lewat namanya.
+  const nikGandaDisetujui = !!nikInput && formData.get("allowDuplicateNik") === "on";
+  if (formData.get("allowDuplicateName") !== "on") {
+    const kunci = normalizeClientName(data.fullName);
+    const kataTerpanjang = kunci.split(" ").sort((a, b) => b.length - a.length)[0] ?? "";
+    if (kunci && kataTerpanjang.length >= 2) {
+      const calon = await prisma.client.findMany({
+        where: { status: "ACTIVE", fullName: { contains: kataTerpanjang, mode: "insensitive" } },
+        select: { id: true, fullName: true, clientNumber: true, nik: true },
+        orderBy: { createdAt: "desc" },
+        take: 200
+      });
+      const mirip = calon.filter((c) => normalizeClientName(c.fullName) === kunci && !(nikInput && c.nik && c.nik !== nikInput) && !(nikGandaDisetujui && c.nik === nikInput)).slice(0, 3);
+      if (mirip.length) {
+        return {
+          errors: {
+            fullName: [
+              `Nama ini sama dengan klien yang sudah ada: ${mirip.map((c) => `${c.fullName} (${c.clientNumber})`).join(", ")}. Buka klien tersebut lalu klik "+ Pekerjaan baru", atau centang "Tetap simpan sebagai klien baru" bila memang orang berbeda.`
+            ]
+          },
+          duplicateName: mirip.map(({ id, fullName, clientNumber }) => ({ id, fullName, clientNumber }))
+        };
+      }
+    }
+  }
 
   // Simpan dengan nomor berikutnya; bila bentrok (dua orang menyimpan
   // bersamaan), coba nomor sesudahnya sampai 5 kali.

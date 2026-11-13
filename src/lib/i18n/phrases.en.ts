@@ -708,6 +708,7 @@ export const PHRASES_EN: Record<string, string> = {
   "— Pilih —": "— Choose —",
   "Individu": "Individual",
   "Tetap simpan": "Save anyway",
+  "Buka klien yang sudah ada:": "Open the existing client:",
   "Tetap simpan sebagai klien baru": "Save anyway as a new client",
   "No. Telepon": "Phone No.",
   "Buatkan akses portal klien (bila email diisi)": "Create client portal access (if email is filled in)",
